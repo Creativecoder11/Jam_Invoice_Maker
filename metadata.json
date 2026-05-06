@@ -1,0 +1,6 @@
+{
+  "name": "Jamroll Invoicemaker",
+  "description": "A modern SaaS invoice web application with RBAC, PDF generation, and MongoDB.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
