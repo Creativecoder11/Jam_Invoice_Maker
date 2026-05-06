@@ -3,5 +3,5 @@ import { authOptions } from "@/lib/authOptions";
 
 const handler = NextAuth(authOptions);
 
-export { handler as GET, handler as POST };
 export const dynamic = "force-dynamic";
+export { handler as GET, handler as POST };
