@@ -160,9 +160,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </main>
       </div>
 
-      <button className="absolute bottom-8 right-8 w-14 h-14 bg-indigo-600 text-white rounded-full shadow-2xl shadow-indigo-300 hidden md:flex items-center justify-center hover:scale-105 active:scale-95 transition-transform group z-50">
+      <Link href="/dashboard/invoices/create" className="absolute bottom-8 right-8 w-14 h-14 bg-indigo-600 text-white rounded-full shadow-2xl shadow-indigo-300 hidden md:flex items-center justify-center hover:scale-105 active:scale-95 transition-transform group z-50" aria-label="Go to all invoices">
         <svg className="w-6 h-6 group-hover:rotate-90 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 4v16m8-8H4"></path></svg>
-      </button>
+      </Link>
     </div>
   );
 }

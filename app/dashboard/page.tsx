@@ -6,8 +6,31 @@ import Link from "next/link";
 import {
   TrendingUp, TrendingDown, AlertCircle, Eye, MoreHorizontal, Search,
 } from "lucide-react";
-import { format, differenceInDays } from "date-fns";
+// import { format, differenceInDays } from "date-fns";
 import { InvoiceFormData } from "@/types/invoice";
+import {
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  CartesianGrid,
+  Tooltip,
+} from "recharts";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  format,
+  differenceInDays,
+  startOfWeek,
+  startOfMonth,
+  startOfYear,
+  eachDayOfInterval,
+  subDays,
+  subWeeks,
+  subMonths,
+  subYears,
+} from "date-fns";
+
+type ChartRange = "daily" | "weekly" | "monthly" | "yearly";
 
 type Invoice = InvoiceFormData & { _id: string; createdAt: string };
 
@@ -23,137 +46,231 @@ function fmtFull(n: number) {
 
 // ── Cash Flow Bar Chart ────────────────────────────────────────────────────────
 function CashFlowChart({ invoices }: { invoices: Invoice[] }) {
-  const [range, setRange] = useState<3 | 6>(6);
+  const [range, setRange] = useState<ChartRange>("monthly");
 
   const data = useMemo(() => {
-    return Array.from({ length: range }, (_, i) => {
-      const d = new Date();
-      d.setMonth(d.getMonth() - (range - 1 - i));
-      const year = d.getFullYear();
-      const month = d.getMonth();
-      const slice = invoices.filter((inv) => {
-        const dd = new Date(inv.date);
-        return dd.getFullYear() === year && dd.getMonth() === month;
+    const now = new Date();
+
+    // ── DAILY ─────────────────────────────────────
+    if (range === "daily") {
+      return eachDayOfInterval({
+        start: subDays(now, 6),
+        end: now,
+      }).map((day) => {
+        const slice = invoices.filter((inv) => {
+          const d = new Date(inv.date);
+
+          return (
+            d.getDate() === day.getDate() &&
+            d.getMonth() === day.getMonth() &&
+            d.getFullYear() === day.getFullYear()
+          );
+        });
+
+        return {
+          label: format(day, "EEE"),
+          paid: slice
+            .filter((i) => i.status === "Paid")
+            .reduce((s, i) => s + i.total, 0),
+
+          outstanding: slice
+            .filter((i) => i.status !== "Paid")
+            .reduce((s, i) => s + i.total, 0),
+        };
       });
+    }
+
+    // ── WEEKLY ────────────────────────────────────
+    if (range === "weekly") {
+      return Array.from({ length: 8 }, (_, i) => {
+        const week = subWeeks(now, 7 - i);
+        const start = startOfWeek(week);
+
+        const slice = invoices.filter((inv) => {
+          const d = new Date(inv.date);
+
+          return (
+            format(startOfWeek(d), "yyyy-MM-dd") ===
+            format(start, "yyyy-MM-dd")
+          );
+        });
+
+        return {
+          label: format(start, "dd MMM"),
+          paid: slice
+            .filter((i) => i.status === "Paid")
+            .reduce((s, i) => s + i.total, 0),
+
+          outstanding: slice
+            .filter((i) => i.status !== "Paid")
+            .reduce((s, i) => s + i.total, 0),
+        };
+      });
+    }
+
+    // ── YEARLY ────────────────────────────────────
+    if (range === "yearly") {
+      return Array.from({ length: 5 }, (_, i) => {
+        const year = subYears(now, 4 - i);
+
+        const slice = invoices.filter((inv) => {
+          const d = new Date(inv.date);
+
+          return d.getFullYear() === year.getFullYear();
+        });
+
+        return {
+          label: format(year, "yyyy"),
+          paid: slice
+            .filter((i) => i.status === "Paid")
+            .reduce((s, i) => s + i.total, 0),
+
+          outstanding: slice
+            .filter((i) => i.status !== "Paid")
+            .reduce((s, i) => s + i.total, 0),
+        };
+      });
+    }
+
+    // ── MONTHLY DEFAULT ───────────────────────────
+    return Array.from({ length: 6 }, (_, i) => {
+      const month = subMonths(now, 5 - i);
+      const start = startOfMonth(month);
+
+      const slice = invoices.filter((inv) => {
+        const d = new Date(inv.date);
+
+        return (
+          d.getMonth() === start.getMonth() &&
+          d.getFullYear() === start.getFullYear()
+        );
+      });
+
       return {
-        label: format(new Date(year, month, 1), "MMM"),
-        paid:  slice.filter((i) => i.status === "Paid").reduce((s, i) => s + i.total, 0),
-        out:   slice.filter((i) => i.status !== "Paid").reduce((s, i) => s + i.total, 0),
+        label: format(start, "MMM"),
+        paid: slice
+          .filter((i) => i.status === "Paid")
+          .reduce((s, i) => s + i.total, 0),
+
+        outstanding: slice
+          .filter((i) => i.status !== "Paid")
+          .reduce((s, i) => s + i.total, 0),
       };
     });
   }, [invoices, range]);
 
-  const maxVal = Math.max(...data.flatMap((d) => [d.paid, d.out]), 1);
-
-  // SVG dimensions
-  const W = 500, H = 180;
-  const PL = 44, PR = 8, PT = 12, PB = 28;
-  const cW = W - PL - PR;
-  const cH = H - PT - PB;
-  const slot = cW / range;
-  const bW = Math.floor(slot * 0.28);
-
-  const toY  = (v: number) => PT + cH - (v / maxVal) * cH;
-  const barH = (v: number) => (v / maxVal) * cH;
-
-  const yTicks = [0, 0.25, 0.5, 0.75, 1];
-
   return (
-    <div>
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+    >
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-6">
         <div>
-          <h3 className="font-bold text-gray-900 text-base">Cash Flow</h3>
-          <p className="text-xs text-gray-400 mt-0.5">Income vs Outstanding</p>
+          <h3 className="font-bold text-gray-900 text-lg">
+            Cash Flow
+          </h3>
+
+          <p className="text-sm text-gray-400 mt-1">
+            Income vs Outstanding invoices
+          </p>
         </div>
-        <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
-          {([3, 6] as const).map((r) => (
+
+        {/* Filters */}
+        <div className="flex items-center bg-gray-100 rounded-2xl p-1 gap-1">
+          {(
+            ["daily", "weekly", "monthly", "yearly"] as ChartRange[]
+          ).map((item) => (
             <button
-              key={r}
-              onClick={() => setRange(r)}
-              className={`px-3 py-1 text-xs font-semibold rounded-md transition-all ${
-                range === r
-                  ? "bg-white text-gray-900 shadow-sm"
+              key={item}
+              onClick={() => setRange(item)}
+              className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all duration-200 capitalize
+              ${
+                range === item
+                  ? "bg-white shadow-sm text-gray-900"
                   : "text-gray-500 hover:text-gray-700"
               }`}
             >
-              {r}M
+              {item}
             </button>
           ))}
         </div>
       </div>
 
       {/* Legend */}
-      <div className="flex items-center gap-5 mb-3">
-        <div className="flex items-center gap-1.5 text-xs text-gray-500">
-          <span className="w-3 h-3 rounded-sm bg-indigo-500 inline-block" />
+      <div className="flex items-center gap-5 mb-4">
+        <div className="flex items-center gap-2 text-sm text-gray-500">
+          <span className="w-3 h-3 rounded-full bg-indigo-500" />
           Paid
         </div>
-        <div className="flex items-center gap-1.5 text-xs text-gray-500">
-          <span className="w-3 h-3 rounded-sm bg-orange-400 inline-block" />
+
+        <div className="flex items-center gap-2 text-sm text-gray-500">
+          <span className="w-3 h-3 rounded-full bg-orange-400" />
           Outstanding
         </div>
       </div>
 
-      {/* SVG Chart */}
-      <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: 180 }}>
-        {/* Grid + Y labels */}
-        {yTicks.map((t) => {
-          const y = PT + cH - t * cH;
-          return (
-            <g key={t}>
-              <line
-                x1={PL} y1={y} x2={W - PR} y2={y}
-                stroke={t === 0 ? "#e5e7eb" : "#f3f4f6"} strokeWidth="1"
-              />
-              <text x={PL - 4} y={y + 3.5} textAnchor="end" fontSize="9" fill="#d1d5db">
-                {t === 0 ? "0" : fmtAmount(maxVal * t)}
-              </text>
-            </g>
-          );
-        })}
-
-        {/* Bars */}
-        {data.map((d, i) => {
-          const cx = PL + i * slot + slot / 2;
-          return (
-            <g key={i}>
-              {/* Paid bar */}
-              {d.paid > 0 && (
-                <rect
-                  x={cx - bW - 2} y={toY(d.paid)}
-                  width={bW} height={barH(d.paid)}
-                  rx="3" fill="#6366f1" opacity="0.9"
-                />
-              )}
-              {/* Outstanding bar */}
-              {d.out > 0 && (
-                <rect
-                  x={cx + 2} y={toY(d.out)}
-                  width={bW} height={barH(d.out)}
-                  rx="3" fill="#fb923c" opacity="0.9"
-                />
-              )}
-              {/* Zero state: faint line */}
-              {d.paid === 0 && d.out === 0 && (
-                <line
-                  x1={cx - bW - 2} y1={PT + cH}
-                  x2={cx + bW + 2} y2={PT + cH}
-                  stroke="#e5e7eb" strokeWidth="2" strokeLinecap="round"
-                />
-              )}
-              {/* Month label */}
-              <text
-                x={cx} y={H - 6}
-                textAnchor="middle" fontSize="10" fill="#9ca3af" fontWeight="500"
+      {/* Chart */}
+      <div className="h-[320px] w-full">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={range}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            className="h-full"
+          >
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={data}
+                barGap={8}
               >
-                {d.label}
-              </text>
-            </g>
-          );
-        })}
-      </svg>
-    </div>
+                <CartesianGrid
+                  vertical={false}
+                  stroke="#f1f5f9"
+                  strokeDasharray="3 3"
+                />
+
+                <XAxis
+                  dataKey="label"
+                  tick={{ fill: "#94a3b8", fontSize: 12 }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+
+                <Tooltip
+                  cursor={{ fill: "rgba(99,102,241,0.05)" }}
+                  contentStyle={{
+                    borderRadius: "16px",
+                    border: "none",
+                    boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
+                    padding: "10px 14px",
+                  }}
+                />
+
+                {/* Paid */}
+                <Bar
+                  dataKey="paid"
+                  fill="#6366f1"
+                  radius={[10, 10, 0, 0]}
+                  animationDuration={1000}
+                />
+
+                {/* Outstanding */}
+                <Bar
+                  dataKey="outstanding"
+                  fill="#fb923c"
+                  radius={[10, 10, 0, 0]}
+                  animationDuration={1400}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </motion.div>
+        </AnimatePresence>
+      </div>
+    </motion.div>
   );
 }
 
@@ -389,7 +506,7 @@ export default function DashboardPage() {
               href="/dashboard/invoices"
               className="text-xs text-indigo-600 font-semibold hover:underline whitespace-nowrap"
             >
-              Full page →
+              All Invoices →
             </Link>
           </div>
         </div>
@@ -472,9 +589,9 @@ export default function DashboardPage() {
                               <Eye className="h-4 w-4 text-gray-400" />
                             </button>
                           </Link>
-                          <button className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
+                          {/* <button className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
                             <MoreHorizontal className="h-4 w-4 text-gray-400" />
-                          </button>
+                          </button> */}
                         </div>
                       </td>
                     </tr>
