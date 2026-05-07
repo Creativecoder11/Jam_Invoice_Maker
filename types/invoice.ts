@@ -2,6 +2,8 @@ export type InvoiceItem = {
   name: string;
   quantity: number;
   unitPrice: number;
+  note?: string;
+  subItems?: string[];
 };
 
 export type InvoiceFormData = {

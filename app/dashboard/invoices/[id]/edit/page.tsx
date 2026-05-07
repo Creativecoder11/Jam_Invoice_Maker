@@ -34,7 +34,7 @@ export default function EditInvoicePage() {
     from: { name: "", email: "", phone: "", address: "" },
     to:   { name: "", email: "", phone: "", address: "" },
     paymentInfo: { accountName: "", accountNumber: "", bankName: "", branch: "", swift: "", currency: "USD" },
-    items: [{ name: "", quantity: 1, unitPrice: 0 }],
+    items: [{ name: "", quantity: 1, unitPrice: 0, note: "", subItems: [] }],
     vat: 0, discount: 0, total: 0,
   });
 
@@ -67,10 +67,17 @@ export default function EditInvoicePage() {
   const updateTo      = (f: string, v: string) => setFormData((p) => ({ ...p, to:   { ...p.to!,   [f]: v } }));
   const updatePayment = (f: string, v: string) => setFormData((p) => ({ ...p, paymentInfo: { ...p.paymentInfo!, [f]: v } }));
 
-  const addItem = () => setFormData((p) => ({ ...p, items: [...(p.items || []), { name: "", quantity: 1, unitPrice: 0 }] }));
+  const addItem = () => setFormData((p) => ({ ...p, items: [...(p.items || []), { name: "", quantity: 1, unitPrice: 0, note: "", subItems: [] }] }));
   const removeItem = (i: number) => setFormData((p) => { const items = [...(p.items || [])]; items.splice(i, 1); return { ...p, items }; });
   const updateItem = (i: number, f: string, v: string | number) =>
     setFormData((p) => { const items = [...(p.items || [])]; items[i] = { ...items[i], [f]: v }; return { ...p, items }; });
+
+  const addSubItem = (itemIndex: number) =>
+    setFormData((p) => { const items = [...(p.items || [])]; items[itemIndex] = { ...items[itemIndex], subItems: [...(items[itemIndex].subItems || []), ""] }; return { ...p, items }; });
+  const updateSubItem = (itemIndex: number, subIndex: number, value: string) =>
+    setFormData((p) => { const items = [...(p.items || [])]; const subItems = [...(items[itemIndex].subItems || [])]; subItems[subIndex] = value; items[itemIndex] = { ...items[itemIndex], subItems }; return { ...p, items }; });
+  const removeSubItem = (itemIndex: number, subIndex: number) =>
+    setFormData((p) => { const items = [...(p.items || [])]; const subItems = [...(items[itemIndex].subItems || [])]; subItems.splice(subIndex, 1); items[itemIndex] = { ...items[itemIndex], subItems }; return { ...p, items }; });
 
   // ── Logo upload ─────────────────────────────────────────────────────────────
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -113,10 +120,17 @@ export default function EditInvoicePage() {
     if (!printRef.current) return;
     try {
       const tid    = toast.loading("Generating PDF…");
-      const canvas = await html2canvas(printRef.current, { scale: 2 });
-      const pdf    = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
-      const w      = pdf.internal.pageSize.getWidth();
-      pdf.addImage(canvas.toDataURL("image/jpeg", 1.0), "JPEG", 0, 0, w, (canvas.height * w) / canvas.width);
+      const canvas = await html2canvas(printRef.current, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: "#ffffff",
+      });
+      const imgData = canvas.toDataURL("image/jpeg", 0.98);
+      const pdfWidthPt = 595.28;
+      const pdfHeightPt = (canvas.height / canvas.width) * pdfWidthPt;
+      const pdf = new jsPDF({ orientation: "portrait", unit: "pt", format: [pdfWidthPt, pdfHeightPt] });
+      pdf.addImage(imgData, "JPEG", 0, 0, pdfWidthPt, pdfHeightPt);
       pdf.save(`${formData.invoiceNumber || "invoice"}.pdf`);
       toast.success("PDF Downloaded", { id: tid });
     } catch { toast.error("Failed to generate PDF"); }
@@ -247,11 +261,45 @@ export default function EditInvoicePage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 {(formData.items || []).map((item, i) => (
-                  <div key={i} className="flex gap-4 items-end border-b pb-4">
-                    <div className="flex-1 space-y-2"><Label>Description</Label><Input value={item.name} onChange={(e) => updateItem(i, "name", e.target.value)} /></div>
-                    <div className="w-24 space-y-2"><Label>Qty</Label><Input type="number" value={item.quantity} onChange={(e) => updateItem(i, "quantity", Number(e.target.value))} /></div>
-                    <div className="w-32 space-y-2"><Label>Price</Label><Input type="number" step="0.01" value={item.unitPrice} onChange={(e) => updateItem(i, "unitPrice", Number(e.target.value))} /></div>
-                    <Button variant="destructive" size="icon" onClick={() => removeItem(i)}><Trash2 className="h-4 w-4" /></Button>
+                  <div key={i} className="border-b pb-4 space-y-3">
+                    <div className="flex gap-4 items-end">
+                      <div className="flex-1 space-y-2"><Label>Description</Label><Input value={item.name} onChange={(e) => updateItem(i, "name", e.target.value)} /></div>
+                      <div className="w-24 space-y-2"><Label>Qty</Label><Input type="number" value={item.quantity} onChange={(e) => updateItem(i, "quantity", Number(e.target.value))} /></div>
+                      <div className="w-32 space-y-2"><Label>Price</Label><Input type="number" step="0.01" value={item.unitPrice} onChange={(e) => updateItem(i, "unitPrice", Number(e.target.value))} /></div>
+                      <Button variant="destructive" size="icon" onClick={() => removeItem(i)}><Trash2 className="h-4 w-4" /></Button>
+                    </div>
+
+                    <div className="space-y-2 pl-2">
+                      <Label className="text-muted-foreground text-xs">Note (optional)</Label>
+                      <Input
+                        placeholder="Add a note for this item..."
+                        value={item.note || ""}
+                        onChange={(e) => updateItem(i, "note", e.target.value)}
+                      />
+                    </div>
+
+                    <div className="space-y-2 pl-2">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-muted-foreground text-xs">Sub-items</Label>
+                        <Button variant="ghost" size="sm" className="h-6 text-xs px-2" onClick={() => addSubItem(i)}>
+                          <Plus className="h-3 w-3 mr-1" /> Add sub-item
+                        </Button>
+                      </div>
+                      {(item.subItems || []).map((sub, si) => (
+                        <div key={si} className="flex gap-2 items-center">
+                          <span className="text-muted-foreground text-sm">-</span>
+                          <Input
+                            className="flex-1 h-7 text-sm"
+                            placeholder="Sub-item description..."
+                            value={sub}
+                            onChange={(e) => updateSubItem(i, si, e.target.value)}
+                          />
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => removeSubItem(i, si)}>
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 ))}
                 <div className="grid grid-cols-2 gap-4 pt-4">

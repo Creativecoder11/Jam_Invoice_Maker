@@ -20,6 +20,7 @@
     "cloudinary": "^2.10.0",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
+    "dom-to-image-more": "^3.7.2",
     "framer-motion": "latest",
     "html2canvas": "^1.4.1",
     "jspdf": "^4.2.1",

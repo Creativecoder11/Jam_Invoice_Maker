@@ -14,7 +14,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
 
     await dbConnect();
     const resolvedParams = await params;
-    const invoice = await Invoice.findById(resolvedParams.id);
+    const invoice = await Invoice.findById(resolvedParams.id).lean();
 
     if (!invoice) {
       return NextResponse.json({ message: "Not Found" }, { status: 404 });
@@ -37,7 +37,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
     await dbConnect();
     const resolvedParams = await params;
-    const invoice = await Invoice.findByIdAndUpdate(resolvedParams.id, data, { new: true });
+    const invoice = await Invoice.findByIdAndUpdate(resolvedParams.id, data, { new: true }).lean();
 
     if (!invoice) {
       return NextResponse.json({ message: "Not Found" }, { status: 404 });

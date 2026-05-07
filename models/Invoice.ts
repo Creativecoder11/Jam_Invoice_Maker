@@ -4,6 +4,8 @@ const itemSchema = new Schema({
   name: { type: String, required: true },
   quantity: { type: Number, required: true },
   unitPrice: { type: Number, required: true },
+  note: { type: String, default: "" },
+  subItems: { type: [String], default: [] },
 });
 
 const invoiceSchema = new Schema(
@@ -52,4 +54,9 @@ const invoiceSchema = new Schema(
   { timestamps: true }
 );
 
-export const Invoice = mongoose.models?.Invoice || mongoose.model("Invoice", invoiceSchema);
+// Always delete the cached model so the latest schema is used.
+// This is safe: delete removes the old registration, then we immediately recreate it.
+// In production (serverless) each invocation is cold anyway.
+// In development with HMR, this ensures schema changes take effect without a full restart.
+delete (mongoose.models as any).Invoice;
+export const Invoice = mongoose.model("Invoice", invoiceSchema);

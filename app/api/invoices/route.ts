@@ -45,7 +45,7 @@ export async function GET(req: Request) {
       query.status = status;
     }
 
-    const invoices = await Invoice.find(query).sort({ createdAt: -1 }).populate("creatorId", "name email");
+    const invoices = await Invoice.find(query).sort({ createdAt: -1 }).populate("creatorId", "name email").lean();
 
     return NextResponse.json(invoices);
   } catch (error) {

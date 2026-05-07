@@ -26,34 +26,46 @@ export default function ViewInvoicePage() {
         setData(data);
         setLoading(false);
       })
-      .catch((err) => {
+      .catch(() => {
         toast.error("Invoice not found");
         setLoading(false);
       });
   }, [id]);
 
   const handleDownloadPDF = async () => {
-    if (!printRef.current) return;
-    
+    if (!printRef.current) {
+      toast.error("Could not find the invoice element");
+      return;
+    }
+
+    const toastId = toast.loading("Generating PDF...");
+
     try {
-      const toastId = toast.loading("Generating PDF...");
       const element = printRef.current;
-      const canvas = await html2canvas(element, { scale: 2 });
-      const imgData = canvas.toDataURL("image/jpeg", 1.0);
-      
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: "#ffffff",
+      });
+
+      const imgData = canvas.toDataURL("image/jpeg", 0.98);
+      const pdfWidthPt = 595.28; // A4 width in points
+      const pdfHeightPt = (canvas.height / canvas.width) * pdfWidthPt;
+
       const pdf = new jsPDF({
         orientation: "portrait",
         unit: "pt",
-        format: "a4",
+        format: [pdfWidthPt, pdfHeightPt],
       });
-      
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-      
-      pdf.addImage(imgData, "JPEG", 0, 0, pdfWidth, pdfHeight);
-      pdf.save(`${data.invoiceNumber || 'Document'}.pdf`);
+
+      pdf.addImage(imgData, "JPEG", 0, 0, pdfWidthPt, pdfHeightPt);
+      pdf.save(`${data.invoiceNumber || "Document"}.pdf`);
+
       toast.success("PDF Downloaded", { id: toastId });
-    } catch (error) {
+    } catch (error: any) {
+      console.error("PDF generation error:", error?.message, error);
+      toast.dismiss(toastId);
       toast.error("Failed to generate PDF");
     }
   };
@@ -67,7 +79,11 @@ export default function ViewInvoicePage() {
   }
 
   if (!data) {
-    return <div className="p-8 text-center text-destructive">Document not found or you don't have access.</div>;
+    return (
+      <div className="p-8 text-center text-destructive">
+        Document not found or you don't have access.
+      </div>
+    );
   }
 
   return (

@@ -31,7 +31,7 @@ export default function CreateInvoicePage() {
     from: { name: "", email: "", phone: "", address: "" },
     to: { name: "", email: "", phone: "", address: "" },
     paymentInfo: { accountName: "", accountNumber: "", bankName: "", branch: "", swift: "", currency: "USD" },
-    items: [{ name: "", quantity: 1, unitPrice: 0 }],
+    items: [{ name: "", quantity: 1, unitPrice: 0, note: "", subItems: [] }],
     vat: 0,
     discount: 0,
     total: 0,
@@ -60,7 +60,7 @@ export default function CreateInvoicePage() {
   const addItem = () => {
     setFormData((prev) => ({
       ...prev,
-      items: [...(prev.items || []), { name: "", quantity: 1, unitPrice: 0 }],
+      items: [...(prev.items || []), { name: "", quantity: 1, unitPrice: 0, note: "", subItems: [] }],
     }));
   };
 
@@ -76,6 +76,34 @@ export default function CreateInvoicePage() {
     setFormData((prev) => {
       const newItems = [...(prev.items || [])];
       newItems.splice(index, 1);
+      return { ...prev, items: newItems };
+    });
+  };
+
+  const addSubItem = (itemIndex: number) => {
+    setFormData((prev) => {
+      const newItems = [...(prev.items || [])];
+      newItems[itemIndex] = { ...newItems[itemIndex], subItems: [...(newItems[itemIndex].subItems || []), ""] };
+      return { ...prev, items: newItems };
+    });
+  };
+
+  const updateSubItem = (itemIndex: number, subIndex: number, value: string) => {
+    setFormData((prev) => {
+      const newItems = [...(prev.items || [])];
+      const subItems = [...(newItems[itemIndex].subItems || [])];
+      subItems[subIndex] = value;
+      newItems[itemIndex] = { ...newItems[itemIndex], subItems };
+      return { ...prev, items: newItems };
+    });
+  };
+
+  const removeSubItem = (itemIndex: number, subIndex: number) => {
+    setFormData((prev) => {
+      const newItems = [...(prev.items || [])];
+      const subItems = [...(newItems[itemIndex].subItems || [])];
+      subItems.splice(subIndex, 1);
+      newItems[itemIndex] = { ...newItems[itemIndex], subItems };
       return { ...prev, items: newItems };
     });
   };
@@ -143,19 +171,23 @@ export default function CreateInvoicePage() {
     try {
       const toastId = toast.loading("Generating PDF...");
       const element = printRef.current;
-      const canvas = await html2canvas(element, { scale: 2 });
-      const imgData = canvas.toDataURL("image/jpeg", 1.0);
-      
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: "#ffffff",
+      });
+      const imgData = canvas.toDataURL("image/jpeg", 0.98);
+      const pdfWidthPt = 595.28;
+      const pdfHeightPt = (canvas.height / canvas.width) * pdfWidthPt;
+
       const pdf = new jsPDF({
         orientation: "portrait",
         unit: "pt",
-        format: "a4",
+        format: [pdfWidthPt, pdfHeightPt],
       });
-      
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-      
-      pdf.addImage(imgData, "JPEG", 0, 0, pdfWidth, pdfHeight);
+
+      pdf.addImage(imgData, "JPEG", 0, 0, pdfWidthPt, pdfHeightPt);
       pdf.save(`${formData.invoiceNumber}.pdf`);
       toast.success("PDF Downloaded", { id: toastId });
     } catch (error) {
@@ -290,22 +322,56 @@ export default function CreateInvoicePage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 {formData.items?.map((item, index) => (
-                  <div key={index} className="flex gap-4 items-end border-b pb-4">
-                    <div className="flex-1 space-y-2">
-                      <Label>Description</Label>
-                      <Input value={item.name} onChange={(e) => updateItem(index, "name", e.target.value)} />
+                  <div key={index} className="border-b pb-4 space-y-3">
+                    <div className="flex gap-4 items-end">
+                      <div className="flex-1 space-y-2">
+                        <Label>Description</Label>
+                        <Input value={item.name} onChange={(e) => updateItem(index, "name", e.target.value)} />
+                      </div>
+                      <div className="w-24 space-y-2">
+                        <Label>Qty</Label>
+                        <Input type="number" value={item.quantity} onChange={(e) => updateItem(index, "quantity", Number(e.target.value))} />
+                      </div>
+                      <div className="w-32 space-y-2">
+                        <Label>Price</Label>
+                        <Input type="number" step="0.01" value={item.unitPrice} onChange={(e) => updateItem(index, "unitPrice", Number(e.target.value))} />
+                      </div>
+                      <Button variant="destructive" size="icon" onClick={() => removeItem(index)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
-                    <div className="w-24 space-y-2">
-                      <Label>Qty</Label>
-                      <Input type="number" value={item.quantity} onChange={(e) => updateItem(index, "quantity", Number(e.target.value))} />
+
+                    <div className="space-y-2 pl-2">
+                      <Label className="text-muted-foreground text-xs">Note (optional)</Label>
+                      <Input
+                        placeholder="Add a note for this item..."
+                        value={item.note || ""}
+                        onChange={(e) => updateItem(index, "note", e.target.value)}
+                      />
                     </div>
-                    <div className="w-32 space-y-2">
-                      <Label>Price</Label>
-                      <Input type="number" step="0.01" value={item.unitPrice} onChange={(e) => updateItem(index, "unitPrice", Number(e.target.value))} />
+
+                    <div className="space-y-2 pl-2">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-muted-foreground text-xs">Sub-items</Label>
+                        <Button variant="ghost" size="sm" className="h-6 text-xs px-2" onClick={() => addSubItem(index)}>
+                          <Plus className="h-3 w-3 mr-1" /> Add sub-item
+                        </Button>
+                      </div>
+                      {(item.subItems || []).map((sub, si) => (
+                        <div key={si} className="flex gap-2 items-center">
+                          <span className="text-muted-foreground text-sm">-</span>
+                          <Input
+                            className="flex-1 h-7 text-sm"
+                            placeholder="Sub-item description..."
+                            value={sub}
+                            onChange={(e) => updateSubItem(index, si, e.target.value)}
+                          />
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => removeSubItem(index, si)}>
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ))}
                     </div>
-                    <Button variant="destructive" size="icon" onClick={() => removeItem(index)}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
                   </div>
                 ))}
                 
