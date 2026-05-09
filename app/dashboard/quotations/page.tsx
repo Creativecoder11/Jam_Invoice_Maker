@@ -17,6 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Plus, Eye, Download, Edit } from "lucide-react";
 import { format } from "date-fns";
 import { InvoiceFormData } from "@/types/invoice";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function QuotationsPage() {
   const { data: session } = useSession();
@@ -73,7 +74,31 @@ export default function QuotationsPage() {
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="py-8 text-center text-muted-foreground">Loading...</div>
+            <div className="rounded-md border overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    {["Quotation No.", "Client", "Date", "Amount", "Status", "Actions"].map((h) => (
+                      <TableHead key={h}><Skeleton className="h-3 w-20" /></TableHead>
+                    ))}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {[
+                    ["w-20","w-28","w-24","w-16","w-14","w-8"],
+                    ["w-24","w-32","w-24","w-16","w-16","w-8"],
+                    ["w-20","w-24","w-24","w-14","w-14","w-8"],
+                    ["w-24","w-28","w-24","w-16","w-16","w-8"],
+                  ].map((widths, ri) => (
+                    <TableRow key={ri}>
+                      {widths.map((w, ci) => (
+                        <TableCell key={ci}><Skeleton className={`h-4 ${w}`} /></TableCell>
+                      ))}
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           ) : quotations.length === 0 ? (
             <div className="py-8 text-center text-muted-foreground">No quotations found.</div>
           ) : (

@@ -17,6 +17,7 @@ import {
   Tooltip,
 } from "recharts";
 import { motion, AnimatePresence } from "framer-motion";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   format,
   differenceInDays,
@@ -373,16 +374,18 @@ export default function DashboardPage() {
             </div>
             <div className="text-3xl font-bold text-gray-900 mb-1 truncate">
               {loading ? (
-                <span className="text-gray-200">—</span>
+                <Skeleton className="h-8 w-28 mt-1" />
               ) : (
                 fmtFull(amount)
               )}
             </div>
-            <div className="text-sm text-gray-400">
+            <div className="text-sm text-gray-400 flex items-center gap-1">
               {label}&nbsp;
-              <span className="text-gray-600 font-semibold">
-                ({loading ? "…" : count})
-              </span>
+              {loading ? (
+                <Skeleton className="inline-block h-4 w-8" />
+              ) : (
+                <span className="text-gray-600 font-semibold">({count})</span>
+              )}
             </div>
           </div>
         ))}
@@ -394,8 +397,28 @@ export default function DashboardPage() {
         {/* Cash Flow */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
           {loading ? (
-            <div className="h-52 flex items-center justify-center text-gray-300 text-sm animate-pulse">
-              Loading chart…
+            <div>
+              <div className="flex items-center justify-between mb-6">
+                <div className="space-y-2">
+                  <Skeleton className="h-5 w-24" />
+                  <Skeleton className="h-3 w-40" />
+                </div>
+                <Skeleton className="h-9 w-56 rounded-2xl" />
+              </div>
+              <div className="flex items-center gap-5 mb-4">
+                <Skeleton className="h-4 w-16" />
+                <Skeleton className="h-4 w-20" />
+              </div>
+              <div className="flex items-end gap-3 h-[200px] pt-4">
+                {[65, 40, 80, 55, 90, 45].map((h, i) => (
+                  <Skeleton key={i} className="flex-1 rounded-t-lg" style={{ height: `${h}%` }} />
+                ))}
+              </div>
+              <div className="flex gap-3 mt-3">
+                {[...Array(6)].map((_, i) => (
+                  <Skeleton key={i} className="flex-1 h-3" />
+                ))}
+              </div>
             </div>
           ) : (
             <CashFlowChart invoices={invoices} />
@@ -419,8 +442,19 @@ export default function DashboardPage() {
 
           <div className="flex-1 overflow-hidden">
             {loading ? (
-              <div className="py-10 text-center text-gray-300 text-sm animate-pulse">
-                Loading…
+              <div className="divide-y divide-gray-50">
+                {[...Array(4)].map((_, i) => (
+                  <div key={i} className="flex items-center justify-between px-6 py-3.5">
+                    <div className="space-y-1.5 flex-1">
+                      <div className="flex items-center gap-2">
+                        <Skeleton className="h-4 w-28" />
+                        <Skeleton className="h-4 w-16" />
+                      </div>
+                      <Skeleton className="h-3 w-48" />
+                    </div>
+                    <Skeleton className="h-4 w-16 ml-4" />
+                  </div>
+                ))}
               </div>
             ) : overdueList.length === 0 ? (
               <div className="py-10 text-center text-sm text-gray-400">
@@ -514,9 +548,31 @@ export default function DashboardPage() {
         {/* Table */}
         <div className="overflow-x-auto">
           {loading ? (
-            <div className="py-16 text-center text-gray-300 text-sm animate-pulse">
-              Loading invoices…
-            </div>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-gray-50/60 border-t border-gray-100">
+                  {["Invoice ID", "Client", "Date", "Due Date", "Amount", "Status"].map((h) => (
+                    <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider first:pl-6">
+                      {h}
+                    </th>
+                  ))}
+                  <th className="pr-6 py-3 w-16" />
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {[...Array(6)].map((_, i) => (
+                  <tr key={i}>
+                    <td className="pl-6 pr-4 py-3.5"><Skeleton className="h-4 w-24" /></td>
+                    <td className="px-4 py-3.5"><Skeleton className="h-4 w-32" /></td>
+                    <td className="px-4 py-3.5"><Skeleton className="h-4 w-24" /></td>
+                    <td className="px-4 py-3.5"><Skeleton className="h-4 w-24" /></td>
+                    <td className="px-4 py-3.5"><Skeleton className="h-4 w-20" /></td>
+                    <td className="px-4 py-3.5"><Skeleton className="h-5 w-16 rounded-full" /></td>
+                    <td className="pr-6 pl-4 py-3.5"><Skeleton className="h-7 w-7 rounded-lg ml-auto" /></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           ) : filtered.length === 0 ? (
             <div className="py-16 text-center text-gray-400 text-sm">
               No invoices found.

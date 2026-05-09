@@ -14,6 +14,7 @@ import { InvoicePreview } from "@/components/InvoicePreview";
 import { InvoiceFormData } from "@/types/invoice";
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
+import { Spinner } from "@/components/ui/spinner";
 
 export default function EditInvoicePage() {
   const { id } = useParams();
@@ -22,6 +23,7 @@ export default function EditInvoicePage() {
 
   const [pageLoading, setPageLoading] = useState(true);
   const [saving, setSaving]           = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
 
   const [formData, setFormData] = useState<Partial<InvoiceFormData>>({
@@ -118,8 +120,9 @@ export default function EditInvoicePage() {
   // ── Download PDF ────────────────────────────────────────────────────────────
   const handleDownloadPDF = async () => {
     if (!printRef.current) return;
+    setDownloading(true);
+    const tid = toast.loading("Generating PDF…");
     try {
-      const tid    = toast.loading("Generating PDF…");
       const canvas = await html2canvas(printRef.current, {
         scale: 2,
         useCORS: true,
@@ -133,7 +136,12 @@ export default function EditInvoicePage() {
       pdf.addImage(imgData, "JPEG", 0, 0, pdfWidthPt, pdfHeightPt);
       pdf.save(`${formData.invoiceNumber || "invoice"}.pdf`);
       toast.success("PDF Downloaded", { id: tid });
-    } catch { toast.error("Failed to generate PDF"); }
+    } catch {
+      toast.dismiss(tid);
+      toast.error("Failed to generate PDF");
+    } finally {
+      setDownloading(false);
+    }
   };
 
   if (pageLoading) {
@@ -163,6 +171,7 @@ export default function EditInvoicePage() {
               Cancel
             </Button>
             <Button onClick={handleSave} disabled={saving} className="bg-gray-900 hover:bg-gray-800">
+              {saving && <Spinner className="mr-2 h-3.5 w-3.5" />}
               {saving ? "Saving…" : "Save Changes"}
             </Button>
           </div>
@@ -221,7 +230,11 @@ export default function EditInvoicePage() {
                   <Label>Logo</Label>
                   <Input type="file" accept="image/*" onChange={handleLogoUpload} disabled={uploadingLogo} />
                   {formData.logoUrl && <img src={formData.logoUrl} alt="logo" className="h-12 mt-2 object-contain" />}
-                  {uploadingLogo && <p className="text-xs text-muted-foreground">Uploading…</p>}
+                  {uploadingLogo && (
+                    <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                      <Spinner className="h-3 w-3" /> Uploading…
+                    </p>
+                  )}
                 </div>
 
                 <div className="pt-4 border-t space-y-4">
@@ -337,10 +350,11 @@ export default function EditInvoicePage() {
 
       {/* ── Live Preview ─────────────────────────────────────────────────────── */}
       <div className="w-full xl:w-1/2 flex flex-col items-center border-l pl-0 xl:pl-6">
-        <div className="w-full flex justify-between items-center mb-4 sticky top-0 bg-background z-10 py-2">
+        <div className="w-full flex justify-between items-center mb-4 top-0 z-10 py-2">
           <h2 className="text-xl font-bold">Preview</h2>
-          <Button variant="outline" onClick={handleDownloadPDF}>
-            <Download className="h-4 w-4 mr-2" /> Download PDF
+          <Button variant="outline" onClick={handleDownloadPDF} disabled={downloading}>
+            {downloading ? <Spinner className="h-4 w-4 mr-2" /> : <Download className="h-4 w-4 mr-2" />}
+            {downloading ? "Generating…" : "Download PDF"}
           </Button>
         </div>
         <div className="w-full overflow-x-auto bg-muted/30 p-4 rounded-xl border flex justify-center">

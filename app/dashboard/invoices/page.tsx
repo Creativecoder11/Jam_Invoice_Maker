@@ -11,6 +11,8 @@ import {
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { InvoiceFormData } from "@/types/invoice";
+import { Spinner } from "@/components/ui/spinner";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type Invoice = InvoiceFormData & { _id: string; createdAt: string };
 type SortField = "invoiceNumber" | "clientName" | "date" | "total";
@@ -39,7 +41,7 @@ const TAB_BADGE: Record<string, string> = {
 };
 
 // ── 3-dot Row Menu ────────────────────────────────────────────────────────────
-function RowMenu({ onDraft, onDelete }: { onDraft: () => void; onDelete: () => void }) {
+function RowMenu({ onDraft, onDelete, isDeleting }: { onDraft: () => void; onDelete: () => void; isDeleting?: boolean }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -71,10 +73,11 @@ function RowMenu({ onDraft, onDelete }: { onDraft: () => void; onDelete: () => v
           </button>
           <button
             onClick={() => { onDelete(); setOpen(false); }}
-            className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 text-left"
+            disabled={isDeleting}
+            className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 text-left disabled:opacity-50"
           >
-            <Trash2 className="h-3.5 w-3.5" />
-            Delete
+            {isDeleting ? <Spinner className="h-3.5 w-3.5 text-red-500" /> : <Trash2 className="h-3.5 w-3.5" />}
+            {isDeleting ? "Deleting…" : "Delete"}
           </button>
         </div>
       )}
@@ -106,6 +109,7 @@ export default function InvoicesPage() {
   const [sortField, setSortField] = useState<SortField>("date");
   const [sortDir, setSortDir]     = useState<SortDir>("desc");
   const [selected, setSelected]   = useState<Set<string>>(new Set());
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/invoices?type=invoice")
@@ -132,6 +136,7 @@ export default function InvoicesPage() {
 
   const handleDelete = async (id: string) => {
     if (!window.confirm("Delete this invoice? This cannot be undone.")) return;
+    setDeletingId(id);
     try {
       const res = await fetch(`/api/invoices/${id}`, { method: "DELETE" });
       if (res.ok) {
@@ -143,6 +148,8 @@ export default function InvoicesPage() {
       }
     } catch {
       toast.error("An error occurred");
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -277,7 +284,35 @@ export default function InvoicesPage() {
         {/* Table */}
         <div className="overflow-x-auto">
           {loading ? (
-            <div className="py-20 text-center text-gray-400 text-sm animate-pulse">Loading invoices…</div>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-gray-50/60 border-t border-gray-100">
+                  {["", "Invoice ID", "Client", "Email", "Date", "Amount", "Status", ""].map((h, i) => (
+                    <th key={i} className="px-3 py-3 first:pl-6 last:pr-6">
+                      {h && <Skeleton className="h-3 w-16" />}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {[
+                  ["w-4","w-20","w-28","w-32","w-20","w-16","w-14","w-16"],
+                  ["w-4","w-24","w-24","w-36","w-20","w-16","w-16","w-16"],
+                  ["w-4","w-20","w-32","w-28","w-20","w-12","w-14","w-16"],
+                  ["w-4","w-24","w-20","w-32","w-20","w-16","w-16","w-16"],
+                  ["w-4","w-20","w-28","w-24","w-20","w-14","w-14","w-16"],
+                  ["w-4","w-24","w-24","w-36","w-20","w-16","w-16","w-16"],
+                ].map((widths, ri) => (
+                  <tr key={ri} className="border-t border-gray-50">
+                    {widths.map((w, ci) => (
+                      <td key={ci} className="px-3 py-4 first:pl-6 last:pr-6">
+                        <Skeleton className={`h-4 ${w}`} />
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           ) : filtered.length === 0 ? (
             <div className="py-20 text-center text-gray-400 text-sm">No invoices found.</div>
           ) : (
@@ -367,6 +402,7 @@ export default function InvoicesPage() {
                             <RowMenu
                               onDraft={() => handleStatusChange(inv._id, "Hold")}
                               onDelete={() => handleDelete(inv._id)}
+                              isDeleting={deletingId === inv._id}
                             />
                           )}
                         </div>

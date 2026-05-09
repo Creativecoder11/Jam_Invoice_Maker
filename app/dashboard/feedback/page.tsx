@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Star } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
 
 export default function FeedbackPage() {
   const { data: session } = useSession();
@@ -89,7 +90,8 @@ export default function FeedbackPage() {
                 />
               </div>
               <Button type="submit" disabled={submitting}>
-                {submitting ? "Submitting..." : "Send Feedback"}
+                {submitting && <Spinner className="mr-2 h-3.5 w-3.5" />}
+                {submitting ? "Submitting…" : "Send Feedback"}
               </Button>
             </form>
           </CardContent>

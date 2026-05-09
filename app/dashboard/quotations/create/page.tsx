@@ -14,11 +14,14 @@ import { InvoicePreview } from "@/components/InvoicePreview";
 import { InvoiceFormData } from "@/types/invoice";
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
+import { Spinner } from "@/components/ui/spinner";
 
 export default function CreateQuotationPage() {
   const router = useRouter();
   const printRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(false);
+  const [savingAs, setSavingAs] = useState<string | null>(null);
+  const [downloading, setDownloading] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
 
   const [formData, setFormData] = useState<Partial<InvoiceFormData>>({
@@ -144,6 +147,7 @@ export default function CreateQuotationPage() {
 
   const handleSave = async (status: "Paid" | "Unpaid" | "Hold") => {
     setLoading(true);
+    setSavingAs(status);
     try {
       const res = await fetch("/api/invoices", {
         method: "POST",
@@ -161,16 +165,16 @@ export default function CreateQuotationPage() {
       toast.error("An error occurred");
     } finally {
       setLoading(false);
+      setSavingAs(null);
     }
   };
 
   const handleDownloadPDF = async () => {
     if (!printRef.current) return;
-    
+    setDownloading(true);
+    const toastId = toast.loading("Generating PDF...");
     try {
-      const toastId = toast.loading("Generating PDF...");
-      const element = printRef.current;
-      const canvas = await html2canvas(element, {
+      const canvas = await html2canvas(printRef.current, {
         scale: 2,
         useCORS: true,
         logging: false,
@@ -179,18 +183,15 @@ export default function CreateQuotationPage() {
       const imgData = canvas.toDataURL("image/jpeg", 0.98);
       const pdfWidthPt = 595.28;
       const pdfHeightPt = (canvas.height / canvas.width) * pdfWidthPt;
-
-      const pdf = new jsPDF({
-        orientation: "portrait",
-        unit: "pt",
-        format: [pdfWidthPt, pdfHeightPt],
-      });
-
+      const pdf = new jsPDF({ orientation: "portrait", unit: "pt", format: [pdfWidthPt, pdfHeightPt] });
       pdf.addImage(imgData, "JPEG", 0, 0, pdfWidthPt, pdfHeightPt);
       pdf.save(`${formData.invoiceNumber}.pdf`);
       toast.success("PDF Downloaded", { id: toastId });
     } catch (error) {
+      toast.dismiss(toastId);
       toast.error("Failed to generate PDF");
+    } finally {
+      setDownloading(false);
     }
   };
 
@@ -200,9 +201,18 @@ export default function CreateQuotationPage() {
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold">Create Quotation</h1>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => handleSave("Hold")} disabled={loading}>Save Draft</Button>
-            <Button variant="default" onClick={() => handleSave("Unpaid")} disabled={loading}>Save Pending</Button>
-            <Button variant="secondary" onClick={() => handleSave("Paid")} disabled={loading}>Save Accepted</Button>
+            <Button variant="outline" onClick={() => handleSave("Hold")} disabled={loading}>
+              {savingAs === "Hold" && <Spinner className="mr-2 h-3.5 w-3.5" />}
+              Save Draft
+            </Button>
+            <Button variant="default" onClick={() => handleSave("Unpaid")} disabled={loading}>
+              {savingAs === "Unpaid" && <Spinner className="mr-2 h-3.5 w-3.5" />}
+              Save Pending
+            </Button>
+            <Button variant="secondary" onClick={() => handleSave("Paid")} disabled={loading}>
+              {savingAs === "Paid" && <Spinner className="mr-2 h-3.5 w-3.5" />}
+              Save Accepted
+            </Button>
           </div>
         </div>
 
@@ -256,7 +266,11 @@ export default function CreateQuotationPage() {
                 <div className="space-y-2">
                   <Label>Logo</Label>
                   <Input type="file" accept="image/*" onChange={handleLogoUpload} disabled={uploadingLogo} />
-                  {uploadingLogo && <p className="text-xs text-muted-foreground">Uploading...</p>}
+                  {uploadingLogo && (
+                    <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                      <Spinner className="h-3 w-3" /> Uploading…
+                    </p>
+                  )}
                 </div>
 
                 <div className="pt-4 border-t space-y-4">
@@ -428,8 +442,9 @@ export default function CreateQuotationPage() {
       <div className="w-full xl:w-1/2 flex flex-col items-center border-l pl-0 xl:pl-6">
         <div className="w-full flex justify-between items-center mb-4 sticky top-0 bg-background z-10 py-2">
           <h2 className="text-xl font-bold">Live Preview</h2>
-          <Button variant="outline" onClick={handleDownloadPDF}>
-            <Download className="h-4 w-4 mr-2" /> Download PDF
+          <Button variant="outline" onClick={handleDownloadPDF} disabled={downloading}>
+            {downloading ? <Spinner className="h-4 w-4 mr-2" /> : <Download className="h-4 w-4 mr-2" />}
+            {downloading ? "Generating…" : "Download PDF"}
           </Button>
         </div>
         

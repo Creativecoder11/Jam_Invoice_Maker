@@ -1,4 +1,5 @@
 import type {Metadata} from 'next';
+// @ts-ignore: CSS module declarations may not be available in this environment
 import './globals.css';
 import { Inter } from "next/font/google";
 import { cn } from "@/lib/utils";

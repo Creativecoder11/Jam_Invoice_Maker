@@ -8,11 +8,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Check, X } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function UsersPage() {
   const { data: session } = useSession();
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
 
   const fetchUsers = useCallback(() => {
     fetch("/api/users")
@@ -28,6 +31,7 @@ export default function UsersPage() {
   }, [fetchUsers]);
 
   const handleUpdateStatus = async (id: string, status: string) => {
+    setUpdatingId(id);
     try {
       const res = await fetch(`/api/users/${id}`, {
         method: "PATCH",
@@ -42,6 +46,8 @@ export default function UsersPage() {
       }
     } catch (error) {
       toast.error("An error occurred");
+    } finally {
+      setUpdatingId(null);
     }
   };
 
@@ -62,28 +68,39 @@ export default function UsersPage() {
           <CardDescription>Manage access to Jamroll Invoicemaker.</CardDescription>
         </CardHeader>
         <CardContent>
-          {loading ? (
-            <div className="py-8 text-center text-muted-foreground">Loading...</div>
-          ) : (
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Role</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {users.map((u) => (
-                    <TableRow key={u._id}>
+          <div className="rounded-md border overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Role</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {loading ? (
+                  [
+                    ["w-28","w-40","w-20","w-16","w-24"],
+                    ["w-24","w-36","w-24","w-16","w-24"],
+                    ["w-32","w-44","w-20","w-16","w-24"],
+                    ["w-24","w-40","w-24","w-16","w-24"],
+                  ].map((widths, ri) => (
+                    <TableRow key={ri}>
+                      {widths.map((w, ci) => (
+                        <TableCell key={ci}><Skeleton className={`h-4 ${w}`} /></TableCell>
+                      ))}
+                    </TableRow>
+                  ))
+                ) : (
+                  users.map((u) => (
+                    <TableRow key={u._id} className={updatingId === u._id ? "opacity-60" : ""}>
                       <TableCell className="font-medium">{u.name}</TableCell>
                       <TableCell>{u.email}</TableCell>
                       <TableCell>{u.role}</TableCell>
                       <TableCell>
-                        <Badge 
+                        <Badge
                           variant={u.status === "approved" ? "default" : u.status === "rejected" ? "destructive" : "secondary"}
                         >
                           {u.status}
@@ -93,13 +110,33 @@ export default function UsersPage() {
                         {u._id !== session?.user?.id && u.role !== "Super Admin" && (
                           <>
                             {(u.status === "pending" || u.status === "rejected") && (
-                              <Button variant="outline" size="sm" onClick={() => handleUpdateStatus(u._id, "approved")}>
-                                <Check className="h-4 w-4 mr-1 text-green-500" /> Approve
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                disabled={updatingId === u._id}
+                                onClick={() => handleUpdateStatus(u._id, "approved")}
+                              >
+                                {updatingId === u._id ? (
+                                  <Spinner className="h-3.5 w-3.5 mr-1" />
+                                ) : (
+                                  <Check className="h-4 w-4 mr-1 text-green-500" />
+                                )}
+                                Approve
                               </Button>
                             )}
                             {(u.status === "pending" || u.status === "approved") && (
-                              <Button variant="outline" size="sm" onClick={() => handleUpdateStatus(u._id, "rejected")}>
-                                <X className="h-4 w-4 mr-1 text-red-500" /> Reject
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                disabled={updatingId === u._id}
+                                onClick={() => handleUpdateStatus(u._id, "rejected")}
+                              >
+                                {updatingId === u._id ? (
+                                  <Spinner className="h-3.5 w-3.5 mr-1" />
+                                ) : (
+                                  <X className="h-4 w-4 mr-1 text-red-500" />
+                                )}
+                                Reject
                               </Button>
                             )}
                           </>
@@ -107,11 +144,11 @@ export default function UsersPage() {
                         {u._id === session?.user?.id && <span className="text-xs text-muted-foreground">You</span>}
                       </TableCell>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
     </div>

@@ -8,12 +8,15 @@ import { InvoicePreview } from "@/components/InvoicePreview";
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
 import { toast } from "sonner";
+import { Spinner } from "@/components/ui/spinner";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function ViewInvoicePage() {
   const { id } = useParams();
   const router = useRouter();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [downloading, setDownloading] = useState(false);
   const printRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -33,49 +36,110 @@ export default function ViewInvoicePage() {
   }, [id]);
 
   const handleDownloadPDF = async () => {
-    if (!printRef.current) {
-      toast.error("Could not find the invoice element");
-      return;
-    }
+  if (!printRef.current) {
+    toast.error("Invoice not found");
+    return;
+  }
 
-    const toastId = toast.loading("Generating PDF...");
+  try {
+    setDownloading(true);
 
-    try {
-      const element = printRef.current;
-      const canvas = await html2canvas(element, {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        backgroundColor: "#ffffff",
-      });
+    const canvas = await html2canvas(printRef.current, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: "#ffffff",
+      logging: true,
+    });
 
-      const imgData = canvas.toDataURL("image/jpeg", 0.98);
-      const pdfWidthPt = 595.28; // A4 width in points
-      const pdfHeightPt = (canvas.height / canvas.width) * pdfWidthPt;
+    const imgData = canvas.toDataURL("image/png");
 
-      const pdf = new jsPDF({
-        orientation: "portrait",
-        unit: "pt",
-        format: [pdfWidthPt, pdfHeightPt],
-      });
+    const pdf = new jsPDF({
+      orientation: "portrait",
+      unit: "px",
+      format: "a4",
+    });
 
-      pdf.addImage(imgData, "JPEG", 0, 0, pdfWidthPt, pdfHeightPt);
-      pdf.save(`${data.invoiceNumber || "Document"}.pdf`);
+    const pdfWidth = pdf.internal.pageSize.getWidth();
 
-      toast.success("PDF Downloaded", { id: toastId });
-    } catch (error: any) {
-      console.error("PDF generation error:", error?.message, error);
-      toast.dismiss(toastId);
-      toast.error("Failed to generate PDF");
-    }
-  };
+    const pdfHeight =
+      (canvas.height * pdfWidth) / canvas.width;
 
-  const handlePrint = () => {
-    window.print();
-  };
+    pdf.addImage(
+      imgData,
+      "PNG",
+      0,
+      0,
+      pdfWidth,
+      pdfHeight
+    );
+
+    pdf.save(`${data.invoiceNumber || "invoice"}.pdf`);
+
+    toast.success("PDF downloaded");
+  } catch (error) {
+    console.error(error);
+
+    toast.error("PDF generation failed");
+  } finally {
+    setDownloading(false);
+  }
+};
+
+  const handlePrint = () => window.print();
 
   if (loading) {
-    return <div className="p-8 text-center">Loading document...</div>;
+    return (
+      <div className="space-y-6">
+        {/* Header skeleton */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Skeleton className="h-9 w-9 rounded-lg" />
+            <Skeleton className="h-7 w-40" />
+          </div>
+          <div className="flex gap-2">
+            <Skeleton className="h-9 w-20 rounded-lg" />
+            <Skeleton className="h-9 w-32 rounded-lg" />
+          </div>
+        </div>
+        {/* Invoice skeleton */}
+        <div className="bg-muted/20 p-8 rounded-xl border flex justify-center">
+          <div className="w-153 bg-white rounded-lg p-8 space-y-6">
+            <div className="flex justify-between">
+              <Skeleton className="h-27.5 w-18.25 rounded" />
+              <div className="space-y-2 w-40">
+                <Skeleton className="h-3 w-16 ml-auto" />
+                <Skeleton className="h-3 w-28 ml-auto" />
+                <Skeleton className="h-3 w-24 ml-auto" />
+                <Skeleton className="h-3 w-20 ml-auto mt-3" />
+                <Skeleton className="h-3 w-28 ml-auto" />
+                <Skeleton className="h-3 w-24 ml-auto" />
+              </div>
+            </div>
+            <div className="flex gap-4">
+              <Skeleton className="h-8 w-32" />
+              <Skeleton className="h-8 w-24" />
+            </div>
+            <div className="space-y-2 pt-2 border-t">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="flex gap-4 py-2 border-b border-gray-100">
+                  <Skeleton className="h-4 w-1/2" />
+                  <Skeleton className="h-4 w-12 ml-auto" />
+                  <Skeleton className="h-4 w-10" />
+                  <Skeleton className="h-4 w-14" />
+                </div>
+              ))}
+            </div>
+            <div className="flex justify-end space-y-2">
+              <div className="w-48 space-y-2">
+                <Skeleton className="h-3 w-full" />
+                <Skeleton className="h-3 w-full" />
+                <Skeleton className="h-4 w-full" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   if (!data) {
@@ -99,8 +163,9 @@ export default function ViewInvoicePage() {
           <Button variant="outline" onClick={handlePrint}>
             <Printer className="h-4 w-4 mr-2" /> Print
           </Button>
-          <Button onClick={handleDownloadPDF}>
-            <Download className="h-4 w-4 mr-2" /> Download PDF
+          <Button onClick={handleDownloadPDF} disabled={downloading}>
+            {downloading ? <Spinner className="h-4 w-4 mr-2" /> : <Download className="h-4 w-4 mr-2" />}
+            {downloading ? "Generating…" : "Download PDF"}
           </Button>
         </div>
       </div>
