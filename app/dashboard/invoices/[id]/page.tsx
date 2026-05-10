@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Download, Printer, ArrowLeft } from "lucide-react";
-import { InvoicePreview } from "@/components/InvoicePreview";
+import { InvoicePreview, PAGE_WIDTH, PAGE_HEIGHT } from "@/components/InvoicePreview";
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
 import { toast } from "sonner";
@@ -36,54 +36,52 @@ export default function ViewInvoicePage() {
   }, [id]);
 
   const handleDownloadPDF = async () => {
-  if (!printRef.current) {
-    toast.error("Invoice not found");
-    return;
-  }
+    if (!printRef.current) {
+      toast.error("Invoice not found");
+      return;
+    }
 
-  try {
-    setDownloading(true);
+    try {
+      setDownloading(true);
 
-    const canvas = await html2canvas(printRef.current, {
-      scale: 2,
-      useCORS: true,
-      backgroundColor: "#ffffff",
-      logging: true,
-    });
+      const pageEls = printRef.current.querySelectorAll<HTMLElement>(
+        "[data-invoice-page]",
+      );
 
-    const imgData = canvas.toDataURL("image/png");
+      if (!pageEls.length) {
+        toast.error("Invoice not found");
+        return;
+      }
 
-    const pdf = new jsPDF({
-      orientation: "portrait",
-      unit: "px",
-      format: "a4",
-    });
+      const pdf = new jsPDF({
+        orientation: "portrait",
+        unit: "px",
+        format: [PAGE_WIDTH, PAGE_HEIGHT],
+      });
 
-    const pdfWidth = pdf.internal.pageSize.getWidth();
+      for (let i = 0; i < pageEls.length; i++) {
+        const canvas = await html2canvas(pageEls[i], {
+          scale: 2,
+          useCORS: true,
+          backgroundColor: "#ffffff",
+        });
 
-    const pdfHeight =
-      (canvas.height * pdfWidth) / canvas.width;
+        const imgData = canvas.toDataURL("image/png");
 
-    pdf.addImage(
-      imgData,
-      "PNG",
-      0,
-      0,
-      pdfWidth,
-      pdfHeight
-    );
+        if (i > 0) pdf.addPage([PAGE_WIDTH, PAGE_HEIGHT], "portrait");
 
-    pdf.save(`${data.invoiceNumber || "invoice"}.pdf`);
+        pdf.addImage(imgData, "PNG", 0, 0, PAGE_WIDTH, PAGE_HEIGHT);
+      }
 
-    toast.success("PDF downloaded");
-  } catch (error) {
-    console.error(error);
-
-    toast.error("PDF generation failed");
-  } finally {
-    setDownloading(false);
-  }
-};
+      pdf.save(`${data.invoiceNumber || "invoice"}.pdf`);
+      toast.success("PDF downloaded");
+    } catch (error) {
+      console.error(error);
+      toast.error("PDF generation failed");
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   const handlePrint = () => window.print();
 

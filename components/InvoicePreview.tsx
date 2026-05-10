@@ -1,12 +1,87 @@
 "use client";
 
-import React, { forwardRef } from "react";
-import { InvoiceFormData } from "@/types/invoice";
+import React, { forwardRef, useMemo } from "react";
+import { InvoiceFormData, InvoiceItem } from "@/types/invoice";
 import { format } from "date-fns";
 
 type InvoicePreviewProps = {
   data: Partial<InvoiceFormData>;
 };
+
+// A4 at 72ppi — matches jsPDF "px" unit format
+export const PAGE_WIDTH = 612;
+export const PAGE_HEIGHT = 842;
+
+const PADDING = 30;
+
+// Approximate heights for page-split calculation (px)
+const BOTTOM_FOOTER_H = 72;
+const HEADER_H = 165;   // logo + from/to block
+const TITLE_H = 50;     // INVOICE #001 row
+const TABLE_HEADER_H = 32; // thead row (reused on every page)
+const FIRST_PAGE_GAP = 24; // spacing between sections on first page
+const FOOTER_H = 150;   // payment info + totals block
+
+const USABLE_H = PAGE_HEIGHT - PADDING * 2 - BOTTOM_FOOTER_H; // 710px
+
+// How many px items can use on first page (header/title take top space)
+const FIRST_PAGE_ITEMS_CAP =
+  USABLE_H - HEADER_H - TITLE_H - TABLE_HEADER_H - FIRST_PAGE_GAP;
+
+// Subsequent pages: only table header consumes space above items
+const NEXT_PAGE_ITEMS_CAP = USABLE_H - TABLE_HEADER_H;
+
+function estimateItemH(item: InvoiceItem): number {
+  let h = 34;
+  if (item.note) h += 16;
+  if (item.subItems?.length) h += item.subItems.length * 14;
+  return h;
+}
+
+type PageSlice = {
+  items: InvoiceItem[];
+  isFirst: boolean;
+  isLast: boolean;
+};
+
+function buildPages(items: InvoiceItem[]): PageSlice[] {
+  if (!items.length) {
+    return [{ items: [], isFirst: true, isLast: true }];
+  }
+
+  const pages: PageSlice[] = [];
+  const queue = [...items];
+  let firstPage = true;
+
+  while (queue.length > 0) {
+    const cap = firstPage ? FIRST_PAGE_ITEMS_CAP : NEXT_PAGE_ITEMS_CAP;
+    const chunk: InvoiceItem[] = [];
+    let used = 0;
+
+    while (queue.length > 0) {
+      const h = estimateItemH(queue[0]);
+      if (used + h > cap && chunk.length > 0) break;
+      chunk.push(queue.shift()!);
+      used += h;
+    }
+
+    pages.push({ items: chunk, isFirst: firstPage, isLast: queue.length === 0 });
+    firstPage = false;
+  }
+
+  // Check whether the totals footer fits on the last page alongside its items
+  const lp = pages[pages.length - 1];
+  const lpCap = lp.isFirst ? FIRST_PAGE_ITEMS_CAP : NEXT_PAGE_ITEMS_CAP;
+  const lpUsed = lp.items.reduce((s, item) => s + estimateItemH(item), 0);
+
+  if (lpUsed + FOOTER_H > lpCap) {
+    // Footer won't fit — push it to a dedicated trailing page
+    lp.isLast = false;
+    pages.push({ items: [], isFirst: false, isLast: true });
+  }
+
+  return pages;
+}
 
 export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
   ({ data }, ref) => {
@@ -29,251 +104,578 @@ export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
       items = [],
       vat = 0,
       discount = 0,
-      total = 0,
     } = data;
 
     const subtotal = items.reduce(
       (acc, item) => acc + item.quantity * item.unitPrice,
       0,
     );
+    const vatAmount = ((subtotal - (discount ?? 0)) * (vat ?? 0)) / 100;
+    const grandTotal = subtotal + vatAmount - (discount ?? 0);
 
-    const vatAmount = ((subtotal - discount) * vat) / 100;
-    const grandTotal = subtotal + vatAmount - discount;
+    const pages = useMemo(() => buildPages(items), [items]);
+
+    // Global item index offset per page (for continuous numbering)
+    const startIndices = useMemo(() => {
+      let offset = 0;
+      return pages.map((p) => {
+        const s = offset;
+        offset += p.items.length;
+        return s;
+      });
+    }, [pages]);
 
     return (
-      <div
-        ref={ref}
-        className="bg-white text-black mx-auto"
-        style={{
-          width: "612px",
-          minHeight: "1000px",
-          padding: "30px 30px",
-          display: "flex",
-          flexDirection: "column",
-        }}
-      >
-        {/* HEADER */}
-        <header className="flex flex-row items-start justify-between mb-6">
-          <div className="w-1/2">
-            {logoUrl ? (
-              <img
-                src={logoUrl}
-                crossOrigin="anonymous"
-                className="w-[73px] h-[110px] object-cover object-center rounded mb-2"
-                alt="Logo"
-              />
-            ) : (
-              <div className="w-[73px] h-[110px] bg-gray-100 flex items-center justify-center text-gray-400 text-xs rounded mb-2">
-                Logo
-              </div>
-            )}
-          </div>
+      <div ref={ref}>
+        {pages.map((page, pageIdx) => (
+          <div
+            key={pageIdx}
+            data-invoice-page="true"
+            style={{
+              width: `${PAGE_WIDTH}px`,
+              height: `${PAGE_HEIGHT}px`,
+              padding: `${PADDING}px`,
+              background: "white",
+              color: "black",
+              display: "flex",
+              flexDirection: "column",
+              boxSizing: "border-box",
+              // Visual gap between pages in browser; hidden on print
+              marginBottom: pageIdx < pages.length - 1 ? "20px" : 0,
+              breakAfter: pageIdx < pages.length - 1 ? "page" : "auto",
+              overflow: "hidden",
+            }}
+          >
+            {/* ── CONTENT AREA ─────────────────────────────────── */}
+            <div style={{ flex: 1, overflow: "hidden" }}>
 
-          {/* FROM / TO on the right side */}
-          <div className="w-1/2 text-right">
-            <div className="mb-3">
-              <h4 className="text-[#5A378F] text-xs font-bold">From:</h4>
-              <div className="text-black text-xs mt-[2px]">
-                <p className="font-bold">{from.name}</p>
-                <p className="text-gray-600 whitespace-pre-line">
+              {/* HEADER — first page only */}
+              {page.isFirst && (
+                <header
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    marginBottom: "14px",
+                  }}
+                >
+                  <div>
+                    {logoUrl ? (
+                      <img
+                        src={logoUrl}
+                        crossOrigin="anonymous"
+                        style={{
+                          width: "73px",
+                          height: "110px",
+                          objectFit: "cover",
+                          borderRadius: "4px",
+                        }}
+                        alt="Logo"
+                      />
+                    ) : (
+                      <div
+                        style={{
+                          width: "73px",
+                          height: "110px",
+                          background: "#f3f4f6",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontSize: "10px",
+                          color: "#9ca3af",
+                          borderRadius: "4px",
+                        }}
+                      >
+                        Logo
+                      </div>
+                    )}
+                  </div>
+
+                  <div style={{ textAlign: "right", fontSize: "12px" }}>
+                    <div style={{ marginBottom: "10px" }}>
+                      <h4
+                        style={{
+                          color: "#5A378F",
+                          fontWeight: "bold",
+                          margin: "0 0 2px",
+                        }}
+                      >
+                        From:
+                      </h4>
+                      <p style={{ fontWeight: "bold", margin: 0 }}>{from.name}</p>
+                      <p
+                        style={{
+                          color: "#4b5563",
+                          whiteSpace: "pre-line",
+                          margin: 0,
+                        }}
+                      >
+                        {from.address}
+                      </p>
+                      <p style={{ color: "#4b5563", margin: 0 }}>{from.email}</p>
+                      <p style={{ color: "#4b5563", margin: 0 }}>{from.phone}</p>
+                    </div>
+                    <div>
+                      <h4
+                        style={{
+                          color: "#5A378F",
+                          fontWeight: "bold",
+                          margin: "0 0 2px",
+                        }}
+                      >
+                        To:
+                      </h4>
+                      <p style={{ fontWeight: "bold", margin: 0 }}>{to.name}</p>
+                      <p
+                        style={{
+                          color: "#4b5563",
+                          whiteSpace: "pre-line",
+                          margin: 0,
+                        }}
+                      >
+                        {to.address}
+                      </p>
+                      <p style={{ color: "#4b5563", margin: 0 }}>{to.email}</p>
+                      <p style={{ color: "#4b5563", margin: 0 }}>{to.phone}</p>
+                    </div>
+                  </div>
+                </header>
+              )}
+
+              {/* TITLE — first page only */}
+              {page.isFirst && (
+                <div
+                  style={{
+                    display: "flex",
+                    gap: "24px",
+                    fontSize: "28px",
+                    fontWeight: "bold",
+                    textTransform: "uppercase",
+                    marginBottom: "14px",
+                  }}
+                >
+                  <h1 style={{ margin: 0 }}>{name}</h1>
+                  <h1 style={{ margin: 0 }}>#{invoiceNumber}</h1>
+                </div>
+              )}
+
+              {/* TWO-COLUMN: dates (first page) | items table */}
+              <div style={{ display: "flex" }}>
+                {/* Left: dates on first page, empty on continuations */}
+                <div style={{ width: "25%", flexShrink: 0 }}>
+                  {page.isFirst && (
+                    <>
+                      <h4
+                        style={{
+                          fontSize: "12px",
+                          fontWeight: "bold",
+                          margin: "0 0 2px",
+                        }}
+                      >
+                        Invoice Date:
+                      </h4>
+                      <p
+                        style={{
+                          fontSize: "12px",
+                          color: "#374151",
+                          margin: "0 0 14px",
+                        }}
+                      >
+                        {format(new Date(date), "MMM dd, yyyy")}
+                      </p>
+                      <h4
+                        style={{
+                          fontSize: "12px",
+                          fontWeight: "bold",
+                          margin: "0 0 2px",
+                        }}
+                      >
+                        Due Date:
+                      </h4>
+                      <p
+                        style={{
+                          fontSize: "12px",
+                          color: "#374151",
+                          margin: 0,
+                        }}
+                      >
+                        {format(new Date(dueDate), "MMM dd, yyyy")}
+                      </p>
+                    </>
+                  )}
+                </div>
+
+                {/* Right: items table */}
+                <div
+                  style={{
+                    width: "75%",
+                    borderTop: "1px solid #7D7E81",
+                    paddingTop: "8px",
+                  }}
+                >
+                  <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                    <thead>
+                      <tr
+                        style={{
+                          color: "#5A378F",
+                          fontSize: "12px",
+                          fontWeight: "bold",
+                        }}
+                      >
+                        <th style={{ textAlign: "left", paddingBottom: "6px" }}>
+                          Items
+                        </th>
+                        <th
+                          style={{ textAlign: "center", paddingBottom: "6px" }}
+                        >
+                          Quantity
+                        </th>
+                        <th
+                          style={{
+                            textAlign: "center",
+                            paddingBottom: "6px",
+                            lineHeight: "1.2",
+                          }}
+                        >
+                          Unit Price
+                        </th>
+                        <th
+                          style={{ textAlign: "center", paddingBottom: "6px" }}
+                        >
+                          Amount
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {page.items.length > 0 ? (
+                        page.items.map((item, i) => {
+                          const globalIdx = startIndices[pageIdx] + i;
+                          return (
+                            <tr
+                              key={i}
+                              style={{ borderTop: "1px solid #e5e7eb" }}
+                            >
+                              <td
+                                style={{
+                                  textAlign: "left",
+                                  fontSize: "12px",
+                                  padding: "7px 0",
+                                }}
+                              >
+                                <span style={{ fontWeight: 600 }}>
+                                  {globalIdx + 1}. {item.name}
+                                </span>
+                                {item.note && (
+                                  <p
+                                    style={{
+                                      fontSize: "10px",
+                                      color: "#6b7280",
+                                      margin: "2px 0 0",
+                                      fontStyle: "italic",
+                                    }}
+                                  >
+                                    {item.note}
+                                  </p>
+                                )}
+                                {item.subItems && item.subItems.length > 0 && (
+                                  <ul
+                                    style={{
+                                      margin: "2px 0 0",
+                                      padding: 0,
+                                      listStyle: "none",
+                                    }}
+                                  >
+                                    {item.subItems.map((sub, si) => (
+                                      <li
+                                        key={si}
+                                        style={{
+                                          fontSize: "10px",
+                                          color: "#4b5563",
+                                        }}
+                                      >
+                                        - {sub}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                )}
+                              </td>
+                              <td
+                                style={{
+                                  textAlign: "center",
+                                  padding: "7px 0",
+                                  fontSize: "12px",
+                                  verticalAlign: "top",
+                                }}
+                              >
+                                {paymentInfo.currency}
+                                {item.unitPrice}
+                              </td>
+                              <td
+                                style={{
+                                  textAlign: "center",
+                                  padding: "7px 0",
+                                  fontSize: "12px",
+                                  verticalAlign: "top",
+                                }}
+                              >
+                                {item.quantity}
+                              </td>
+                              <td
+                                style={{
+                                  textAlign: "center",
+                                  padding: "7px 0",
+                                  fontSize: "12px",
+                                  verticalAlign: "top",
+                                }}
+                              >
+                                {paymentInfo.currency}
+                                {(item.quantity * item.unitPrice).toFixed(2)}
+                              </td>
+                            </tr>
+                          );
+                        })
+                      ) : (
+                        page.isLast &&
+                        items.length === 0 && (
+                          <tr>
+                            <td
+                              colSpan={4}
+                              style={{
+                                textAlign: "center",
+                                padding: "24px 0",
+                                color: "#9ca3af",
+                                fontSize: "14px",
+                              }}
+                            >
+                              No items added
+                            </td>
+                          </tr>
+                        )
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* FOOTER (payment + totals) — last page only, flows below items */}
+              {page.isLast && (
+                <div style={{ display: "flex", marginTop: "16px" }}>
+                  {/* Payment info box */}
+                  <div style={{ width: "25%" }}>
+                    <div
+                      style={{
+                        width: "114px",
+                        minHeight: "120px",
+                        padding: "8px",
+                        border: "1px solid #5A378F",
+                      }}
+                    >
+                      <h3
+                        style={{
+                          fontSize: "10px",
+                          fontWeight: "bold",
+                          textDecoration: "underline",
+                          margin: "0 0 4px",
+                        }}
+                      >
+                        Payment Information:
+                      </h3>
+                      <p style={{ fontSize: "5px", color: "#7D7E81", margin: 0 }}>
+                        Account Name:
+                      </p>
+                      <h4
+                        style={{
+                          fontSize: "8px",
+                          fontWeight: "bold",
+                          margin: "0 0 2px",
+                        }}
+                      >
+                        {paymentInfo.accountName}
+                      </h4>
+                      <p style={{ fontSize: "5px", color: "#7D7E81", margin: 0 }}>
+                        Account Number:
+                      </p>
+                      <h4
+                        style={{
+                          fontSize: "8px",
+                          fontWeight: "bold",
+                          margin: "0 0 2px",
+                        }}
+                      >
+                        {paymentInfo.accountNumber}
+                      </h4>
+                      <p style={{ fontSize: "5px", color: "#7D7E81", margin: 0 }}>
+                        SWIFT Code:
+                      </p>
+                      <h4
+                        style={{
+                          fontSize: "8px",
+                          fontWeight: "bold",
+                          margin: "0 0 2px",
+                        }}
+                      >
+                        {paymentInfo.swift}
+                      </h4>
+                      <p style={{ fontSize: "5px", color: "#7D7E81", margin: 0 }}>
+                        Bank Name:
+                      </p>
+                      <h4
+                        style={{
+                          fontSize: "8px",
+                          fontWeight: "bold",
+                          margin: "0 0 2px",
+                        }}
+                      >
+                        {paymentInfo.bankName}
+                      </h4>
+                      <p style={{ fontSize: "5px", color: "#7D7E81", margin: 0 }}>
+                        Branch:
+                      </p>
+                      <h4
+                        style={{ fontSize: "8px", fontWeight: "bold", margin: 0 }}
+                      >
+                        {paymentInfo.branch}
+                      </h4>
+                    </div>
+                  </div>
+
+                  {/* Totals */}
+                  <div style={{ width: "75%" }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "5.5px",
+                        fontSize: "10px",
+                      }}
+                    >
+                      <div style={{ borderTop: "1px solid #7D7E81" }} />
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          fontWeight: "bold",
+                        }}
+                      >
+                        <h2 style={{ color: "#EA2B7B", margin: 0 }}>
+                          Sub-Total
+                        </h2>
+                        <h2 style={{ margin: 0 }}>
+                          {subtotal.toFixed(2)} ({paymentInfo.currency})
+                        </h2>
+                      </div>
+
+                      {(vat ?? 0) > 0 && (
+                        <>
+                          <div style={{ borderTop: "1px solid #7D7E81" }} />
+                          <div
+                            style={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              fontWeight: "bold",
+                            }}
+                          >
+                            <h2 style={{ color: "#EA2B7B", margin: 0 }}>
+                              VAT ({vat}%)
+                            </h2>
+                            <h2 style={{ margin: 0 }}>
+                              {vatAmount.toFixed(2)} ({paymentInfo.currency})
+                            </h2>
+                          </div>
+                        </>
+                      )}
+
+                      {(discount ?? 0) > 0 && (
+                        <>
+                          <div style={{ borderTop: "1px solid #7D7E81" }} />
+                          <div
+                            style={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              fontWeight: "bold",
+                            }}
+                          >
+                            <h2 style={{ color: "#EA2B7B", margin: 0 }}>
+                              Discount (-)
+                            </h2>
+                            <h2 style={{ margin: 0 }}>
+                              {Number(discount).toFixed(2)} ({paymentInfo.currency}
+                              )
+                            </h2>
+                          </div>
+                        </>
+                      )}
+
+                      <div style={{ borderTop: "1px solid #7D7E81" }} />
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          fontWeight: "bold",
+                        }}
+                      >
+                        <h2 style={{ color: "#EA2B7B", margin: 0 }}>
+                          Grand Total
+                        </h2>
+                        <h2 style={{ margin: 0 }}>
+                          {Number(grandTotal).toFixed(2)} ({paymentInfo.currency})
+                        </h2>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* ── BOTTOM FOOTER — pinned to bottom of every page ─── */}
+            <div
+              style={{
+                borderTop: "1px solid #e5e7eb",
+                paddingTop: "12px",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                gap: "16px",
+                flexShrink: 0,
+              }}
+            >
+              <div
+                style={{
+                  fontSize: "12px",
+                  borderLeft: "1px solid #EA2B7B",
+                  paddingLeft: "8px",
+                }}
+              >
+                <p style={{ margin: 0 }}>{from.name}</p>
+                <p
+                  style={{ color: "#4b5563", whiteSpace: "pre-line", margin: 0 }}
+                >
                   {from.address}
                 </p>
-                <p className="text-gray-600">{from.email}</p>
-                <p className="text-gray-600">{from.phone}</p>
               </div>
-            </div>
-            <div>
-              <h4 className="text-[#5A378F] text-xs font-bold">To:</h4>
-              <div className="text-black text-xs mt-[2px]">
-                <p className="font-bold">{to.name}</p>
-                <p className="text-gray-600 whitespace-pre-line">
-                  {to.address}
-                </p>
-                <p className="text-gray-600">{to.email}</p>
-                <p className="text-gray-600">{to.phone}</p>
+              <div
+                style={{
+                  fontSize: "12px",
+                  color: "#4b5563",
+                  borderLeft: "1px solid #EA2B7B",
+                  paddingLeft: "8px",
+                }}
+              >
+                <p style={{ margin: 0 }}>+880 1784 398 934</p>
+                <p style={{ margin: 0 }}>info@jamroll.xyz</p>
+                <p style={{ margin: 0 }}>www.jamroll.xyz</p>
               </div>
-            </div>
-          </div>
-        </header>
-
-        {/* INVOICE TITLE */}
-        <div className="flex justify-start gap-8 text-black text-[28px] font-bold uppercase mb-4">
-          <h1>{name}</h1>
-          <h1>#{invoiceNumber}</h1>
-        </div>
-
-        {/* DATES + ITEMS TABLE */}
-        <main className="flex-grow">
-          <div className="w-full flex my-4">
-            {/* LEFT: Dates */}
-            <div className="w-[25%] -mt-2">
-              <h4 className="text-[12px] font-bold">Invoice Date:</h4>
-              <p className="text-xs text-gray-700">
-                {format(new Date(date), "MMM dd, yyyy")}
-              </p>
-              <h4 className="text-[12px] font-bold mt-6">Due Date:</h4>
-              <p className="text-xs text-gray-700">
-                {format(new Date(dueDate), "MMM dd, yyyy")}
-              </p>
-            </div>
-
-            {/* RIGHT: Items Table */}
-            <div className="w-[75%] border-t-1 border-[#7D7E81]">
-              <div className="mt-2">
-                <table className="w-full">
-                  <thead>
-                    <tr className="w-full text-[#5A378F] text-[12px] font-bold">
-                      <th className="text-left">Items</th>
-                      <th className="text-center">Quantity</th>
-                      <th className="text-center leading-4">Unit Price</th>
-                      <th className="text-center">Amount</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {items.length > 0 ? (
-                      items.map((item, index) => (
-                        <tr key={index} className="border-t border-gray-200">
-                          <td className="text-left text-xs pt-2 pb-2">
-                            <span className="font-semibold">{index + 1}. {item.name}</span>
-                            {item.note && (
-                              <p className="text-[10px] text-gray-500 mt-0.5 italic">{item.note}</p>
-                            )}
-                            {item.subItems && item.subItems.length > 0 && (
-                              <ul className="mt-0.5">
-                                {item.subItems.map((sub, si) => (
-                                  <li key={si} className="text-[10px] text-gray-600">- {sub}</li>
-                                ))}
-                              </ul>
-                            )}
-                          </td>
-                          <td className="text-center pt-2 pb-2 align-top text-xs">
-                            {paymentInfo.currency}{item.unitPrice}
-                          </td>
-                          <td className="text-center pt-2 pb-2 align-top text-xs">
-                            {item.quantity}
-                          </td>
-                          <td className="text-center pt-2 pb-2 align-top text-xs">
-                            {paymentInfo.currency}{""}
-                            {(item.quantity * item.unitPrice).toFixed(2)}
-                          </td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td
-                          colSpan={4}
-                          className="text-center py-6 text-gray-400 text-sm"
-                        >
-                          No items added
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
+              <div>
+                <img
+                  src="/assets/Jamroll Logo.png"
+                  alt="Jamroll Logo"
+                  width={160}
+                  height={50}
+                  style={{ objectFit: "cover" }}
+                />
               </div>
             </div>
           </div>
-        </main>
-
-        {/* FOOTER */}
-        <footer className="mt-auto">
-          {/* PAYMENT INFO + TOTALS */}
-          <div className="w-full flex my-4">
-            {/* Payment Info Box */}
-            <div className="w-[25%]">
-              <div className="w-[114px] min-h-[120px] p-2 border border-[#5A378F]">
-                <h3 className="text-[10px] font-bold underline mb-1">
-                  Payment Information:
-                </h3>
-                <p className="text-[5px] text-[#7D7E81]">Account Name:</p>
-                <h4 className="text-[8px] font-bold">
-                  {paymentInfo.accountName}
-                </h4>
-                <p className="text-[5px] text-[#7D7E81]">Account Number:</p>
-                <h4 className="text-[8px] font-bold">
-                  {paymentInfo.accountNumber}
-                </h4>
-                <p className="text-[5px] text-[#7D7E81]">SWIFT Code:</p>
-                <h4 className="text-[8px] font-bold">{paymentInfo.swift}</h4>
-                <p className="text-[5px] text-[#7D7E81]">Bank Name:</p>
-                <h4 className="text-[8px] font-bold">{paymentInfo.bankName}</h4>
-                <p className="text-[5px] text-[#7D7E81]">Branch:</p>
-                <h4 className="text-[8px] font-bold">{paymentInfo.branch}</h4>
-              </div>
-            </div>
-
-            {/* Totals */}
-            <div className="w-[75%]">
-              <div className="text-sm w-full flex flex-col gap-[5.5px]">
-                <div className="border-t-1 border-[#7D7E81]"></div>
-                <div className="flex justify-between text-[10px] font-bold">
-                  <h2 className="text-[#EA2B7B]">Sub-Total</h2>
-                  <h2>
-                    {subtotal.toFixed(2)} ({paymentInfo.currency})
-                  </h2>
-                </div>
-
-                {vat > 0 && (
-                  <>
-                    <div className="border-t-1 border-[#7D7E81]"></div>
-                    <div className="flex justify-between text-[10px] font-bold">
-                      <h2 className="text-[#EA2B7B]">VAT ({vat}%)</h2>
-                      <h2>
-                        {vatAmount.toFixed(2)} ({paymentInfo.currency})
-                      </h2>
-                    </div>
-                  </>
-                )}
-
-                {discount > 0 && (
-                  <>
-                    <div className="border-t-1 border-[#7D7E81]"></div>
-                    <div className="flex justify-between text-[10px] font-bold">
-                      <h2 className="text-[#EA2B7B]">Discount (-)</h2>
-                      <h2>
-                        {Number(discount).toFixed(2)} ({paymentInfo.currency})
-                      </h2>
-                    </div>
-                  </>
-                )}
-
-                <div className="border-t-1 border-[#7D7E81]"></div>
-                <div className="flex justify-between text-[10px] font-bold">
-                  <h2 className="text-[#EA2B7B]">Grand Total</h2>
-                  <h2>
-                    {Number(grandTotal).toFixed(2)} ({paymentInfo.currency})
-                  </h2>
-                </div>
-              </div>
-            </div>
-          </div>
-        </footer>
-
-        {/* BOTTOM FOOTER */}
-        <div className="w-full flex justify-between items-center gap-4 border-t border-gray-200 pt-4">
-          <div className="text-black text-xs border-l-1 border-[#EA2B7B] ps-2">
-            <p className="">{from.name}</p>
-            <p className="text-gray-600 whitespace-pre-line">{from.address}</p>
-          </div>
-          {/* <div className="text-black text-xs border-l-2 border-[#EA2B7B] ps-2">
-              <p>{from.phone}</p>
-              <p>{from.email}</p>
-            </div> */}
-          <div className="text-gray-600 text-xs border-l-1 border-[#EA2B7B] ps-2">
-            <p>+880 1784 398 934</p>
-            <p>info@jamroll.xyz</p>
-            <p>www.jamroll.xyz</p>
-          </div>
-          <div>
-            <img
-              src="/assets/Jamroll Logo.png"
-              alt="Jamroll Logo"
-              width={160}
-              height={50}
-              className="object-cover object-center"
-            />
-          </div>
-        </div>
+        ))}
       </div>
     );
   },

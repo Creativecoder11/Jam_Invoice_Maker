@@ -161,3 +161,10 @@
     transform: translateX(100%);
   }
 }
+
+@media print {
+  [data-invoice-page] {
+    margin-bottom: 0 !important;
+    box-shadow: none !important;
+  }
+}
