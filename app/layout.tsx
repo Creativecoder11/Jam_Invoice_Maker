@@ -1,12 +1,19 @@
 import type {Metadata} from 'next';
 // @ts-ignore: CSS module declarations may not be available in this environment
 import './globals.css';
-import { Inter } from "next/font/google";
+import localFont from "next/font/local";
 import { cn } from "@/lib/utils";
 import { Providers } from './Providers';
 import { Toaster } from '@/components/ui/sonner';
 
-const inter = Inter({subsets:['latin'],variable:'--font-sans'});
+const helveticaNow = localFont({
+  src: [
+    { path: '../public/fonts/HelveticaNowDisplay-Regular.ttf', weight: '400', style: 'normal' },
+    { path: '../public/fonts/HelveticaNowDisplay-Medium.ttf',  weight: '500', style: 'normal' },
+    { path: '../public/fonts/HelveticaNowDisplay-Bold.ttf',    weight: '700', style: 'normal' },
+  ],
+  variable: '--font-sans',
+});
 
 export const metadata: Metadata = {
   title: 'Jamroll Invoicemaker',
@@ -15,7 +22,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({children}: {children: React.ReactNode}) {
   return (
-    <html lang="en" suppressHydrationWarning className={cn("font-sans", inter.variable)}>
+    <html lang="en" suppressHydrationWarning className={cn("font-sans", helveticaNow.variable)}>
       <body suppressHydrationWarning>
         <Providers>
           {children}

@@ -16,11 +16,11 @@ const PADDING = 30;
 
 // Approximate heights for page-split calculation (px)
 const BOTTOM_FOOTER_H = 72;
-const HEADER_H = 165;   // logo + from/to block
-const TITLE_H = 50;     // INVOICE #001 row
+const HEADER_H = 165; // logo + from/to block
+const TITLE_H = 60; // INVOICE #001 row
 const TABLE_HEADER_H = 32; // thead row (reused on every page)
 const FIRST_PAGE_GAP = 24; // spacing between sections on first page
-const FOOTER_H = 150;   // payment info + totals block
+const FOOTER_H = 150; // payment info + totals block
 
 const USABLE_H = PAGE_HEIGHT - PADDING * 2 - BOTTOM_FOOTER_H; // 710px
 
@@ -65,7 +65,11 @@ function buildPages(items: InvoiceItem[]): PageSlice[] {
       used += h;
     }
 
-    pages.push({ items: chunk, isFirst: firstPage, isLast: queue.length === 0 });
+    pages.push({
+      items: chunk,
+      isFirst: firstPage,
+      isLast: queue.length === 0,
+    });
     firstPage = false;
   }
 
@@ -148,7 +152,6 @@ export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
           >
             {/* ── CONTENT AREA ─────────────────────────────────── */}
             <div style={{ flex: 1, overflow: "hidden" }}>
-
               {/* HEADER — first page only */}
               {page.isFirst && (
                 <header
@@ -158,6 +161,7 @@ export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
                     marginBottom: "14px",
                   }}
                 >
+                  {/* Logo on left, From/To on right */}
                   <div>
                     {logoUrl ? (
                       <img
@@ -189,9 +193,9 @@ export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
                       </div>
                     )}
                   </div>
-
-                  <div style={{ textAlign: "right", fontSize: "12px" }}>
-                    <div style={{ marginBottom: "10px" }}>
+                  {/* From/To block */}
+                  <div style={{ textAlign: "left", fontSize: "12px" }}>
+                    {/* <div style={{ marginBottom: "10px" }}>
                       <h4
                         style={{
                           color: "#5A378F",
@@ -213,7 +217,7 @@ export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
                       </p>
                       <p style={{ color: "#4b5563", margin: 0 }}>{from.email}</p>
                       <p style={{ color: "#4b5563", margin: 0 }}>{from.phone}</p>
-                    </div>
+                    </div> */}
                     <div>
                       <h4
                         style={{
@@ -241,13 +245,13 @@ export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
                 </header>
               )}
 
-              {/* TITLE — first page only */}
+              {/* Invoice & No */}
               {page.isFirst && (
                 <div
                   style={{
                     display: "flex",
                     gap: "24px",
-                    fontSize: "28px",
+                    fontSize: "20px",
                     fontWeight: "bold",
                     textTransform: "uppercase",
                     marginBottom: "14px",
@@ -258,12 +262,24 @@ export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
                 </div>
               )}
 
-              {/* TWO-COLUMN: dates (first page) | items table */}
-              <div style={{ display: "flex" }}>
-                {/* Left: dates on first page, empty on continuations */}
-                <div style={{ width: "25%", flexShrink: 0 }}>
-                  {page.isFirst && (
-                    <>
+              {/* Invoice Date and Due Date */}
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  gap: "2px",
+                }}
+              >
+                {page.isFirst && (
+                  <>
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "row",
+                        gap: "4px",
+                      }}
+                    >
                       <h4
                         style={{
                           fontSize: "12px",
@@ -282,6 +298,14 @@ export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
                       >
                         {format(new Date(date), "MMM dd, yyyy")}
                       </p>
+                    </div>
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "row",
+                        gap: "4px",
+                      }}
+                    >
                       <h4
                         style={{
                           fontSize: "12px",
@@ -300,54 +324,51 @@ export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
                       >
                         {format(new Date(dueDate), "MMM dd, yyyy")}
                       </p>
-                    </>
-                  )}
-                </div>
+                    </div>
+                  </>
+                )}
+              </div>
 
-                {/* Right: items table */}
-                <div
-                  style={{
-                    width: "75%",
-                    borderTop: "1px solid #7D7E81",
-                    paddingTop: "8px",
-                  }}
-                >
-                  <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                    <thead>
-                      <tr
+              {/* items table */}
+              <div
+                style={{
+                  width: "100%",
+                  borderTop: "1px solid #7D7E81",
+                  paddingTop: "8px",
+                }}
+              >
+                <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                  <thead>
+                    <tr
+                      style={{
+                        color: "#5A378F",
+                        fontSize: "12px",
+                        fontWeight: "bold",
+                      }}
+                    >
+                      <th style={{ textAlign: "left", paddingBottom: "6px" }}>
+                        Items
+                      </th>
+                      <th style={{ textAlign: "center", paddingBottom: "6px" }}>
+                        Quantity
+                      </th>
+                      <th
                         style={{
-                          color: "#5A378F",
-                          fontSize: "12px",
-                          fontWeight: "bold",
+                          textAlign: "center",
+                          paddingBottom: "6px",
+                          lineHeight: "1.2",
                         }}
                       >
-                        <th style={{ textAlign: "left", paddingBottom: "6px" }}>
-                          Items
-                        </th>
-                        <th
-                          style={{ textAlign: "center", paddingBottom: "6px" }}
-                        >
-                          Quantity
-                        </th>
-                        <th
-                          style={{
-                            textAlign: "center",
-                            paddingBottom: "6px",
-                            lineHeight: "1.2",
-                          }}
-                        >
-                          Unit Price
-                        </th>
-                        <th
-                          style={{ textAlign: "center", paddingBottom: "6px" }}
-                        >
-                          Amount
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {page.items.length > 0 ? (
-                        page.items.map((item, i) => {
+                        Unit Price
+                      </th>
+                      <th style={{ textAlign: "center", paddingBottom: "6px" }}>
+                        Amount
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {page.items.length > 0
+                      ? page.items.map((item, i) => {
                           const globalIdx = startIndices[pageIdx] + i;
                           return (
                             <tr
@@ -433,8 +454,7 @@ export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
                             </tr>
                           );
                         })
-                      ) : (
-                        page.isLast &&
+                      : page.isLast &&
                         items.length === 0 && (
                           <tr>
                             <td
@@ -449,97 +469,16 @@ export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
                               No items added
                             </td>
                           </tr>
-                        )
-                      )}
-                    </tbody>
-                  </table>
-                </div>
+                        )}
+                  </tbody>
+                </table>
               </div>
 
               {/* FOOTER (payment + totals) — last page only, flows below items */}
               {page.isLast && (
-                <div style={{ display: "flex", marginTop: "16px" }}>
-                  {/* Payment info box */}
-                  <div style={{ width: "25%" }}>
-                    <div
-                      style={{
-                        width: "114px",
-                        minHeight: "120px",
-                        padding: "8px",
-                        border: "1px solid #5A378F",
-                      }}
-                    >
-                      <h3
-                        style={{
-                          fontSize: "10px",
-                          fontWeight: "bold",
-                          textDecoration: "underline",
-                          margin: "0 0 4px",
-                        }}
-                      >
-                        Payment Information:
-                      </h3>
-                      <p style={{ fontSize: "5px", color: "#7D7E81", margin: 0 }}>
-                        Account Name:
-                      </p>
-                      <h4
-                        style={{
-                          fontSize: "8px",
-                          fontWeight: "bold",
-                          margin: "0 0 2px",
-                        }}
-                      >
-                        {paymentInfo.accountName}
-                      </h4>
-                      <p style={{ fontSize: "5px", color: "#7D7E81", margin: 0 }}>
-                        Account Number:
-                      </p>
-                      <h4
-                        style={{
-                          fontSize: "8px",
-                          fontWeight: "bold",
-                          margin: "0 0 2px",
-                        }}
-                      >
-                        {paymentInfo.accountNumber}
-                      </h4>
-                      <p style={{ fontSize: "5px", color: "#7D7E81", margin: 0 }}>
-                        SWIFT Code:
-                      </p>
-                      <h4
-                        style={{
-                          fontSize: "8px",
-                          fontWeight: "bold",
-                          margin: "0 0 2px",
-                        }}
-                      >
-                        {paymentInfo.swift}
-                      </h4>
-                      <p style={{ fontSize: "5px", color: "#7D7E81", margin: 0 }}>
-                        Bank Name:
-                      </p>
-                      <h4
-                        style={{
-                          fontSize: "8px",
-                          fontWeight: "bold",
-                          margin: "0 0 2px",
-                        }}
-                      >
-                        {paymentInfo.bankName}
-                      </h4>
-                      <p style={{ fontSize: "5px", color: "#7D7E81", margin: 0 }}>
-                        Branch:
-                      </p>
-                      <h4
-                        style={{ fontSize: "8px", fontWeight: "bold", margin: 0 }}
-                      >
-                        {paymentInfo.branch}
-                      </h4>
-                    </div>
-                  </div>
-
+                <div style={{ marginTop: "8px" }}>
                   {/* Totals */}
-                  <div style={{ width: "75%" }}>
+                  <div style={{ width: "100%" }}>
                     <div
                       style={{
                         display: "flex",
@@ -548,11 +487,12 @@ export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
                         fontSize: "10px",
                       }}
                     >
-                      <div style={{ borderTop: "1px solid #7D7E81" }} />
+                      <div style={{ borderTop: "1px solid #B1B1B1" }} />
                       <div
                         style={{
                           display: "flex",
                           justifyContent: "space-between",
+                          fontSize: "12px",
                           fontWeight: "bold",
                         }}
                       >
@@ -566,11 +506,12 @@ export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
 
                       {(vat ?? 0) > 0 && (
                         <>
-                          <div style={{ borderTop: "1px solid #7D7E81" }} />
+                          <div style={{ borderTop: "1px solid #B1B1B1" }} />
                           <div
                             style={{
                               display: "flex",
                               justifyContent: "space-between",
+                              fontSize: "12px",
                               fontWeight: "bold",
                             }}
                           >
@@ -586,11 +527,12 @@ export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
 
                       {(discount ?? 0) > 0 && (
                         <>
-                          <div style={{ borderTop: "1px solid #7D7E81" }} />
+                          <div style={{ borderTop: "1px solid #B1B1B1" }} />
                           <div
                             style={{
                               display: "flex",
                               justifyContent: "space-between",
+                              fontSize: "12px",
                               fontWeight: "bold",
                             }}
                           >
@@ -598,18 +540,19 @@ export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
                               Discount (-)
                             </h2>
                             <h2 style={{ margin: 0 }}>
-                              {Number(discount).toFixed(2)} ({paymentInfo.currency}
-                              )
+                              {Number(discount).toFixed(2)} (
+                              {paymentInfo.currency})
                             </h2>
                           </div>
                         </>
                       )}
 
-                      <div style={{ borderTop: "1px solid #7D7E81" }} />
+                      <div style={{ borderTop: "1px solid #B1B1B1" }} />
                       <div
                         style={{
                           display: "flex",
                           justifyContent: "space-between",
+                          fontSize: "12px",
                           fontWeight: "bold",
                         }}
                       >
@@ -617,8 +560,144 @@ export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
                           Grand Total
                         </h2>
                         <h2 style={{ margin: 0 }}>
-                          {Number(grandTotal).toFixed(2)} ({paymentInfo.currency})
+                          {Number(grandTotal).toFixed(2)} (
+                          {paymentInfo.currency})
                         </h2>
+                      </div>
+                    </div>
+                  </div>
+                  {/* Payment info box */}
+                  <div style={{ width: "100%" }}>
+                    <div
+                      style={{
+                        width: "100%",
+                        color: "white",
+                        // minHeight: "120px",
+                        padding: "10px 32px 10px 32px",
+                        border: "1px solid #5A378F",
+                        backgroundColor: "#5A3691",
+                        display: "flex",
+                        flexDirection: "row",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        gap: "8px",
+                        marginTop: "8px",
+                      }}
+                    >
+                      <h3
+                        style={{
+                          fontSize: "16px",
+                          fontWeight: "bold",
+                          margin: "0 0 4px",
+                        }}
+                      >
+                        Payment Information:
+                      </h3>
+                      <div style={{ textAlign: "left", fontSize: "10px" }}>
+                        <div
+                          style={{
+                            display: "flex",
+                            flexDirection: "row",
+                            gap: "4px",
+                          }}
+                        >
+                          <p
+                            style={{
+                              fontSize: "8px",
+                              color: "white",
+                              margin: 0,
+                            }}
+                          >
+                            Account Number:
+                          </p>
+                          <h4
+                            style={{
+                              fontSize: "8px",
+                              fontWeight: "bold",
+                              margin: "0 0 2px",
+                            }}
+                          >
+                            {paymentInfo.accountNumber}
+                          </h4>
+                        </div>
+                        <div
+                          style={{
+                            display: "flex",
+                            flexDirection: "row",
+                            gap: "4px",
+                          }}
+                        >
+                          <p
+                            style={{
+                              fontSize: "8px",
+                              color: "white",
+                              margin: 0,
+                            }}
+                          >
+                            SWIFT Code:
+                          </p>
+                          <h4
+                            style={{
+                              fontSize: "8px",
+                              fontWeight: "bold",
+                              margin: "0 0 2px",
+                            }}
+                          >
+                            {paymentInfo.swift}
+                          </h4>
+                        </div>
+                        <div
+                          style={{
+                            display: "flex",
+                            flexDirection: "row",
+                            gap: "4px",
+                          }}
+                        >
+                          <p
+                            style={{
+                              fontSize: "8px",
+                              color: "white",
+                              margin: 0,
+                            }}
+                          >
+                            Bank Name:
+                          </p>
+                          <h4
+                            style={{
+                              fontSize: "8px",
+                              fontWeight: "bold",
+                              margin: "0 0 2px",
+                            }}
+                          >
+                            {paymentInfo.bankName}
+                          </h4>
+                        </div>
+                        <div
+                          style={{
+                            display: "flex",
+                            flexDirection: "row",
+                            gap: "4px",
+                          }}
+                        > 
+                        <p
+                          style={{
+                            fontSize: "8px",
+                            color: "white",
+                            margin: 0,
+                          }}
+                        >
+                          Branch:
+                        </p>
+                        <h4
+                          style={{
+                            fontSize: "8px",
+                            fontWeight: "bold",
+                            margin: 0,
+                          }}
+                        >
+                          {paymentInfo.branch}
+                        </h4>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -630,7 +709,7 @@ export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
             <div
               style={{
                 borderTop: "1px solid #e5e7eb",
-                paddingTop: "12px",
+                paddingTop: "8px",
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "center",
@@ -638,7 +717,7 @@ export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
                 flexShrink: 0,
               }}
             >
-              <div
+              {/* <div
                 style={{
                   fontSize: "12px",
                   borderLeft: "1px solid #EA2B7B",
@@ -647,11 +726,15 @@ export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
               >
                 <p style={{ margin: 0 }}>{from.name}</p>
                 <p
-                  style={{ color: "#4b5563", whiteSpace: "pre-line", margin: 0 }}
+                  style={{
+                    color: "#4b5563",
+                    whiteSpace: "pre-line",
+                    margin: 0,
+                  }}
                 >
                   {from.address}
                 </p>
-              </div>
+              </div> */}
               <div
                 style={{
                   fontSize: "12px",

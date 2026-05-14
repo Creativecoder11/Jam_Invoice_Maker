@@ -8,11 +8,24 @@ const itemSchema = new Schema({
   subItems: { type: [String], default: [] },
 });
 
+const serviceItemSchema = new Schema({
+  name: { type: String, required: true },
+  quantity: { type: Number, required: true },
+  unitPrice: { type: Number, required: true },
+  note: { type: String, default: "" },
+  subItems: { type: [String], default: [] },
+});
+
+const serviceGroupSchema = new Schema({
+  serviceName: { type: String, required: true },
+  items: { type: [serviceItemSchema], default: [] },
+});
+
 const invoiceSchema = new Schema(
   {
     invoiceNumber: { type: String, required: true },
     name: { type: String, required: true }, // E.g., "Web Dev Services"
-    type: { type: String, enum: ["invoice", "quotation"], default: "invoice" },
+    type: { type: String, enum: ["invoice", "invoice2", "quotation"], default: "invoice" },
     logoUrl: { type: String },
     
     from: {
@@ -41,7 +54,8 @@ const invoiceSchema = new Schema(
       currency: { type: String, default: "USD" },
     },
     
-    items: [itemSchema],
+    items: { type: [itemSchema], default: [] },
+    services: { type: [serviceGroupSchema], default: [] },
     
     vat: { type: Number, default: 0 }, // percentage
     discount: { type: Number, default: 0 }, // absolute amount

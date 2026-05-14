@@ -40,7 +40,6 @@ const TAB_BADGE: Record<string, string> = {
   Cancelled: "bg-red-100 text-red-500",
 };
 
-// ── 3-dot Row Menu ────────────────────────────────────────────────────────────
 function RowMenu({ onDraft, onDelete, isDeleting }: { onDraft: () => void; onDelete: () => void; isDeleting?: boolean }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -85,7 +84,6 @@ function RowMenu({ onDraft, onDelete, isDeleting }: { onDraft: () => void; onDel
   );
 }
 
-// ── Sort button ───────────────────────────────────────────────────────────────
 function SortBtn({
   field, active, dir, onClick,
 }: { field: SortField; active: SortField; dir: SortDir; onClick: () => void }) {
@@ -97,8 +95,7 @@ function SortBtn({
   );
 }
 
-// ── Main Page ─────────────────────────────────────────────────────────────────
-export default function InvoicesPage() {
+export default function Invoices2Page() {
   const { data: session } = useSession();
   const isSuperAdmin = session?.user?.role === "Super Admin";
 
@@ -112,14 +109,13 @@ export default function InvoicesPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("/api/invoices?type=invoice")
+    fetch("/api/invoices?type=invoice2")
       .then((r) => r.json())
       .then((data) => { if (Array.isArray(data)) setInvoices(data); })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
 
-  // ── Handlers ───────────────────────────────────────────────────────────────
   const handleStatusChange = async (id: string, status: string) => {
     setInvoices((prev) => prev.map((i) => i._id === id ? { ...i, status: status as any } : i));
     try {
@@ -153,7 +149,6 @@ export default function InvoicesPage() {
     }
   };
 
-  // ── Tab counts ─────────────────────────────────────────────────────────────
   const tabCounts = useMemo(() => ({
     all:       invoices.length,
     Unpaid:    invoices.filter((i) => i.status === "Unpaid").length,
@@ -162,7 +157,6 @@ export default function InvoicesPage() {
     Cancelled: invoices.filter((i) => i.status === "Cancelled").length,
   }), [invoices]);
 
-  // ── Filter + sort ──────────────────────────────────────────────────────────
   const filtered = useMemo(() => {
     let list = [...invoices];
     if (activeTab !== "all") list = list.filter((i) => i.status === activeTab);
@@ -211,8 +205,8 @@ export default function InvoicesPage() {
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Invoices</h1>
-        <p className="text-sm text-gray-400 mt-0.5">Manage and track all your invoices.</p>
+        <h1 className="text-2xl font-bold text-gray-900">Invoice 2</h1>
+        <p className="text-sm text-gray-400 mt-0.5">Manage and track all your Invoice 2 records.</p>
       </div>
 
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
@@ -224,15 +218,9 @@ export default function InvoicesPage() {
             {!loading && <span className="ml-2 text-sm font-normal text-gray-400">({invoices.length})</span>}
           </h2>
           <div className="flex items-center gap-3">
-            {/* <Button variant="outline" className="rounded-xl border-gray-200 text-gray-600 hover:bg-gray-50">
-              <svg className="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-              </svg>
-              Import
-            </Button> */}
             {isSuperAdmin && (
               <Button asChild className="rounded-xl bg-gray-900 hover:bg-gray-800 text-white">
-                <Link href="/dashboard/invoices/create">
+                <Link href="/dashboard/invoices2/create">
                   <Plus className="mr-2 h-4 w-4" /> New Invoice
                 </Link>
               </Button>
@@ -363,7 +351,6 @@ export default function InvoicesPage() {
                       <td className="px-3 py-4 text-gray-700">{format(new Date(inv.date), "dd MMM, yyyy")}</td>
                       <td className="px-3 py-4 font-semibold text-gray-900">${inv.total.toLocaleString()}</td>
 
-                      {/* Status — dropdown for admins, badge for others */}
                       <td className="px-3 py-4">
                         {isSuperAdmin ? (
                           <select
@@ -383,16 +370,15 @@ export default function InvoicesPage() {
                         )}
                       </td>
 
-                      {/* Actions */}
                       <td className="pr-6 pl-3 py-4">
                         <div className="flex items-center gap-0.5 justify-end">
-                          <Link href={`/dashboard/invoices/${inv._id}`}>
+                          <Link href={`/dashboard/invoices2/${inv._id}`}>
                             <button title="Preview" className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
                               <Eye className="h-4 w-4 text-gray-400" />
                             </button>
                           </Link>
                           {isSuperAdmin && (
-                            <Link href={`/dashboard/invoices/${inv._id}/edit`}>
+                            <Link href={`/dashboard/invoices2/${inv._id}/edit`}>
                               <button title="Edit" className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
                                 <Edit className="h-4 w-4 text-gray-400" />
                               </button>
