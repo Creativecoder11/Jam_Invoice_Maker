@@ -23,7 +23,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "Invoices", href: "/dashboard/invoices", icon: FileText },
-  { name: "Invoice 2", href: "/dashboard/invoices2", icon: FileText },
+  { name: "Invoice Services", href: "/dashboard/invoices2", icon: FileText },
   { name: "Quotations", href: "/dashboard/quotations", icon: FileText },
   { name: "Clients", href: "/dashboard/clients", icon: ContactRound },
   { name: "Users", href: "/dashboard/users", icon: Users },

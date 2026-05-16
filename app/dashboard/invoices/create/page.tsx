@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Trash2, Plus, Download, Search, X, UserPlus } from "lucide-react";
-import { InvoicePreview } from "@/components/InvoicePreview";
+import { InvoicePreview, PAGE_WIDTH, PAGE_HEIGHT } from "@/components/InvoicePreview";
 import { InvoiceFormData } from "@/types/invoice";
 import { ClientData } from "@/types/client";
 import html2canvas from "html2canvas";
@@ -177,6 +177,7 @@ function ClientSearch({
 export default function CreateInvoicePage() {
   const router = useRouter();
   const printRef = useRef<HTMLDivElement>(null);
+  const pdfRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [downloading, setDownloading] = useState(false);
@@ -354,21 +355,34 @@ export default function CreateInvoicePage() {
   };
 
   const handleDownloadPDF = async () => {
-    if (!printRef.current) return;
+    if (!pdfRef.current) return;
     setDownloading(true);
     const toastId = toast.loading("Generating PDF...");
     try {
-      const canvas = await html2canvas(printRef.current, {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        backgroundColor: "#ffffff",
+      const pageEls = pdfRef.current.querySelectorAll<HTMLElement>("[data-invoice-page]");
+      if (!pageEls.length) {
+        toast.error("Invoice not ready", { id: toastId });
+        return;
+      }
+
+      const pdf = new jsPDF({
+        orientation: "portrait",
+        unit: "px",
+        format: [PAGE_WIDTH, PAGE_HEIGHT],
       });
-      const imgData = canvas.toDataURL("image/jpeg", 0.98);
-      const pdfWidthPt = 595.28;
-      const pdfHeightPt = (canvas.height / canvas.width) * pdfWidthPt;
-      const pdf = new jsPDF({ orientation: "portrait", unit: "pt", format: [pdfWidthPt, pdfHeightPt] });
-      pdf.addImage(imgData, "JPEG", 0, 0, pdfWidthPt, pdfHeightPt);
+
+      for (let i = 0; i < pageEls.length; i++) {
+        const canvas = await html2canvas(pageEls[i], {
+          scale: 2,
+          useCORS: true,
+          logging: false,
+          backgroundColor: "#ffffff",
+        });
+        const imgData = canvas.toDataURL("image/png");
+        if (i > 0) pdf.addPage([PAGE_WIDTH, PAGE_HEIGHT], "portrait");
+        pdf.addImage(imgData, "PNG", 0, 0, PAGE_WIDTH, PAGE_HEIGHT);
+      }
+
       pdf.save(`${formData.invoiceNumber}.pdf`);
       toast.success("PDF Downloaded", { id: toastId });
     } catch (error) {
@@ -672,6 +686,14 @@ export default function CreateInvoicePage() {
           </div>
         </div>
       </div>
+    </div>
+
+    {/* Hidden full-size invoice used only for PDF capture — no parent CSS transform */}
+    <div
+      aria-hidden="true"
+      style={{ position: "fixed", left: "-9999px", top: 0, opacity: 0, pointerEvents: "none" }}
+    >
+      <InvoicePreview data={formData} ref={pdfRef} />
     </div>
     </>
   );

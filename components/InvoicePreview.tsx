@@ -87,6 +87,29 @@ function buildPages(items: InvoiceItem[]): PageSlice[] {
   return pages;
 }
 
+// ── FIX: CSS reset injected before PDF capture ─────────────────────────────
+export function injectPdfResetStyle(): HTMLStyleElement {
+  const style = document.createElement("style");
+  style.setAttribute("data-pdf-reset", "true");
+  style.innerHTML = `
+    [data-invoice-page] * {
+      margin-block-start: 0 !important;
+      margin-block-end: 0 !important;
+      margin-top: 0 !important;
+      margin-bottom: 0 !important;
+    }
+  `;
+  document.head.appendChild(style);
+  return style;
+}
+
+export function removePdfResetStyle(style: HTMLStyleElement) {
+  if (style && document.head.contains(style)) {
+    document.head.removeChild(style);
+  }
+}
+// ───────────────────────────────────────────────────────────────────────────
+
 export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
   ({ data }, ref) => {
     const {
@@ -130,7 +153,8 @@ export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
     }, [pages]);
 
     return (
-      <div ref={ref}>
+      // FIX: added lineHeight: "normal" to outer wrapper
+      <div ref={ref} style={{ lineHeight: "normal" }}>
         {pages.map((page, pageIdx) => (
           <div
             key={pageIdx}
@@ -144,7 +168,6 @@ export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
               display: "flex",
               flexDirection: "column",
               boxSizing: "border-box",
-              // Visual gap between pages in browser; hidden on print
               marginBottom: pageIdx < pages.length - 1 ? "20px" : 0,
               breakAfter: pageIdx < pages.length - 1 ? "page" : "auto",
               overflow: "hidden",
@@ -195,39 +218,18 @@ export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
                   </div>
                   {/* From/To block */}
                   <div style={{ textAlign: "left", fontSize: "12px" }}>
-                    {/* <div style={{ marginBottom: "10px" }}>
-                      <h4
-                        style={{
-                          color: "#5A378F",
-                          fontWeight: "bold",
-                          margin: "0 0 2px",
-                        }}
-                      >
-                        From:
-                      </h4>
-                      <p style={{ fontWeight: "bold", margin: 0 }}>{from.name}</p>
-                      <p
-                        style={{
-                          color: "#4b5563",
-                          whiteSpace: "pre-line",
-                          margin: 0,
-                        }}
-                      >
-                        {from.address}
-                      </p>
-                      <p style={{ color: "#4b5563", margin: 0 }}>{from.email}</p>
-                      <p style={{ color: "#4b5563", margin: 0 }}>{from.phone}</p>
-                    </div> */}
                     <div>
+                      {/* FIX: margin: 0 on h4 */}
                       <h4
                         style={{
                           color: "#5A378F",
                           fontWeight: "bold",
-                          margin: "0 0 2px",
+                          margin: 0,
                         }}
                       >
                         To:
                       </h4>
+                      {/* FIX: margin: 0 on all p tags */}
                       <p style={{ fontWeight: "bold", margin: 0 }}>{to.name}</p>
                       <p
                         style={{
@@ -257,8 +259,17 @@ export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
                     marginBottom: "14px",
                   }}
                 >
-                  <h1 style={{ margin: 0 }}>{name}</h1>
-                  <h1 style={{ margin: 0 }}>#{invoiceNumber}</h1>
+                  {/* FIX: margin: 0 on both h1 tags */}
+                  <h1
+                    style={{ margin: 0, fontSize: "20px", fontWeight: "bold" }}
+                  >
+                    {name}
+                  </h1>
+                  <h1
+                    style={{ margin: 0, fontSize: "20px", fontWeight: "bold" }}
+                  >
+                    #{invoiceNumber}
+                  </h1>
                 </div>
               )}
 
@@ -280,11 +291,12 @@ export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
                         gap: "4px",
                       }}
                     >
+                      {/* FIX: margin: 0 on h4 and p */}
                       <h4
                         style={{
                           fontSize: "12px",
                           fontWeight: "bold",
-                          margin: "0 0 2px",
+                          margin: 0,
                         }}
                       >
                         Invoice Date:
@@ -293,7 +305,7 @@ export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
                         style={{
                           fontSize: "12px",
                           color: "#374151",
-                          margin: "0 0 14px",
+                          margin: 0,
                         }}
                       >
                         {format(new Date(date), "MMM dd, yyyy")}
@@ -306,11 +318,12 @@ export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
                         gap: "4px",
                       }}
                     >
+                      {/* FIX: margin: 0 on h4 and p */}
                       <h4
                         style={{
                           fontSize: "12px",
                           fontWeight: "bold",
-                          margin: "0 0 2px",
+                          margin: 0,
                         }}
                       >
                         Due Date:
@@ -335,6 +348,8 @@ export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
                   width: "100%",
                   borderTop: "1px solid #7D7E81",
                   paddingTop: "8px",
+                  // FIX: added marginTop to separate from date row
+                  marginTop: "14px",
                 }}
               >
                 <table style={{ width: "100%", borderCollapse: "collapse" }}>
@@ -346,22 +361,44 @@ export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
                         fontWeight: "bold",
                       }}
                     >
-                      <th style={{ textAlign: "left", paddingBottom: "6px" }}>
+                      <th
+                        style={{
+                          textAlign: "left",
+                          paddingBottom: "6px",
+                          lineHeight: "1",
+                          verticalAlign: "middle",
+                        }}
+                      >
                         Items
                       </th>
-                      <th style={{ textAlign: "center", paddingBottom: "6px" }}>
+                      <th
+                        style={{
+                          textAlign: "center",
+                          paddingBottom: "6px",
+                          lineHeight: "1",
+                          verticalAlign: "middle",
+                        }}
+                      >
                         Quantity
                       </th>
                       <th
                         style={{
                           textAlign: "center",
                           paddingBottom: "6px",
-                          lineHeight: "1.2",
+                          lineHeight: "1",
+                          verticalAlign: "middle",
                         }}
                       >
                         Unit Price
                       </th>
-                      <th style={{ textAlign: "center", paddingBottom: "6px" }}>
+                      <th
+                        style={{
+                          textAlign: "center",
+                          paddingBottom: "6px",
+                          lineHeight: "1",
+                          verticalAlign: "middle",
+                        }}
+                      >
                         Amount
                       </th>
                     </tr>
@@ -382,7 +419,14 @@ export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
                                   padding: "7px 0",
                                 }}
                               >
-                                <span style={{ fontWeight: 600 }}>
+                                {/* FIX: use span/div instead of implicit block margin */}
+                                <span
+                                  style={{
+                                    fontWeight: 600,
+                                    display: "block",
+                                    margin: 0,
+                                  }}
+                                >
                                   {globalIdx + 1}. {item.name}
                                 </span>
                                 {item.note && (
@@ -390,7 +434,8 @@ export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
                                     style={{
                                       fontSize: "10px",
                                       color: "#6b7280",
-                                      margin: "2px 0 0",
+                                      margin: 0,
+                                      marginTop: "2px",
                                       fontStyle: "italic",
                                     }}
                                   >
@@ -400,7 +445,8 @@ export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
                                 {item.subItems && item.subItems.length > 0 && (
                                   <ul
                                     style={{
-                                      margin: "2px 0 0",
+                                      margin: 0,
+                                      marginTop: "2px",
                                       padding: 0,
                                       listStyle: "none",
                                     }}
@@ -411,6 +457,7 @@ export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
                                         style={{
                                           fontSize: "10px",
                                           color: "#4b5563",
+                                          margin: 0,
                                         }}
                                       >
                                         - {sub}
@@ -446,6 +493,7 @@ export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
                                   padding: "7px 0",
                                   fontSize: "12px",
                                   verticalAlign: "top",
+                                  lineHeight: 1,
                                 }}
                               >
                                 {paymentInfo.currency}
@@ -474,7 +522,7 @@ export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
                 </table>
               </div>
 
-              {/* FOOTER (payment + totals) — last page only, flows below items */}
+              {/* FOOTER (payment + totals) — last page only */}
               {page.isLast && (
                 <div style={{ marginTop: "8px" }}>
                   {/* Totals */}
@@ -494,12 +542,27 @@ export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
                           justifyContent: "space-between",
                           fontSize: "12px",
                           fontWeight: "bold",
+                          // marginTop: "8px",
                         }}
                       >
-                        <h2 style={{ color: "#EA2B7B", margin: 0 }}>
+                        {/* FIX: margin: 0 on all h2 tags */}
+                        <h2
+                          style={{
+                            color: "#EA2B7B",
+                            margin: 0,
+                            fontSize: "12px",
+                            fontWeight: "bold",
+                          }}
+                        >
                           Sub-Total
                         </h2>
-                        <h2 style={{ margin: 0 }}>
+                        <h2
+                          style={{
+                            margin: 0,
+                            fontSize: "12px",
+                            fontWeight: "bold",
+                          }}
+                        >
                           {subtotal.toFixed(2)} ({paymentInfo.currency})
                         </h2>
                       </div>
@@ -515,10 +578,23 @@ export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
                               fontWeight: "bold",
                             }}
                           >
-                            <h2 style={{ color: "#EA2B7B", margin: 0 }}>
+                            <h2
+                              style={{
+                                color: "#EA2B7B",
+                                margin: 0,
+                                fontSize: "12px",
+                                fontWeight: "bold",
+                              }}
+                            >
                               VAT ({vat}%)
                             </h2>
-                            <h2 style={{ margin: 0 }}>
+                            <h2
+                              style={{
+                                margin: 0,
+                                fontSize: "12px",
+                                fontWeight: "bold",
+                              }}
+                            >
                               {vatAmount.toFixed(2)} ({paymentInfo.currency})
                             </h2>
                           </div>
@@ -536,10 +612,23 @@ export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
                               fontWeight: "bold",
                             }}
                           >
-                            <h2 style={{ color: "#EA2B7B", margin: 0 }}>
+                            <h2
+                              style={{
+                                color: "#EA2B7B",
+                                margin: 0,
+                                fontSize: "12px",
+                                fontWeight: "bold",
+                              }}
+                            >
                               Discount (-)
                             </h2>
-                            <h2 style={{ margin: 0 }}>
+                            <h2
+                              style={{
+                                margin: 0,
+                                fontSize: "12px",
+                                fontWeight: "bold",
+                              }}
+                            >
                               {Number(discount).toFixed(2)} (
                               {paymentInfo.currency})
                             </h2>
@@ -556,147 +645,176 @@ export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
                           fontWeight: "bold",
                         }}
                       >
-                        <h2 style={{ color: "#EA2B7B", margin: 0 }}>
+                        <h2
+                          style={{
+                            color: "#EA2B7B",
+                            margin: 0,
+                            fontSize: "12px",
+                            fontWeight: "bold",
+                          }}
+                        >
                           Grand Total
                         </h2>
-                        <h2 style={{ margin: 0 }}>
+                        <h2
+                          style={{
+                            margin: 0,
+                            fontSize: "12px",
+                            fontWeight: "bold",
+                          }}
+                        >
                           {Number(grandTotal).toFixed(2)} (
                           {paymentInfo.currency})
                         </h2>
                       </div>
                     </div>
                   </div>
+
                   {/* Payment info box */}
                   <div style={{ width: "100%" }}>
                     <div
                       style={{
                         width: "100%",
                         color: "white",
-                        // minHeight: "120px",
                         padding: "10px 32px 10px 32px",
                         border: "1px solid #5A378F",
                         backgroundColor: "#5A3691",
-                        display: "flex",
-                        flexDirection: "row",
-                        alignItems: "center",
-                        justifyContent: "space-between",
+                        // display: "flex",
+                        // flexDirection: "row",
+                        // alignItems: "center",
+                        // justifyContent: "space-between",
                         gap: "8px",
                         marginTop: "8px",
+                        // boxSizing: "border-box",
+                        verticalAlign: "top"
                       }}
                     >
-                      <h3
+                      {/* FIX: margin: 0 on h3 */}
+                      <div
                         style={{
-                          fontSize: "16px",
-                          fontWeight: "bold",
-                          margin: "0 0 4px",
+                          // paddingBottom: "8px",
+                          display: "flex",
+                          flexDirection: "row",
+                          justifyContent: "space-between",
+                          alignItems: "center",
                         }}
                       >
-                        Payment Information:
-                      </h3>
-                      <div style={{ textAlign: "left", fontSize: "10px" }}>
-                        <div
-                          style={{
-                            display: "flex",
-                            flexDirection: "row",
-                            gap: "4px",
-                          }}
-                        >
-                          <p
+                        <div>
+                          <h3
                             style={{
-                              fontSize: "8px",
-                              color: "white",
+                              fontSize: "16px",
+                              fontWeight: "bold",
                               margin: 0,
                             }}
                           >
-                            Account Number:
-                          </p>
-                          <h4
-                            style={{
-                              fontSize: "8px",
-                              fontWeight: "bold",
-                              margin: "0 0 2px",
-                            }}
-                          >
-                            {paymentInfo.accountNumber}
-                          </h4>
+                            Payment Information:
+                          </h3>
                         </div>
-                        <div
-                          style={{
-                            display: "flex",
-                            flexDirection: "row",
-                            gap: "4px",
-                          }}
-                        >
-                          <p
+                        <div style={{ textAlign: "left", fontSize: "10px" }}>
+                          <div
                             style={{
-                              fontSize: "8px",
-                              color: "white",
-                              margin: 0,
+                              display: "flex",
+                              flexDirection: "row",
+                              gap: "4px",
                             }}
                           >
-                            SWIFT Code:
-                          </p>
-                          <h4
+                            {/* FIX: margin: 0 on all p and h4 inside payment info */}
+                            <p
+                              style={{
+                                fontSize: "8px",
+                                color: "white",
+                                margin: 0,
+                              }}
+                            >
+                              Account Number:
+                            </p>
+                            <h4
+                              style={{
+                                fontSize: "8px",
+                                fontWeight: "bold",
+                                margin: 0,
+                              }}
+                            >
+                              {paymentInfo.accountNumber}
+                            </h4>
+                          </div>
+                          <div
                             style={{
-                              fontSize: "8px",
-                              fontWeight: "bold",
-                              margin: "0 0 2px",
+                              display: "flex",
+                              flexDirection: "row",
+                              gap: "4px",
                             }}
                           >
-                            {paymentInfo.swift}
-                          </h4>
-                        </div>
-                        <div
-                          style={{
-                            display: "flex",
-                            flexDirection: "row",
-                            gap: "4px",
-                          }}
-                        >
-                          <p
+                            <p
+                              style={{
+                                fontSize: "8px",
+                                color: "white",
+                                margin: 0,
+                              }}
+                            >
+                              SWIFT Code:
+                            </p>
+                            <h4
+                              style={{
+                                fontSize: "8px",
+                                fontWeight: "bold",
+                                margin: 0,
+                              }}
+                            >
+                              {paymentInfo.swift}
+                            </h4>
+                          </div>
+                          <div
                             style={{
-                              fontSize: "8px",
-                              color: "white",
-                              margin: 0,
+                              display: "flex",
+                              flexDirection: "row",
+                              gap: "4px",
                             }}
                           >
-                            Bank Name:
-                          </p>
-                          <h4
+                            <p
+                              style={{
+                                fontSize: "8px",
+                                color: "white",
+                                margin: 0,
+                              }}
+                            >
+                              Bank Name:
+                            </p>
+                            <h4
+                              style={{
+                                fontSize: "8px",
+                                fontWeight: "bold",
+                                margin: 0,
+                              }}
+                            >
+                              {paymentInfo.bankName}
+                            </h4>
+                          </div>
+                          <div
                             style={{
-                              fontSize: "8px",
-                              fontWeight: "bold",
-                              margin: "0 0 2px",
+                              display: "flex",
+                              flexDirection: "row",
+                              gap: "4px",
                             }}
                           >
-                            {paymentInfo.bankName}
-                          </h4>
-                        </div>
-                        <div
-                          style={{
-                            display: "flex",
-                            flexDirection: "row",
-                            gap: "4px",
-                          }}
-                        > 
-                        <p
-                          style={{
-                            fontSize: "8px",
-                            color: "white",
-                            margin: 0,
-                          }}
-                        >
-                          Branch:
-                        </p>
-                        <h4
-                          style={{
-                            fontSize: "8px",
-                            fontWeight: "bold",
-                            margin: 0,
-                          }}
-                        >
-                          {paymentInfo.branch}
-                        </h4>
+                            <p
+                              style={{
+                                fontSize: "8px",
+                                color: "white",
+                                margin: 0,
+                              }}
+                            >
+                              Branch:
+                            </p>
+                            <h4
+                              style={{
+                                fontSize: "8px",
+                                fontWeight: "bold",
+                                margin: 0,
+                              }}
+                            >
+                              {paymentInfo.branch}
+                            </h4>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -705,7 +823,7 @@ export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
               )}
             </div>
 
-            {/* ── BOTTOM FOOTER — pinned to bottom of every page ─── */}
+            {/* ── BOTTOM FOOTER — pinned to bottom of every page ─── Done */}
             <div
               style={{
                 borderTop: "1px solid #e5e7eb",
@@ -717,32 +835,16 @@ export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
                 flexShrink: 0,
               }}
             >
-              {/* <div
-                style={{
-                  fontSize: "12px",
-                  borderLeft: "1px solid #EA2B7B",
-                  paddingLeft: "8px",
-                }}
-              >
-                <p style={{ margin: 0 }}>{from.name}</p>
-                <p
-                  style={{
-                    color: "#4b5563",
-                    whiteSpace: "pre-line",
-                    margin: 0,
-                  }}
-                >
-                  {from.address}
-                </p>
-              </div> */}
               <div
                 style={{
                   fontSize: "12px",
                   color: "#4b5563",
-                  borderLeft: "1px solid #EA2B7B",
-                  paddingLeft: "8px",
+                  marginTop: "-4px",
+                  // borderLeft: "1px solid #EA2B7B",
+                  // paddingLeft: "28px",
                 }}
               >
+                {/* FIX: margin: 0 on footer p tags */}
                 <p style={{ margin: 0 }}>+880 1784 398 934</p>
                 <p style={{ margin: 0 }}>info@jamroll.xyz</p>
                 <p style={{ margin: 0 }}>www.jamroll.xyz</p>

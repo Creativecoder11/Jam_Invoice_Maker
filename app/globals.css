@@ -162,9 +162,34 @@
   }
 }
 
-@media print {
+/* @media print {
   [data-invoice-page] {
     margin-bottom: 0 !important;
     box-shadow: none !important;
+  }
+} */
+@media print {
+  html,
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+  }
+
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  [data-invoice-page] {
+    width: 794px !important;
+    min-height: 1123px !important;
+    overflow: hidden !important;
+    page-break-after: always;
+    background: white !important;
+  }
+
+  .print\:hidden {
+    display: none !important;
   }
 }
