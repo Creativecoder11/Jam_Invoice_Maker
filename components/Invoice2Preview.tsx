@@ -1,4 +1,6 @@
-import React, { forwardRef } from "react";
+"use client";
+
+import React, { forwardRef, useMemo } from "react";
 import { format } from "date-fns";
 import { Invoice2FormData, ServiceGroup, ServiceItem } from "@/types/invoice";
 
@@ -15,14 +17,13 @@ const HEADER_H = 165;
 const TITLE_H = 60;
 const TABLE_HEADER_H = 32;
 const FIRST_PAGE_GAP = 24;
-const FOOTER_H = 200;
-
-// A4 preview layout measurements used for deterministic PDF pagination.
+const FOOTER_H = 160;
 const USABLE_H = PAGE_HEIGHT_2 - PADDING * 2 - BOTTOM_FOOTER_H;
 const FIRST_PAGE_ITEMS_CAP =
   USABLE_H - HEADER_H - TITLE_H - TABLE_HEADER_H - FIRST_PAGE_GAP;
 const NEXT_PAGE_ITEMS_CAP = USABLE_H - TABLE_HEADER_H;
 
+// ── Flat row types for pagination ─────────────────────────────────────────────
 type ServiceHeaderRow = { type: "service-header"; name: string; idx: number };
 type ServiceItemRow = {
   type: "item";
@@ -87,11 +88,10 @@ function buildPages2(rows: FlatRow[]): PageSlice2[] {
     firstPage = false;
   }
 
+  // Check whether footer fits on last page
   const lp = pages[pages.length - 1];
   const lpCap = lp.isFirst ? FIRST_PAGE_ITEMS_CAP : NEXT_PAGE_ITEMS_CAP;
   const lpUsed = lp.rows.reduce((s, r) => s + estimateFlatRowH(r), 0);
-
-  // Move the totals and payment block to a trailing page when it cannot fit.
   if (lpUsed + FOOTER_H > lpCap) {
     lp.isLast = false;
     pages.push({ rows: [], isFirst: false, isLast: true });
@@ -106,6 +106,7 @@ export const Invoice2Preview = forwardRef<HTMLDivElement, Invoice2PreviewProps>(
       invoiceNumber = "INV2-001",
       name = "Invoice",
       logoUrl,
+      from = { name: "", email: "", phone: "", address: "" },
       to = { name: "", email: "", phone: "", address: "" },
       date = new Date(),
       dueDate = new Date(),
@@ -124,16 +125,23 @@ export const Invoice2Preview = forwardRef<HTMLDivElement, Invoice2PreviewProps>(
 
     const currency = paymentInfo.currency || "USD";
 
-    const grandSubtotal = services.reduce(
-      (s, svc) =>
-        s + svc.items.reduce((a, i) => a + i.quantity * i.unitPrice, 0),
-      0,
+    const grandSubtotal = useMemo(
+      () =>
+        services.reduce(
+          (s, svc) =>
+            s + svc.items.reduce((a, i) => a + i.quantity * i.unitPrice, 0),
+          0,
+        ),
+      [services],
     );
     const vatAmount = ((grandSubtotal - (discount ?? 0)) * (vat ?? 0)) / 100;
     const grandTotal = grandSubtotal + vatAmount - (discount ?? 0);
 
-    const flatRows = flattenServices(services, currency);
-    const pages = buildPages2(flatRows);
+    const flatRows = useMemo(
+      () => flattenServices(services, currency),
+      [services, currency],
+    );
+    const pages = useMemo(() => buildPages2(flatRows), [flatRows]);
 
     return (
       <div ref={ref}>
@@ -153,13 +161,10 @@ export const Invoice2Preview = forwardRef<HTMLDivElement, Invoice2PreviewProps>(
               marginBottom: pageIdx < pages.length - 1 ? "20px" : 0,
               breakAfter: pageIdx < pages.length - 1 ? "page" : "auto",
               overflow: "hidden",
-              fontFamily:
-                "'HelveticaNowDisplay', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif",
             }}
           >
-            {/* Main invoice content */}
             <div style={{ flex: 1, overflow: "hidden" }}>
-              {/* Header */}
+              {/* HEADER — first page only */}
               {page.isFirst && (
                 <header
                   style={{
@@ -168,6 +173,7 @@ export const Invoice2Preview = forwardRef<HTMLDivElement, Invoice2PreviewProps>(
                     marginBottom: "14px",
                   }}
                 >
+                  {/* Logo on left, From/To on right */}
                   <div>
                     {logoUrl ? (
                       <img
@@ -199,8 +205,10 @@ export const Invoice2Preview = forwardRef<HTMLDivElement, Invoice2PreviewProps>(
                       </div>
                     )}
                   </div>
+                  {/* From/To block */}
                   <div style={{ textAlign: "left", fontSize: "12px" }}>
                     <div>
+                      {/* FIX: margin: 0 on h4 */}
                       <h4
                         style={{
                           color: "#5A378F",
@@ -210,6 +218,7 @@ export const Invoice2Preview = forwardRef<HTMLDivElement, Invoice2PreviewProps>(
                       >
                         To:
                       </h4>
+                      {/* FIX: margin: 0 on all p tags */}
                       <p style={{ fontWeight: "bold", margin: 0 }}>{to.name}</p>
                       <p
                         style={{
@@ -227,7 +236,7 @@ export const Invoice2Preview = forwardRef<HTMLDivElement, Invoice2PreviewProps>(
                 </header>
               )}
 
-              {/* Invoice title */}
+              {/* Invoice & No */}
               {page.isFirst && (
                 <div
                   style={{
@@ -239,6 +248,7 @@ export const Invoice2Preview = forwardRef<HTMLDivElement, Invoice2PreviewProps>(
                     marginBottom: "14px",
                   }}
                 >
+                  {/* FIX: margin: 0 on both h1 tags */}
                   <h1
                     style={{ margin: 0, fontSize: "20px", fontWeight: "bold" }}
                   >
@@ -252,7 +262,7 @@ export const Invoice2Preview = forwardRef<HTMLDivElement, Invoice2PreviewProps>(
                 </div>
               )}
 
-              {/* Invoice dates */}
+              {/* Invoice Date and Due Date */}
               <div
                 style={{
                   display: "flex",
@@ -270,6 +280,7 @@ export const Invoice2Preview = forwardRef<HTMLDivElement, Invoice2PreviewProps>(
                         gap: "4px",
                       }}
                     >
+                      {/* FIX: margin: 0 on h4 and p */}
                       <h4
                         style={{
                           fontSize: "12px",
@@ -296,6 +307,7 @@ export const Invoice2Preview = forwardRef<HTMLDivElement, Invoice2PreviewProps>(
                         gap: "4px",
                       }}
                     >
+                      {/* FIX: margin: 0 on h4 and p */}
                       <h4
                         style={{
                           fontSize: "12px",
@@ -319,7 +331,7 @@ export const Invoice2Preview = forwardRef<HTMLDivElement, Invoice2PreviewProps>(
                 )}
               </div>
 
-              {/* Services and items table */}
+              {/* ── Items table ───────────────────────────────────── */}
               <div
                 style={{
                   width: "100%",
@@ -404,6 +416,7 @@ export const Invoice2Preview = forwardRef<HTMLDivElement, Invoice2PreviewProps>(
                             );
                           }
 
+                          // item row
                           return (
                             <tr
                               key={ri}
@@ -510,36 +523,36 @@ export const Invoice2Preview = forwardRef<HTMLDivElement, Invoice2PreviewProps>(
                 </table>
               </div>
 
-              {/* Totals and payment information */}
+              {/* FOOTER (payment + totals) — last page only */}
               {page.isLast && (
                 <div style={{ marginTop: "8px" }}>
+                  {/* Totals */}
                   <div style={{ width: "100%" }}>
                     <div
                       style={{
                         display: "flex",
                         flexDirection: "column",
+                        gap: "5.5px",
                         fontSize: "10px",
                       }}
                     >
+                      <div style={{ borderTop: "1px solid #B1B1B1" }} />
                       <div
                         style={{
                           display: "flex",
                           justifyContent: "space-between",
-                          alignItems: "center",
                           fontSize: "12px",
                           fontWeight: "bold",
-                          height: "32px",
-                          lineHeight: 1.2,
-                          borderTop: "1px solid #B1B1B1",
+                          // marginTop: "8px",
                         }}
                       >
+                        {/* FIX: margin: 0 on all h2 tags */}
                         <h2
                           style={{
                             color: "#EA2B7B",
                             margin: 0,
                             fontSize: "12px",
                             fontWeight: "bold",
-                            lineHeight: 1.2,
                           }}
                         >
                           Sub-Total
@@ -549,7 +562,6 @@ export const Invoice2Preview = forwardRef<HTMLDivElement, Invoice2PreviewProps>(
                             margin: 0,
                             fontSize: "12px",
                             fontWeight: "bold",
-                            lineHeight: 1.2,
                           }}
                         >
                           {grandSubtotal.toFixed(2)} ({paymentInfo.currency})
@@ -558,16 +570,13 @@ export const Invoice2Preview = forwardRef<HTMLDivElement, Invoice2PreviewProps>(
 
                       {(vat ?? 0) > 0 && (
                         <>
+                          <div style={{ borderTop: "1px solid #B1B1B1" }} />
                           <div
                             style={{
                               display: "flex",
                               justifyContent: "space-between",
-                              alignItems: "center",
                               fontSize: "12px",
                               fontWeight: "bold",
-                              height: "32px",
-                              lineHeight: 1.2,
-                              borderTop: "1px solid #B1B1B1",
                             }}
                           >
                             <h2
@@ -576,7 +585,6 @@ export const Invoice2Preview = forwardRef<HTMLDivElement, Invoice2PreviewProps>(
                                 margin: 0,
                                 fontSize: "12px",
                                 fontWeight: "bold",
-                                lineHeight: 1.2,
                               }}
                             >
                               VAT ({vat}%)
@@ -586,7 +594,6 @@ export const Invoice2Preview = forwardRef<HTMLDivElement, Invoice2PreviewProps>(
                                 margin: 0,
                                 fontSize: "12px",
                                 fontWeight: "bold",
-                                lineHeight: 1.2,
                               }}
                             >
                               {vatAmount.toFixed(2)} ({paymentInfo.currency})
@@ -597,16 +604,13 @@ export const Invoice2Preview = forwardRef<HTMLDivElement, Invoice2PreviewProps>(
 
                       {(discount ?? 0) > 0 && (
                         <>
+                          <div style={{ borderTop: "1px solid #B1B1B1" }} />
                           <div
                             style={{
                               display: "flex",
                               justifyContent: "space-between",
-                              alignItems: "center",
                               fontSize: "12px",
                               fontWeight: "bold",
-                              height: "32px",
-                              lineHeight: 1.2,
-                              borderTop: "1px solid #B1B1B1",
                             }}
                           >
                             <h2
@@ -615,7 +619,6 @@ export const Invoice2Preview = forwardRef<HTMLDivElement, Invoice2PreviewProps>(
                                 margin: 0,
                                 fontSize: "12px",
                                 fontWeight: "bold",
-                                lineHeight: 1.2,
                               }}
                             >
                               Discount (-)
@@ -625,7 +628,6 @@ export const Invoice2Preview = forwardRef<HTMLDivElement, Invoice2PreviewProps>(
                                 margin: 0,
                                 fontSize: "12px",
                                 fontWeight: "bold",
-                                lineHeight: 1.2,
                               }}
                             >
                               {Number(discount).toFixed(2)} (
@@ -635,16 +637,13 @@ export const Invoice2Preview = forwardRef<HTMLDivElement, Invoice2PreviewProps>(
                         </>
                       )}
 
+                      <div style={{ borderTop: "1px solid #B1B1B1" }} />
                       <div
                         style={{
                           display: "flex",
                           justifyContent: "space-between",
-                          alignItems: "center",
                           fontSize: "12px",
                           fontWeight: "bold",
-                          height: "32px",
-                          lineHeight: 1.2,
-                          borderTop: "1px solid #B1B1B1",
                         }}
                       >
                         <h2
@@ -653,7 +652,6 @@ export const Invoice2Preview = forwardRef<HTMLDivElement, Invoice2PreviewProps>(
                             margin: 0,
                             fontSize: "12px",
                             fontWeight: "bold",
-                            lineHeight: 1.2,
                           }}
                         >
                           Grand Total
@@ -663,7 +661,6 @@ export const Invoice2Preview = forwardRef<HTMLDivElement, Invoice2PreviewProps>(
                             margin: 0,
                             fontSize: "12px",
                             fontWeight: "bold",
-                            lineHeight: 1.2,
                           }}
                         >
                           {Number(grandTotal).toFixed(2)} (
@@ -673,6 +670,7 @@ export const Invoice2Preview = forwardRef<HTMLDivElement, Invoice2PreviewProps>(
                     </div>
                   </div>
 
+                  {/* Payment info box */}
                   <div style={{ width: "100%" }}>
                     <div
                       style={{
@@ -681,127 +679,152 @@ export const Invoice2Preview = forwardRef<HTMLDivElement, Invoice2PreviewProps>(
                         padding: "10px 32px 10px 32px",
                         border: "1px solid #5A378F",
                         backgroundColor: "#5A3691",
+                        // display: "flex",
+                        // flexDirection: "row",
+                        // alignItems: "center",
+                        // justifyContent: "space-between",
                         gap: "8px",
                         marginTop: "8px",
-                        verticalAlign: "top",
+                        // boxSizing: "border-box",
+                        verticalAlign: "top"
                       }}
                     >
-                      <table
+                      {/* FIX: margin: 0 on h3 */}
+                      <div
                         style={{
-                          width: "100%",
-                          borderCollapse: "collapse",
+                          // paddingBottom: "8px",
+                          display: "flex",
+                          flexDirection: "row",
+                          justifyContent: "space-between",
+                          alignItems: "center",
                         }}
                       >
-                        <tbody>
-                          <tr>
-                            <td style={{ verticalAlign: "middle", padding: 0 }}>
-                              <h3
-                                style={{
-                                  fontSize: "16px",
-                                  fontWeight: "bold",
-                                  margin: 0,
-                                  lineHeight: 1.2,
-                                  color: "white",
-                                }}
-                              >
-                                Payment Information:
-                              </h3>
-                            </td>
-                            <td
+                        <div>
+                          <h3
+                            style={{
+                              fontSize: "16px",
+                              fontWeight: "bold",
+                              margin: 0,
+                            }}
+                          >
+                            Payment Information:
+                          </h3>
+                        </div>
+                        <div style={{ textAlign: "left", fontSize: "10px" }}>
+                          <div
+                            style={{
+                              display: "flex",
+                              flexDirection: "row",
+                              gap: "4px",
+                            }}
+                          >
+                            {/* FIX: margin: 0 on all p and h4 inside payment info */}
+                            <p
                               style={{
-                                verticalAlign: "middle",
-                                textAlign: "left",
-                                fontSize: "10px",
-                                padding: 0,
+                                fontSize: "8px",
+                                color: "white",
+                                margin: 0,
                               }}
                             >
-                              <div style={{ lineHeight: 1.4 }}>
-                                <span
-                                  style={{
-                                    fontSize: "8px",
-                                    color: "white",
-                                  }}
-                                >
-                                  Account Number:{" "}
-                                </span>
-                                <span
-                                  style={{
-                                    fontSize: "8px",
-                                    fontWeight: "bold",
-                                    color: "white",
-                                  }}
-                                >
-                                  {paymentInfo.accountNumber}
-                                </span>
-                              </div>
-                              <div style={{ lineHeight: 1.4 }}>
-                                <span
-                                  style={{
-                                    fontSize: "8px",
-                                    color: "white",
-                                  }}
-                                >
-                                  SWIFT Code:{" "}
-                                </span>
-                                <span
-                                  style={{
-                                    fontSize: "8px",
-                                    fontWeight: "bold",
-                                    color: "white",
-                                  }}
-                                >
-                                  {paymentInfo.swift}
-                                </span>
-                              </div>
-                              <div style={{ lineHeight: 1.4 }}>
-                                <span
-                                  style={{
-                                    fontSize: "8px",
-                                    color: "white",
-                                  }}
-                                >
-                                  Bank Name:{" "}
-                                </span>
-                                <span
-                                  style={{
-                                    fontSize: "8px",
-                                    fontWeight: "bold",
-                                    color: "white",
-                                  }}
-                                >
-                                  {paymentInfo.bankName}
-                                </span>
-                              </div>
-                              <div style={{ lineHeight: 1.4 }}>
-                                <span
-                                  style={{
-                                    fontSize: "8px",
-                                    color: "white",
-                                  }}
-                                >
-                                  Branch:{" "}
-                                </span>
-                                <span
-                                  style={{
-                                    fontSize: "8px",
-                                    fontWeight: "bold",
-                                    color: "white",
-                                  }}
-                                >
-                                  {paymentInfo.branch}
-                                </span>
-                              </div>
-                            </td>
-                          </tr>
-                        </tbody>
-                      </table>
+                              Account Number:
+                            </p>
+                            <h4
+                              style={{
+                                fontSize: "8px",
+                                fontWeight: "bold",
+                                margin: 0,
+                              }}
+                            >
+                              {paymentInfo.accountNumber}
+                            </h4>
+                          </div>
+                          <div
+                            style={{
+                              display: "flex",
+                              flexDirection: "row",
+                              gap: "4px",
+                            }}
+                          >
+                            <p
+                              style={{
+                                fontSize: "8px",
+                                color: "white",
+                                margin: 0,
+                              }}
+                            >
+                              SWIFT Code:
+                            </p>
+                            <h4
+                              style={{
+                                fontSize: "8px",
+                                fontWeight: "bold",
+                                margin: 0,
+                              }}
+                            >
+                              {paymentInfo.swift}
+                            </h4>
+                          </div>
+                          <div
+                            style={{
+                              display: "flex",
+                              flexDirection: "row",
+                              gap: "4px",
+                            }}
+                          >
+                            <p
+                              style={{
+                                fontSize: "8px",
+                                color: "white",
+                                margin: 0,
+                              }}
+                            >
+                              Bank Name:
+                            </p>
+                            <h4
+                              style={{
+                                fontSize: "8px",
+                                fontWeight: "bold",
+                                margin: 0,
+                              }}
+                            >
+                              {paymentInfo.bankName}
+                            </h4>
+                          </div>
+                          <div
+                            style={{
+                              display: "flex",
+                              flexDirection: "row",
+                              gap: "4px",
+                            }}
+                          >
+                            <p
+                              style={{
+                                fontSize: "8px",
+                                color: "white",
+                                margin: 0,
+                              }}
+                            >
+                              Branch:
+                            </p>
+                            <h4
+                              style={{
+                                fontSize: "8px",
+                                fontWeight: "bold",
+                                margin: 0,
+                              }}
+                            >
+                              {paymentInfo.branch}
+                            </h4>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
               )}
             </div>
 
-            {/* Bottom footer */}
+            {/* ── Bottom footer (every page) ─────────────────────── */}
             <div
               style={{
                 borderTop: "1px solid #e5e7eb",
@@ -813,10 +836,30 @@ export const Invoice2Preview = forwardRef<HTMLDivElement, Invoice2PreviewProps>(
                 flexShrink: 0,
               }}
             >
+              {/* <div
+                style={{
+                  fontSize: "12px",
+                  borderLeft: "1px solid #EA2B7B",
+                  paddingLeft: "8px",
+                }}
+              >
+                <p style={{ margin: 0 }}>{from.name}</p>
+                <p
+                  style={{
+                    color: "#4b5563",
+                    whiteSpace: "pre-line",
+                    margin: 0,
+                  }}
+                >
+                  {from.address}
+                </p>
+              </div> */}
               <div
                 style={{
                   fontSize: "12px",
                   color: "#4b5563",
+                  // borderLeft: "1px solid #EA2B7B",
+                  // paddingLeft: "8px",
                 }}
               >
                 <p style={{ margin: 0 }}>+880 1784 398 934</p>
@@ -829,7 +872,7 @@ export const Invoice2Preview = forwardRef<HTMLDivElement, Invoice2PreviewProps>(
                   alt="Jamroll Logo"
                   width={160}
                   height={50}
-                  style={{ objectFit: "contain" }}
+                  style={{ objectFit: "cover" }}
                 />
               </div>
             </div>
