@@ -1,12 +1,10 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Download, Printer, ArrowLeft } from "lucide-react";
-import { Invoice2Preview, PAGE_WIDTH_2, PAGE_HEIGHT_2 } from "@/components/Invoice2Preview";
-import html2canvas from "html2canvas";
-import { jsPDF } from "jspdf";
+import { Invoice2Preview } from "@/components/Invoice2Preview";
 import { toast } from "sonner";
 import { Spinner } from "@/components/ui/spinner";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -17,7 +15,6 @@ export default function ViewInvoice2Page() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(false);
-  const printRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetch(`/api/invoices/${id}`)
@@ -27,20 +24,20 @@ export default function ViewInvoice2Page() {
   }, [id]);
 
   const handleDownloadPDF = async () => {
-    if (!printRef.current) { toast.error("Invoice not found"); return; }
     try {
       setDownloading(true);
-      const pageEls = printRef.current.querySelectorAll<HTMLElement>("[data-invoice-page]");
-      if (!pageEls.length) { toast.error("Invoice not found"); return; }
+      const res = await fetch(`/api/invoices/${id}/pdf`);
+      if (!res.ok) throw new Error("PDF generation failed");
 
-      const pdf = new jsPDF({ orientation: "portrait", unit: "px", format: [PAGE_WIDTH_2, PAGE_HEIGHT_2] });
-      for (let i = 0; i < pageEls.length; i++) {
-        const canvas = await html2canvas(pageEls[i], { scale: 2, useCORS: true, backgroundColor: "#ffffff" });
-        const imgData = canvas.toDataURL("image/png");
-        if (i > 0) pdf.addPage([PAGE_WIDTH_2, PAGE_HEIGHT_2], "portrait");
-        pdf.addImage(imgData, "PNG", 0, 0, PAGE_WIDTH_2, PAGE_HEIGHT_2);
-      }
-      pdf.save(`${data.invoiceNumber || "invoice"}.pdf`);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${data?.invoiceNumber || "invoice"}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
       toast.success("PDF downloaded");
     } catch (error) {
       console.error(error);
@@ -100,7 +97,7 @@ export default function ViewInvoice2Page() {
 
       <div className="overflow-x-auto bg-muted/20 p-8 rounded-xl border flex justify-center print:p-0 print:border-none print:bg-white print:overflow-visible">
         <div className="scale-75 md:scale-100 origin-top print:scale-100">
-          <Invoice2Preview data={data} ref={printRef} />
+          <Invoice2Preview data={data} />
         </div>
       </div>
     </div>

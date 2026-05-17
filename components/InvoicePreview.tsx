@@ -1,6 +1,4 @@
-"use client";
-
-import React, { forwardRef, useMemo } from "react";
+import React, { forwardRef } from "react";
 import { InvoiceFormData, InvoiceItem } from "@/types/invoice";
 import { format } from "date-fns";
 
@@ -8,28 +6,25 @@ type InvoicePreviewProps = {
   data: Partial<InvoiceFormData>;
 };
 
-// A4 at 72ppi — matches jsPDF "px" unit format
 export const PAGE_WIDTH = 612;
 export const PAGE_HEIGHT = 842;
 
 const PADDING = 30;
 
-// Approximate heights for page-split calculation (px)
+// A4 preview layout measurements used for deterministic PDF pagination.
 const BOTTOM_FOOTER_H = 72;
-const HEADER_H = 165; // logo + from/to block
-const TITLE_H = 60; // INVOICE #001 row
-const TABLE_HEADER_H = 32; // thead row (reused on every page)
-const FIRST_PAGE_GAP = 32; // spacing between sections on first page
-const FOOTER_H = 150; // payment info + totals block
+const HEADER_H = 165;
+const TITLE_H = 60;
+const TABLE_HEADER_H = 32;
+const FIRST_PAGE_GAP = 32;
+const FOOTER_H = 200;
 
-const USABLE_H = PAGE_HEIGHT - PADDING * 2 - BOTTOM_FOOTER_H; // 710px
+const USABLE_H = PAGE_HEIGHT - PADDING * 2 - BOTTOM_FOOTER_H;
 
-// How many px items can use on first page (header/title take top space)
 const FIRST_PAGE_ITEMS_CAP =
   USABLE_H - HEADER_H - TITLE_H - TABLE_HEADER_H - FIRST_PAGE_GAP;
 
-// Subsequent pages: only table header consumes space above items
-const NEXT_PAGE_ITEMS_CAP = USABLE_H - HEADER_H - TITLE_H - TABLE_HEADER_H ;
+const NEXT_PAGE_ITEMS_CAP = USABLE_H - HEADER_H - TITLE_H - TABLE_HEADER_H;
 
 function estimateItemH(item: InvoiceItem): number {
   let h = 34;
@@ -73,13 +68,12 @@ function buildPages(items: InvoiceItem[]): PageSlice[] {
     firstPage = false;
   }
 
-  // Check whether the totals footer fits on the last page alongside its items
   const lp = pages[pages.length - 1];
   const lpCap = lp.isFirst ? FIRST_PAGE_ITEMS_CAP : NEXT_PAGE_ITEMS_CAP;
   const lpUsed = lp.items.reduce((s, item) => s + estimateItemH(item), 0);
 
+  // Move the totals and payment block to a trailing page when it cannot fit.
   if (lpUsed + FOOTER_H > lpCap) {
-    // Footer won't fit — push it to a dedicated trailing page
     lp.isLast = false;
     pages.push({ items: [], isFirst: false, isLast: true });
   }
@@ -87,36 +81,12 @@ function buildPages(items: InvoiceItem[]): PageSlice[] {
   return pages;
 }
 
-// ── FIX: CSS reset injected before PDF capture ─────────────────────────────
-export function injectPdfResetStyle(): HTMLStyleElement {
-  const style = document.createElement("style");
-  style.setAttribute("data-pdf-reset", "true");
-  style.innerHTML = `
-    [data-invoice-page] * {
-      margin-block-start: 0 !important;
-      margin-block-end: 0 !important;
-      margin-top: 0 !important;
-      margin-bottom: 0 !important;
-    }
-  `;
-  document.head.appendChild(style);
-  return style;
-}
-
-export function removePdfResetStyle(style: HTMLStyleElement) {
-  if (style && document.head.contains(style)) {
-    document.head.removeChild(style);
-  }
-}
-// ───────────────────────────────────────────────────────────────────────────
-
 export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
   ({ data }, ref) => {
     const {
       invoiceNumber = "INV-001",
       name = "Invoice",
       logoUrl,
-      from = { name: "", email: "", phone: "", address: "" },
       to = { name: "", email: "", phone: "", address: "" },
       date = new Date(),
       dueDate = new Date(),
@@ -139,21 +109,46 @@ export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
     );
     const vatAmount = ((subtotal - (discount ?? 0)) * (vat ?? 0)) / 100;
     const grandTotal = subtotal + vatAmount - (discount ?? 0);
+    const totalRows = [
+      {
+        label: "Sub-Total",
+        value: `${subtotal.toFixed(2)} (${paymentInfo.currency})`,
+      },
+      ...((vat ?? 0) > 0
+        ? [
+            {
+              label: `VAT (${vat}%)`,
+              value: `${vatAmount.toFixed(2)} (${paymentInfo.currency})`,
+            },
+          ]
+        : []),
+      ...((discount ?? 0) > 0
+        ? [
+            {
+              label: "Discount (-)",
+              value: `${Number(discount).toFixed(2)} (${paymentInfo.currency})`,
+            },
+          ]
+        : []),
+      {
+        label: "Grand Total",
+        value: `${Number(grandTotal).toFixed(2)} (${paymentInfo.currency})`,
+      },
+    ];
 
-    const pages = useMemo(() => buildPages(items), [items]);
+    const pages = buildPages(items);
 
-    // Global item index offset per page (for continuous numbering)
-    const startIndices = useMemo(() => {
+    // Keeps item numbering continuous across paginated invoice pages.
+    const startIndices = (() => {
       let offset = 0;
       return pages.map((p) => {
         const s = offset;
         offset += p.items.length;
         return s;
       });
-    }, [pages]);
+    })();
 
     return (
-      // FIX: added lineHeight: "normal" to outer wrapper
       <div ref={ref} style={{ lineHeight: "normal" }}>
         {pages.map((page, pageIdx) => (
           <div
@@ -173,9 +168,9 @@ export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
               overflow: "hidden",
             }}
           >
-            {/* ── CONTENT AREA ─────────────────────────────────── */}
+            {/* Main invoice content */}
             <div style={{ flex: 1, overflow: "hidden" }}>
-              {/* HEADER — first page only */}
+              {/* Header */}
               {page.isFirst && (
                 <header
                   style={{
@@ -184,7 +179,6 @@ export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
                     marginBottom: "14px",
                   }}
                 >
-                  {/* Logo on left, From/To on right */}
                   <div>
                     {logoUrl ? (
                       <img
@@ -216,10 +210,8 @@ export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
                       </div>
                     )}
                   </div>
-                  {/* From/To block */}
                   <div style={{ textAlign: "left", fontSize: "12px" }}>
                     <div>
-                      {/* FIX: margin: 0 on h4 */}
                       <h4
                         style={{
                           color: "#5A378F",
@@ -229,7 +221,6 @@ export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
                       >
                         To:
                       </h4>
-                      {/* FIX: margin: 0 on all p tags */}
                       <p style={{ fontWeight: "bold", margin: 0 }}>{to.name}</p>
                       <p
                         style={{
@@ -247,7 +238,7 @@ export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
                 </header>
               )}
 
-              {/* Invoice & No */}
+              {/* Invoice title */}
               {page.isFirst && (
                 <div
                   style={{
@@ -259,7 +250,6 @@ export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
                     marginBottom: "14px",
                   }}
                 >
-                  {/* FIX: margin: 0 on both h1 tags */}
                   <h1
                     style={{ margin: 0, fontSize: "20px", fontWeight: "bold" }}
                   >
@@ -273,7 +263,7 @@ export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
                 </div>
               )}
 
-              {/* Invoice Date and Due Date */}
+              {/* Invoice dates */}
               <div
                 style={{
                   display: "flex",
@@ -291,7 +281,6 @@ export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
                         gap: "4px",
                       }}
                     >
-                      {/* FIX: margin: 0 on h4 and p */}
                       <h4
                         style={{
                           fontSize: "12px",
@@ -318,7 +307,6 @@ export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
                         gap: "4px",
                       }}
                     >
-                      {/* FIX: margin: 0 on h4 and p */}
                       <h4
                         style={{
                           fontSize: "12px",
@@ -342,13 +330,12 @@ export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
                 )}
               </div>
 
-              {/* items table */}
+              {/* Items table */}
               <div
                 style={{
                   width: "100%",
                   borderTop: "1px solid #7D7E81",
                   paddingTop: "8px",
-                  // FIX: added marginTop to separate from date row
                   marginTop: "14px",
                 }}
               >
@@ -419,7 +406,6 @@ export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
                                   padding: "7px 0",
                                 }}
                               >
-                                {/* FIX: use span/div instead of implicit block margin */}
                                 <span
                                   style={{
                                     fontWeight: 600,
@@ -522,154 +508,57 @@ export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
                 </table>
               </div>
 
-              {/* FOOTER (payment + totals) — last page only */}
+              {/* Totals and payment information */}
               {page.isLast && (
                 <div style={{ marginTop: "8px" }}>
-                  {/* Totals */}
                   <div style={{ width: "100%" }}>
                     <div
                       style={{
                         display: "flex",
                         flexDirection: "column",
-                        gap: "5.5px",
                         fontSize: "10px",
                       }}
                     >
-                      <div style={{ borderTop: "1px solid #B1B1B1" }} />
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          fontSize: "12px",
-                          fontWeight: "bold",
-                          // marginTop: "8px",
-                        }}
-                      >
-                        {/* FIX: margin: 0 on all h2 tags */}
-                        <h2
+                      {totalRows.map((row) => (
+                        <div
+                          key={row.label}
                           style={{
-                            color: "#EA2B7B",
-                            margin: 0,
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
                             fontSize: "12px",
                             fontWeight: "bold",
+                            height: "32px",
+                            lineHeight: 1.2,
+                            borderTop: "1px solid #B1B1B1",
                           }}
                         >
-                          Sub-Total
-                        </h2>
-                        <h2
-                          style={{
-                            margin: 0,
-                            fontSize: "12px",
-                            fontWeight: "bold",
-                          }}
-                        >
-                          {subtotal.toFixed(2)} ({paymentInfo.currency})
-                        </h2>
-                      </div>
-
-                      {(vat ?? 0) > 0 && (
-                        <>
-                          <div style={{ borderTop: "1px solid #B1B1B1" }} />
-                          <div
+                          <h2
                             style={{
-                              display: "flex",
-                              justifyContent: "space-between",
+                              color: "#EA2B7B",
+                              margin: 0,
                               fontSize: "12px",
                               fontWeight: "bold",
+                              lineHeight: 1.2,
                             }}
                           >
-                            <h2
-                              style={{
-                                color: "#EA2B7B",
-                                margin: 0,
-                                fontSize: "12px",
-                                fontWeight: "bold",
-                              }}
-                            >
-                              VAT ({vat}%)
-                            </h2>
-                            <h2
-                              style={{
-                                margin: 0,
-                                fontSize: "12px",
-                                fontWeight: "bold",
-                              }}
-                            >
-                              {vatAmount.toFixed(2)} ({paymentInfo.currency})
-                            </h2>
-                          </div>
-                        </>
-                      )}
-
-                      {(discount ?? 0) > 0 && (
-                        <>
-                          <div style={{ borderTop: "1px solid #B1B1B1" }} />
-                          <div
+                            {row.label}
+                          </h2>
+                          <h2
                             style={{
-                              display: "flex",
-                              justifyContent: "space-between",
+                              margin: 0,
                               fontSize: "12px",
                               fontWeight: "bold",
+                              lineHeight: 1.2,
                             }}
                           >
-                            <h2
-                              style={{
-                                color: "#EA2B7B",
-                                margin: 0,
-                                fontSize: "12px",
-                                fontWeight: "bold",
-                              }}
-                            >
-                              Discount (-)
-                            </h2>
-                            <h2
-                              style={{
-                                margin: 0,
-                                fontSize: "12px",
-                                fontWeight: "bold",
-                              }}
-                            >
-                              {Number(discount).toFixed(2)} (
-                              {paymentInfo.currency})
-                            </h2>
-                          </div>
-                        </>
-                      )}
-
-                      <div style={{ borderTop: "1px solid #B1B1B1" }} />
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          fontSize: "12px",
-                          fontWeight: "bold",
-                        }}
-                      >
-                        <h2
-                          style={{
-                            color: "#EA2B7B",
-                            margin: 0,
-                            fontSize: "12px",
-                            fontWeight: "bold",
-                          }}
-                        >
-                          Grand Total
-                        </h2>
-                        <h2
-                          style={{
-                            margin: 0,
-                            fontSize: "12px",
-                            fontWeight: "bold",
-                          }}
-                        >
-                          {Number(grandTotal).toFixed(2)} (
-                          {paymentInfo.currency})
-                        </h2>
-                      </div>
+                            {row.value}
+                          </h2>
+                        </div>
+                      ))}
                     </div>
                   </div>
 
-                  {/* Payment info box */}
                   <div style={{ width: "100%" }}>
                     <div
                       style={{
@@ -678,20 +567,13 @@ export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
                         padding: "10px 32px 10px 32px",
                         border: "1px solid #5A378F",
                         backgroundColor: "#5A3691",
-                        // display: "flex",
-                        // flexDirection: "row",
-                        // alignItems: "center",
-                        // justifyContent: "space-between",
                         gap: "8px",
                         marginTop: "8px",
-                        // boxSizing: "border-box",
-                        verticalAlign: "top"
+                        verticalAlign: "top",
                       }}
                     >
-                      {/* FIX: margin: 0 on h3 */}
                       <div
                         style={{
-                          // paddingBottom: "8px",
                           display: "flex",
                           flexDirection: "row",
                           justifyContent: "space-between",
@@ -717,7 +599,6 @@ export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
                               gap: "4px",
                             }}
                           >
-                            {/* FIX: margin: 0 on all p and h4 inside payment info */}
                             <p
                               style={{
                                 fontSize: "8px",
@@ -823,7 +704,7 @@ export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
               )}
             </div>
 
-            {/* ── BOTTOM FOOTER — pinned to bottom of every page ─── Done */}
+            {/* Bottom footer */}
             <div
               style={{
                 borderTop: "1px solid #e5e7eb",
@@ -840,11 +721,8 @@ export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
                   fontSize: "12px",
                   color: "#4b5563",
                   marginTop: "-4px",
-                  // borderLeft: "1px solid #EA2B7B",
-                  // paddingLeft: "28px",
                 }}
               >
-                {/* FIX: margin: 0 on footer p tags */}
                 <p style={{ margin: 0 }}>+880 1784 398 934</p>
                 <p style={{ margin: 0 }}>info@jamroll.xyz</p>
                 <p style={{ margin: 0 }}>www.jamroll.xyz</p>
@@ -855,7 +733,7 @@ export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
                   alt="Jamroll Logo"
                   width={160}
                   height={50}
-                  style={{ objectFit: "cover" }}
+                  style={{ objectFit: "contain" }}
                 />
               </div>
             </div>
