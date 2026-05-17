@@ -28,7 +28,11 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
     const update: Record<string, string> = {};
     if (status !== undefined) update.status = status;
-    if (role !== undefined) update.role = role;
+    if (role !== undefined) {
+      update.role = role;
+      // Super Admins must be approved so they can log in
+      if (role === "Super Admin") update.status = "approved";
+    }
 
     await dbConnect();
     const updatedUser = await User.findByIdAndUpdate(resolvedParams.id, update, { new: true });

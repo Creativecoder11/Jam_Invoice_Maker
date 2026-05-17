@@ -29,7 +29,7 @@ const invoiceSchema = new Schema(
     logoUrl: { type: String },
     
     from: {
-      name: { type: String, required: true },
+      name: { type: String },
       email: { type: String },
       phone: { type: String },
       address: { type: String },

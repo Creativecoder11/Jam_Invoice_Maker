@@ -29,7 +29,7 @@ const FIRST_PAGE_ITEMS_CAP =
   USABLE_H - HEADER_H - TITLE_H - TABLE_HEADER_H - FIRST_PAGE_GAP;
 
 // Subsequent pages: only table header consumes space above items
-const NEXT_PAGE_ITEMS_CAP = USABLE_H - TABLE_HEADER_H;
+const NEXT_PAGE_ITEMS_CAP = USABLE_H - HEADER_H - TITLE_H - TABLE_HEADER_H ;
 
 function estimateItemH(item: InvoiceItem): number {
   let h = 34;

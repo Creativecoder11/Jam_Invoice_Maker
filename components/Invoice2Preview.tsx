@@ -19,13 +19,19 @@ const TABLE_HEADER_H = 32;
 const FIRST_PAGE_GAP = 24;
 const FOOTER_H = 160;
 const USABLE_H = PAGE_HEIGHT_2 - PADDING * 2 - BOTTOM_FOOTER_H;
-const FIRST_PAGE_ITEMS_CAP = USABLE_H - HEADER_H - TITLE_H - TABLE_HEADER_H - FIRST_PAGE_GAP;
+const FIRST_PAGE_ITEMS_CAP =
+  USABLE_H - HEADER_H - TITLE_H - TABLE_HEADER_H - FIRST_PAGE_GAP;
 const NEXT_PAGE_ITEMS_CAP = USABLE_H - TABLE_HEADER_H;
 
 // ── Flat row types for pagination ─────────────────────────────────────────────
 type ServiceHeaderRow = { type: "service-header"; name: string; idx: number };
-type ServiceItemRow   = { type: "item"; item: ServiceItem; serviceIdx: number; itemIdx: number };
-type SubtotalRow      = { type: "subtotal"; amount: number; currency: string };
+type ServiceItemRow = {
+  type: "item";
+  item: ServiceItem;
+  serviceIdx: number;
+  itemIdx: number;
+};
+type SubtotalRow = { type: "subtotal"; amount: number; currency: string };
 type FlatRow = ServiceHeaderRow | ServiceItemRow | SubtotalRow;
 
 function estimateFlatRowH(row: FlatRow): number {
@@ -37,10 +43,17 @@ function estimateFlatRowH(row: FlatRow): number {
   return h;
 }
 
-function flattenServices(services: ServiceGroup[], currency: string): FlatRow[] {
+function flattenServices(
+  services: ServiceGroup[],
+  currency: string,
+): FlatRow[] {
   const rows: FlatRow[] = [];
   services.forEach((svc, si) => {
-    rows.push({ type: "service-header", name: svc.serviceName || `Service ${si + 1}`, idx: si });
+    rows.push({
+      type: "service-header",
+      name: svc.serviceName || `Service ${si + 1}`,
+      idx: si,
+    });
     svc.items.forEach((item, ii) => {
       rows.push({ type: "item", item, serviceIdx: si, itemIdx: ii });
     });
@@ -97,7 +110,14 @@ export const Invoice2Preview = forwardRef<HTMLDivElement, Invoice2PreviewProps>(
       to = { name: "", email: "", phone: "", address: "" },
       date = new Date(),
       dueDate = new Date(),
-      paymentInfo = { accountName: "", accountNumber: "", bankName: "", branch: "", swift: "", currency: "USD" },
+      paymentInfo = {
+        accountName: "",
+        accountNumber: "",
+        bankName: "",
+        branch: "",
+        swift: "",
+        currency: "USD",
+      },
       services = [],
       vat = 0,
       discount = 0,
@@ -106,14 +126,22 @@ export const Invoice2Preview = forwardRef<HTMLDivElement, Invoice2PreviewProps>(
     const currency = paymentInfo.currency || "USD";
 
     const grandSubtotal = useMemo(
-      () => services.reduce((s, svc) => s + svc.items.reduce((a, i) => a + i.quantity * i.unitPrice, 0), 0),
+      () =>
+        services.reduce(
+          (s, svc) =>
+            s + svc.items.reduce((a, i) => a + i.quantity * i.unitPrice, 0),
+          0,
+        ),
       [services],
     );
-    const vatAmount  = ((grandSubtotal - (discount ?? 0)) * (vat ?? 0)) / 100;
+    const vatAmount = ((grandSubtotal - (discount ?? 0)) * (vat ?? 0)) / 100;
     const grandTotal = grandSubtotal + vatAmount - (discount ?? 0);
 
-    const flatRows = useMemo(() => flattenServices(services, currency), [services, currency]);
-    const pages    = useMemo(() => buildPages2(flatRows), [flatRows]);
+    const flatRows = useMemo(
+      () => flattenServices(services, currency),
+      [services, currency],
+    );
+    const pages = useMemo(() => buildPages2(flatRows), [flatRows]);
 
     return (
       <div ref={ref}>
@@ -136,26 +164,71 @@ export const Invoice2Preview = forwardRef<HTMLDivElement, Invoice2PreviewProps>(
             }}
           >
             <div style={{ flex: 1, overflow: "hidden" }}>
-              {/* ── Header (first page only) ──────────────────────── */}
+              {/* HEADER — first page only */}
               {page.isFirst && (
-                <header style={{ display: "flex", justifyContent: "space-between", marginBottom: "14px" }}>
+                <header
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    marginBottom: "14px",
+                  }}
+                >
+                  {/* Logo on left, From/To on right */}
                   <div>
                     {logoUrl ? (
-                      <img src={logoUrl} crossOrigin="anonymous"
-                        style={{ width: "73px", height: "110px", objectFit: "cover", borderRadius: "4px" }}
-                        alt="Logo" />
+                      <img
+                        src={logoUrl}
+                        crossOrigin="anonymous"
+                        style={{
+                          width: "73px",
+                          height: "110px",
+                          objectFit: "cover",
+                          borderRadius: "4px",
+                        }}
+                        alt="Logo"
+                      />
                     ) : (
-                      <div style={{ width: "73px", height: "110px", background: "#f3f4f6", display: "flex",
-                        alignItems: "center", justifyContent: "center", fontSize: "10px", color: "#9ca3af", borderRadius: "4px" }}>
+                      <div
+                        style={{
+                          width: "73px",
+                          height: "110px",
+                          background: "#f3f4f6",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontSize: "10px",
+                          color: "#9ca3af",
+                          borderRadius: "4px",
+                        }}
+                      >
                         Logo
                       </div>
                     )}
                   </div>
-                  <div style={{ textAlign: "right", fontSize: "12px" }}>
+                  {/* From/To block */}
+                  <div style={{ textAlign: "left", fontSize: "12px" }}>
                     <div>
-                      <h4 style={{ color: "#5A378F", fontWeight: "bold", margin: "0 0 2px" }}>To:</h4>
+                      {/* FIX: margin: 0 on h4 */}
+                      <h4
+                        style={{
+                          color: "#5A378F",
+                          fontWeight: "bold",
+                          margin: 0,
+                        }}
+                      >
+                        To:
+                      </h4>
+                      {/* FIX: margin: 0 on all p tags */}
                       <p style={{ fontWeight: "bold", margin: 0 }}>{to.name}</p>
-                      <p style={{ color: "#4b5563", whiteSpace: "pre-line", margin: 0 }}>{to.address}</p>
+                      <p
+                        style={{
+                          color: "#4b5563",
+                          whiteSpace: "pre-line",
+                          margin: 0,
+                        }}
+                      >
+                        {to.address}
+                      </p>
                       <p style={{ color: "#4b5563", margin: 0 }}>{to.email}</p>
                       <p style={{ color: "#4b5563", margin: 0 }}>{to.phone}</p>
                     </div>
@@ -163,172 +236,588 @@ export const Invoice2Preview = forwardRef<HTMLDivElement, Invoice2PreviewProps>(
                 </header>
               )}
 
-              {/* ── Invoice title + dates (first page only) ────────── */}
+              {/* Invoice & No */}
               {page.isFirst && (
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: "0" }}>
-                  <div style={{ display: "flex", gap: "24px", fontSize: "28px", fontWeight: "bold",
-                    textTransform: "uppercase", marginBottom: "14px" }}>
-                    <h1 style={{ margin: 0 }}>{name}</h1>
-                    <h1 style={{ margin: 0 }}>#{invoiceNumber}</h1>
-                  </div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: "2px", marginBottom: "14px" }}>
-                    <h4 style={{ fontSize: "12px", fontWeight: "bold", margin: "0 0 2px" }}>Invoice Date:</h4>
-                    <p style={{ fontSize: "12px", color: "#374151", margin: "0 0 14px" }}>
-                      {format(new Date(date), "MMM dd, yyyy")}
-                    </p>
-                    <h4 style={{ fontSize: "12px", fontWeight: "bold", margin: "0 0 2px" }}>Due Date:</h4>
-                    <p style={{ fontSize: "12px", color: "#374151", margin: 0 }}>
-                      {format(new Date(dueDate), "MMM dd, yyyy")}
-                    </p>
-                  </div>
+                <div
+                  style={{
+                    display: "flex",
+                    gap: "24px",
+                    fontSize: "20px",
+                    fontWeight: "bold",
+                    textTransform: "uppercase",
+                    marginBottom: "14px",
+                  }}
+                >
+                  {/* FIX: margin: 0 on both h1 tags */}
+                  <h1
+                    style={{ margin: 0, fontSize: "20px", fontWeight: "bold" }}
+                  >
+                    {name}
+                  </h1>
+                  <h1
+                    style={{ margin: 0, fontSize: "20px", fontWeight: "bold" }}
+                  >
+                    #{invoiceNumber}
+                  </h1>
                 </div>
               )}
 
+              {/* Invoice Date and Due Date */}
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  gap: "2px",
+                }}
+              >
+                {page.isFirst && (
+                  <>
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "row",
+                        gap: "4px",
+                      }}
+                    >
+                      {/* FIX: margin: 0 on h4 and p */}
+                      <h4
+                        style={{
+                          fontSize: "12px",
+                          fontWeight: "bold",
+                          margin: 0,
+                        }}
+                      >
+                        Invoice Date:
+                      </h4>
+                      <p
+                        style={{
+                          fontSize: "12px",
+                          color: "#374151",
+                          margin: 0,
+                        }}
+                      >
+                        {format(new Date(date), "MMM dd, yyyy")}
+                      </p>
+                    </div>
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "row",
+                        gap: "4px",
+                      }}
+                    >
+                      {/* FIX: margin: 0 on h4 and p */}
+                      <h4
+                        style={{
+                          fontSize: "12px",
+                          fontWeight: "bold",
+                          margin: 0,
+                        }}
+                      >
+                        Due Date:
+                      </h4>
+                      <p
+                        style={{
+                          fontSize: "12px",
+                          color: "#374151",
+                          margin: 0,
+                        }}
+                      >
+                        {format(new Date(dueDate), "MMM dd, yyyy")}
+                      </p>
+                    </div>
+                  </>
+                )}
+              </div>
+
               {/* ── Items table ───────────────────────────────────── */}
-              <div style={{ width: "100%", borderTop: "1px solid #7D7E81", paddingTop: "8px" }}>
+              <div
+                style={{
+                  width: "100%",
+                  borderTop: "1px solid #7D7E81",
+                  paddingTop: "8px",
+                  marginTop: "14px",
+                }}
+              >
                 <table style={{ width: "100%", borderCollapse: "collapse" }}>
                   <thead>
-                    <tr style={{ color: "#5A378F", fontSize: "12px", fontWeight: "bold" }}>
-                      <th style={{ textAlign: "left", paddingBottom: "6px" }}>Services &amp; Items</th>
-                      <th style={{ textAlign: "center", paddingBottom: "6px" }}>Qty</th>
-                      <th style={{ textAlign: "center", paddingBottom: "6px" }}>Unit Price</th>
-                      <th style={{ textAlign: "center", paddingBottom: "6px" }}>Amount</th>
+                    <tr
+                      style={{
+                        color: "#5A378F",
+                        fontSize: "12px",
+                        fontWeight: "bold",
+                      }}
+                    >
+                      <th style={{ textAlign: "left", paddingBottom: "6px" }}>
+                        Services &amp; Items
+                      </th>
+                      <th style={{ textAlign: "center", paddingBottom: "6px" }}>
+                        Qty
+                      </th>
+                      <th style={{ textAlign: "center", paddingBottom: "6px" }}>
+                        Unit Price
+                      </th>
+                      <th style={{ textAlign: "center", paddingBottom: "6px" }}>
+                        Amount
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
-                    {page.rows.length > 0 ? (
-                      page.rows.map((row, ri) => {
-                        if (row.type === "service-header") {
+                    {page.rows.length > 0
+                      ? page.rows.map((row, ri) => {
+                          if (row.type === "service-header") {
+                            return (
+                              <tr key={ri}>
+                                <td
+                                  colSpan={4}
+                                  style={{
+                                    background: "#5A378F",
+                                    color: "white",
+                                    fontSize: "11px",
+                                    fontWeight: "bold",
+                                    padding: "6px 8px",
+                                    borderRadius: "2px",
+                                  }}
+                                >
+                                  {row.idx + 1}. {row.name}
+                                </td>
+                              </tr>
+                            );
+                          }
+
+                          if (row.type === "subtotal") {
+                            return (
+                              <tr key={ri} style={{ background: "#f5f3ff" }}>
+                                <td
+                                  colSpan={3}
+                                  style={{
+                                    textAlign: "right",
+                                    fontSize: "10px",
+                                    fontWeight: "bold",
+                                    padding: "5px 8px",
+                                    color: "#5A378F",
+                                  }}
+                                >
+                                  Service Subtotal:
+                                </td>
+                                <td
+                                  style={{
+                                    textAlign: "center",
+                                    fontSize: "10px",
+                                    fontWeight: "bold",
+                                    padding: "5px 0",
+                                    color: "#5A378F",
+                                  }}
+                                >
+                                  {currency} {row.amount.toFixed(2)}
+                                </td>
+                              </tr>
+                            );
+                          }
+
+                          // item row
                           return (
-                            <tr key={ri}>
-                              <td colSpan={4} style={{
-                                background: "#5A378F", color: "white", fontSize: "11px",
-                                fontWeight: "bold", padding: "6px 8px", borderRadius: "2px",
-                              }}>
-                                {row.idx + 1}. {row.name}
+                            <tr
+                              key={ri}
+                              style={{ borderTop: "1px solid #e5e7eb" }}
+                            >
+                              <td
+                                style={{
+                                  textAlign: "left",
+                                  fontSize: "12px",
+                                  padding: "7px 0 7px 14px",
+                                }}
+                              >
+                                <span style={{ fontWeight: 600 }}>
+                                  {row.itemIdx + 1}. {row.item.name}
+                                </span>
+                                {row.item.note && (
+                                  <p
+                                    style={{
+                                      fontSize: "10px",
+                                      color: "#6b7280",
+                                      margin: "2px 0 0",
+                                      fontStyle: "italic",
+                                    }}
+                                  >
+                                    {row.item.note}
+                                  </p>
+                                )}
+                                {row.item.subItems &&
+                                  row.item.subItems.length > 0 && (
+                                    <ul
+                                      style={{
+                                        margin: "2px 0 0",
+                                        padding: 0,
+                                        listStyle: "none",
+                                      }}
+                                    >
+                                      {row.item.subItems.map((sub, si) => (
+                                        <li
+                                          key={si}
+                                          style={{
+                                            fontSize: "10px",
+                                            color: "#4b5563",
+                                          }}
+                                        >
+                                          - {sub}
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  )}
+                              </td>
+                              <td
+                                style={{
+                                  textAlign: "center",
+                                  padding: "7px 0",
+                                  fontSize: "12px",
+                                  verticalAlign: "top",
+                                }}
+                              >
+                                {row.item.quantity}
+                              </td>
+                              <td
+                                style={{
+                                  textAlign: "center",
+                                  padding: "7px 0",
+                                  fontSize: "12px",
+                                  verticalAlign: "top",
+                                }}
+                              >
+                                {currency} {row.item.unitPrice}
+                              </td>
+                              <td
+                                style={{
+                                  textAlign: "center",
+                                  padding: "7px 0",
+                                  fontSize: "12px",
+                                  verticalAlign: "top",
+                                }}
+                              >
+                                {currency}{" "}
+                                {(
+                                  row.item.quantity * row.item.unitPrice
+                                ).toFixed(2)}
                               </td>
                             </tr>
                           );
-                        }
-
-                        if (row.type === "subtotal") {
-                          return (
-                            <tr key={ri} style={{ background: "#f5f3ff" }}>
-                              <td colSpan={3} style={{
-                                textAlign: "right", fontSize: "10px", fontWeight: "bold",
-                                padding: "5px 8px", color: "#5A378F",
-                              }}>
-                                Service Subtotal:
-                              </td>
-                              <td style={{
-                                textAlign: "center", fontSize: "10px", fontWeight: "bold",
-                                padding: "5px 0", color: "#5A378F",
-                              }}>
-                                {currency} {row.amount.toFixed(2)}
-                              </td>
-                            </tr>
-                          );
-                        }
-
-                        // item row
-                        return (
-                          <tr key={ri} style={{ borderTop: "1px solid #e5e7eb" }}>
-                            <td style={{ textAlign: "left", fontSize: "12px", padding: "7px 0 7px 14px" }}>
-                              <span style={{ fontWeight: 600 }}>
-                                {row.itemIdx + 1}. {row.item.name}
-                              </span>
-                              {row.item.note && (
-                                <p style={{ fontSize: "10px", color: "#6b7280", margin: "2px 0 0", fontStyle: "italic" }}>
-                                  {row.item.note}
-                                </p>
-                              )}
-                              {row.item.subItems && row.item.subItems.length > 0 && (
-                                <ul style={{ margin: "2px 0 0", padding: 0, listStyle: "none" }}>
-                                  {row.item.subItems.map((sub, si) => (
-                                    <li key={si} style={{ fontSize: "10px", color: "#4b5563" }}>- {sub}</li>
-                                  ))}
-                                </ul>
-                              )}
-                            </td>
-                            <td style={{ textAlign: "center", padding: "7px 0", fontSize: "12px", verticalAlign: "top" }}>
-                              {row.item.quantity}
-                            </td>
-                            <td style={{ textAlign: "center", padding: "7px 0", fontSize: "12px", verticalAlign: "top" }}>
-                              {currency} {row.item.unitPrice}
-                            </td>
-                            <td style={{ textAlign: "center", padding: "7px 0", fontSize: "12px", verticalAlign: "top" }}>
-                              {currency} {(row.item.quantity * row.item.unitPrice).toFixed(2)}
+                        })
+                      : page.isLast &&
+                        services.length === 0 && (
+                          <tr>
+                            <td
+                              colSpan={4}
+                              style={{
+                                textAlign: "center",
+                                padding: "24px 0",
+                                color: "#9ca3af",
+                                fontSize: "14px",
+                              }}
+                            >
+                              No services added
                             </td>
                           </tr>
-                        );
-                      })
-                    ) : (
-                      page.isLast && services.length === 0 && (
-                        <tr>
-                          <td colSpan={4} style={{ textAlign: "center", padding: "24px 0", color: "#9ca3af", fontSize: "14px" }}>
-                            No services added
-                          </td>
-                        </tr>
-                      )
-                    )}
+                        )}
                   </tbody>
                 </table>
               </div>
 
-              {/* ── Footer: totals + payment info (last page only) ── */}
+              {/* FOOTER (payment + totals) — last page only */}
               {page.isLast && (
-                <div style={{ marginTop: "24px" }}>
+                <div style={{ marginTop: "8px" }}>
                   {/* Totals */}
-                  <div style={{ display: "flex", flexDirection: "column", gap: "5.5px", fontSize: "10px" }}>
-                    <div style={{ borderTop: "1px solid #7D7E81" }} />
-                    <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold" }}>
-                      <h2 style={{ color: "#EA2B7B", margin: 0 }}>Sub-Total</h2>
-                      <h2 style={{ margin: 0 }}>{grandSubtotal.toFixed(2)} ({currency})</h2>
-                    </div>
+                  <div style={{ width: "100%" }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "5.5px",
+                        fontSize: "10px",
+                      }}
+                    >
+                      <div style={{ borderTop: "1px solid #B1B1B1" }} />
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          fontSize: "12px",
+                          fontWeight: "bold",
+                          // marginTop: "8px",
+                        }}
+                      >
+                        {/* FIX: margin: 0 on all h2 tags */}
+                        <h2
+                          style={{
+                            color: "#EA2B7B",
+                            margin: 0,
+                            fontSize: "12px",
+                            fontWeight: "bold",
+                          }}
+                        >
+                          Sub-Total
+                        </h2>
+                        <h2
+                          style={{
+                            margin: 0,
+                            fontSize: "12px",
+                            fontWeight: "bold",
+                          }}
+                        >
+                          {grandSubtotal.toFixed(2)} ({paymentInfo.currency})
+                        </h2>
+                      </div>
 
-                    {(vat ?? 0) > 0 && (
-                      <>
-                        <div style={{ borderTop: "1px solid #7D7E81" }} />
-                        <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold" }}>
-                          <h2 style={{ color: "#EA2B7B", margin: 0 }}>VAT ({vat}%)</h2>
-                          <h2 style={{ margin: 0 }}>{vatAmount.toFixed(2)} ({currency})</h2>
-                        </div>
-                      </>
-                    )}
+                      {(vat ?? 0) > 0 && (
+                        <>
+                          <div style={{ borderTop: "1px solid #B1B1B1" }} />
+                          <div
+                            style={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              fontSize: "12px",
+                              fontWeight: "bold",
+                            }}
+                          >
+                            <h2
+                              style={{
+                                color: "#EA2B7B",
+                                margin: 0,
+                                fontSize: "12px",
+                                fontWeight: "bold",
+                              }}
+                            >
+                              VAT ({vat}%)
+                            </h2>
+                            <h2
+                              style={{
+                                margin: 0,
+                                fontSize: "12px",
+                                fontWeight: "bold",
+                              }}
+                            >
+                              {vatAmount.toFixed(2)} ({paymentInfo.currency})
+                            </h2>
+                          </div>
+                        </>
+                      )}
 
-                    {(discount ?? 0) > 0 && (
-                      <>
-                        <div style={{ borderTop: "1px solid #7D7E81" }} />
-                        <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold" }}>
-                          <h2 style={{ color: "#EA2B7B", margin: 0 }}>Discount (-)</h2>
-                          <h2 style={{ margin: 0 }}>{Number(discount).toFixed(2)} ({currency})</h2>
-                        </div>
-                      </>
-                    )}
+                      {(discount ?? 0) > 0 && (
+                        <>
+                          <div style={{ borderTop: "1px solid #B1B1B1" }} />
+                          <div
+                            style={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              fontSize: "12px",
+                              fontWeight: "bold",
+                            }}
+                          >
+                            <h2
+                              style={{
+                                color: "#EA2B7B",
+                                margin: 0,
+                                fontSize: "12px",
+                                fontWeight: "bold",
+                              }}
+                            >
+                              Discount (-)
+                            </h2>
+                            <h2
+                              style={{
+                                margin: 0,
+                                fontSize: "12px",
+                                fontWeight: "bold",
+                              }}
+                            >
+                              {Number(discount).toFixed(2)} (
+                              {paymentInfo.currency})
+                            </h2>
+                          </div>
+                        </>
+                      )}
 
-                    <div style={{ borderTop: "1px solid #7D7E81" }} />
-                    <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold" }}>
-                      <h2 style={{ color: "#EA2B7B", margin: 0 }}>Grand Total</h2>
-                      <h2 style={{ margin: 0 }}>{Number(grandTotal).toFixed(2)} ({currency})</h2>
+                      <div style={{ borderTop: "1px solid #B1B1B1" }} />
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          fontSize: "12px",
+                          fontWeight: "bold",
+                        }}
+                      >
+                        <h2
+                          style={{
+                            color: "#EA2B7B",
+                            margin: 0,
+                            fontSize: "12px",
+                            fontWeight: "bold",
+                          }}
+                        >
+                          Grand Total
+                        </h2>
+                        <h2
+                          style={{
+                            margin: 0,
+                            fontSize: "12px",
+                            fontWeight: "bold",
+                          }}
+                        >
+                          {Number(grandTotal).toFixed(2)} (
+                          {paymentInfo.currency})
+                        </h2>
+                      </div>
                     </div>
                   </div>
 
                   {/* Payment info box */}
-                  <div style={{ marginTop: "8px" }}>
-                    <div style={{ width: "100%", minHeight: "120px", padding: "8px", border: "1px solid #5A378F" }}>
-                      <h3 style={{ fontSize: "10px", fontWeight: "bold", textDecoration: "underline", margin: "0 0 4px" }}>
-                        Payment Information:
-                      </h3>
-                      <p style={{ fontSize: "5px", color: "#7D7E81", margin: 0 }}>Account Name:</p>
-                      <h4 style={{ fontSize: "8px", fontWeight: "bold", margin: "0 0 2px" }}>{paymentInfo.accountName}</h4>
-                      <p style={{ fontSize: "5px", color: "#7D7E81", margin: 0 }}>Account Number:</p>
-                      <h4 style={{ fontSize: "8px", fontWeight: "bold", margin: "0 0 2px" }}>{paymentInfo.accountNumber}</h4>
-                      <p style={{ fontSize: "5px", color: "#7D7E81", margin: 0 }}>SWIFT Code:</p>
-                      <h4 style={{ fontSize: "8px", fontWeight: "bold", margin: "0 0 2px" }}>{paymentInfo.swift}</h4>
-                      <p style={{ fontSize: "5px", color: "#7D7E81", margin: 0 }}>Bank Name:</p>
-                      <h4 style={{ fontSize: "8px", fontWeight: "bold", margin: "0 0 2px" }}>{paymentInfo.bankName}</h4>
-                      <p style={{ fontSize: "5px", color: "#7D7E81", margin: 0 }}>Branch:</p>
-                      <h4 style={{ fontSize: "8px", fontWeight: "bold", margin: 0 }}>{paymentInfo.branch}</h4>
+                  <div style={{ width: "100%" }}>
+                    <div
+                      style={{
+                        width: "100%",
+                        color: "white",
+                        padding: "10px 32px 10px 32px",
+                        border: "1px solid #5A378F",
+                        backgroundColor: "#5A3691",
+                        // display: "flex",
+                        // flexDirection: "row",
+                        // alignItems: "center",
+                        // justifyContent: "space-between",
+                        gap: "8px",
+                        marginTop: "8px",
+                        // boxSizing: "border-box",
+                        verticalAlign: "top"
+                      }}
+                    >
+                      {/* FIX: margin: 0 on h3 */}
+                      <div
+                        style={{
+                          // paddingBottom: "8px",
+                          display: "flex",
+                          flexDirection: "row",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                        }}
+                      >
+                        <div>
+                          <h3
+                            style={{
+                              fontSize: "16px",
+                              fontWeight: "bold",
+                              margin: 0,
+                            }}
+                          >
+                            Payment Information:
+                          </h3>
+                        </div>
+                        <div style={{ textAlign: "left", fontSize: "10px" }}>
+                          <div
+                            style={{
+                              display: "flex",
+                              flexDirection: "row",
+                              gap: "4px",
+                            }}
+                          >
+                            {/* FIX: margin: 0 on all p and h4 inside payment info */}
+                            <p
+                              style={{
+                                fontSize: "8px",
+                                color: "white",
+                                margin: 0,
+                              }}
+                            >
+                              Account Number:
+                            </p>
+                            <h4
+                              style={{
+                                fontSize: "8px",
+                                fontWeight: "bold",
+                                margin: 0,
+                              }}
+                            >
+                              {paymentInfo.accountNumber}
+                            </h4>
+                          </div>
+                          <div
+                            style={{
+                              display: "flex",
+                              flexDirection: "row",
+                              gap: "4px",
+                            }}
+                          >
+                            <p
+                              style={{
+                                fontSize: "8px",
+                                color: "white",
+                                margin: 0,
+                              }}
+                            >
+                              SWIFT Code:
+                            </p>
+                            <h4
+                              style={{
+                                fontSize: "8px",
+                                fontWeight: "bold",
+                                margin: 0,
+                              }}
+                            >
+                              {paymentInfo.swift}
+                            </h4>
+                          </div>
+                          <div
+                            style={{
+                              display: "flex",
+                              flexDirection: "row",
+                              gap: "4px",
+                            }}
+                          >
+                            <p
+                              style={{
+                                fontSize: "8px",
+                                color: "white",
+                                margin: 0,
+                              }}
+                            >
+                              Bank Name:
+                            </p>
+                            <h4
+                              style={{
+                                fontSize: "8px",
+                                fontWeight: "bold",
+                                margin: 0,
+                              }}
+                            >
+                              {paymentInfo.bankName}
+                            </h4>
+                          </div>
+                          <div
+                            style={{
+                              display: "flex",
+                              flexDirection: "row",
+                              gap: "4px",
+                            }}
+                          >
+                            <p
+                              style={{
+                                fontSize: "8px",
+                                color: "white",
+                                margin: 0,
+                              }}
+                            >
+                              Branch:
+                            </p>
+                            <h4
+                              style={{
+                                fontSize: "8px",
+                                fontWeight: "bold",
+                                margin: 0,
+                              }}
+                            >
+                              {paymentInfo.branch}
+                            </h4>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -336,22 +825,55 @@ export const Invoice2Preview = forwardRef<HTMLDivElement, Invoice2PreviewProps>(
             </div>
 
             {/* ── Bottom footer (every page) ─────────────────────── */}
-            <div style={{
-              borderTop: "1px solid #e5e7eb", paddingTop: "12px", display: "flex",
-              justifyContent: "space-between", alignItems: "center", gap: "16px", flexShrink: 0,
-            }}>
-              <div style={{ fontSize: "12px", borderLeft: "1px solid #EA2B7B", paddingLeft: "8px" }}>
+            <div
+              style={{
+                borderTop: "1px solid #e5e7eb",
+                paddingTop: "12px",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                gap: "16px",
+                flexShrink: 0,
+              }}
+            >
+              {/* <div
+                style={{
+                  fontSize: "12px",
+                  borderLeft: "1px solid #EA2B7B",
+                  paddingLeft: "8px",
+                }}
+              >
                 <p style={{ margin: 0 }}>{from.name}</p>
-                <p style={{ color: "#4b5563", whiteSpace: "pre-line", margin: 0 }}>{from.address}</p>
-              </div>
-              <div style={{ fontSize: "12px", color: "#4b5563", borderLeft: "1px solid #EA2B7B", paddingLeft: "8px" }}>
+                <p
+                  style={{
+                    color: "#4b5563",
+                    whiteSpace: "pre-line",
+                    margin: 0,
+                  }}
+                >
+                  {from.address}
+                </p>
+              </div> */}
+              <div
+                style={{
+                  fontSize: "12px",
+                  color: "#4b5563",
+                  // borderLeft: "1px solid #EA2B7B",
+                  // paddingLeft: "8px",
+                }}
+              >
                 <p style={{ margin: 0 }}>+880 1784 398 934</p>
                 <p style={{ margin: 0 }}>info@jamroll.xyz</p>
                 <p style={{ margin: 0 }}>www.jamroll.xyz</p>
               </div>
               <div>
-                <img src="/assets/Jamroll Logo.png" alt="Jamroll Logo" width={160} height={50}
-                  style={{ objectFit: "cover" }} />
+                <img
+                  src="/assets/Jamroll Logo.png"
+                  alt="Jamroll Logo"
+                  width={160}
+                  height={50}
+                  style={{ objectFit: "cover" }}
+                />
               </div>
             </div>
           </div>
