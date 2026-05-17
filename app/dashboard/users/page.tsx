@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Check, X } from "lucide-react";
+import { Check, X, ShieldCheck, ShieldOff } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -29,6 +29,28 @@ export default function UsersPage() {
   useEffect(() => {
     fetchUsers();
   }, [fetchUsers]);
+
+  const handleUpdateRole = async (id: string, role: string) => {
+    setUpdatingId(id);
+    try {
+      const res = await fetch(`/api/users/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role }),
+      });
+      if (res.ok) {
+        toast.success(`User role updated to ${role}`);
+        fetchUsers();
+      } else {
+        const data = await res.json();
+        toast.error(data.message || "Failed to update role");
+      }
+    } catch {
+      toast.error("An error occurred");
+    } finally {
+      setUpdatingId(null);
+    }
+  };
 
   const handleUpdateStatus = async (id: string, status: string) => {
     setUpdatingId(id);
@@ -107,41 +129,74 @@ export default function UsersPage() {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right space-x-2">
-                        {u._id !== session?.user?.id && u.role !== "Super Admin" && (
+                        {u._id !== session?.user?.id ? (
                           <>
-                            {(u.status === "pending" || u.status === "rejected") && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                disabled={updatingId === u._id}
-                                onClick={() => handleUpdateStatus(u._id, "approved")}
-                              >
-                                {updatingId === u._id ? (
-                                  <Spinner className="h-3.5 w-3.5 mr-1" />
-                                ) : (
-                                  <Check className="h-4 w-4 mr-1 text-green-500" />
+                            {u.role !== "Super Admin" && (
+                              <>
+                                {(u.status === "pending" || u.status === "rejected") && (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    disabled={updatingId === u._id}
+                                    onClick={() => handleUpdateStatus(u._id, "approved")}
+                                  >
+                                    {updatingId === u._id ? (
+                                      <Spinner className="h-3.5 w-3.5 mr-1" />
+                                    ) : (
+                                      <Check className="h-4 w-4 mr-1 text-green-500" />
+                                    )}
+                                    Approve
+                                  </Button>
                                 )}
-                                Approve
-                              </Button>
+                                {(u.status === "pending" || u.status === "approved") && (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    disabled={updatingId === u._id}
+                                    onClick={() => handleUpdateStatus(u._id, "rejected")}
+                                  >
+                                    {updatingId === u._id ? (
+                                      <Spinner className="h-3.5 w-3.5 mr-1" />
+                                    ) : (
+                                      <X className="h-4 w-4 mr-1 text-red-500" />
+                                    )}
+                                    Reject
+                                  </Button>
+                                )}
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  disabled={updatingId === u._id}
+                                  onClick={() => handleUpdateRole(u._id, "Super Admin")}
+                                >
+                                  {updatingId === u._id ? (
+                                    <Spinner className="h-3.5 w-3.5 mr-1" />
+                                  ) : (
+                                    <ShieldCheck className="h-4 w-4 mr-1 text-blue-500" />
+                                  )}
+                                  Make Admin
+                                </Button>
+                              </>
                             )}
-                            {(u.status === "pending" || u.status === "approved") && (
+                            {u.role === "Super Admin" && (
                               <Button
                                 variant="outline"
                                 size="sm"
                                 disabled={updatingId === u._id}
-                                onClick={() => handleUpdateStatus(u._id, "rejected")}
+                                onClick={() => handleUpdateRole(u._id, "Employee")}
                               >
                                 {updatingId === u._id ? (
                                   <Spinner className="h-3.5 w-3.5 mr-1" />
                                 ) : (
-                                  <X className="h-4 w-4 mr-1 text-red-500" />
+                                  <ShieldOff className="h-4 w-4 mr-1 text-orange-500" />
                                 )}
-                                Reject
+                                Remove Admin
                               </Button>
                             )}
                           </>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">You</span>
                         )}
-                        {u._id === session?.user?.id && <span className="text-xs text-muted-foreground">You</span>}
                       </TableCell>
                     </TableRow>
                   ))

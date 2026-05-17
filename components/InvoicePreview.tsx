@@ -19,7 +19,7 @@ const BOTTOM_FOOTER_H = 72;
 const HEADER_H = 165; // logo + from/to block
 const TITLE_H = 60; // INVOICE #001 row
 const TABLE_HEADER_H = 32; // thead row (reused on every page)
-const FIRST_PAGE_GAP = 24; // spacing between sections on first page
+const FIRST_PAGE_GAP = 32; // spacing between sections on first page
 const FOOTER_H = 150; // payment info + totals block
 
 const USABLE_H = PAGE_HEIGHT - PADDING * 2 - BOTTOM_FOOTER_H; // 710px

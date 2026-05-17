@@ -11,15 +11,27 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       return NextResponse.json({ message: "Forbidden" }, { status: 403 });
     }
 
-    const { status } = await req.json();
+    const { status, role } = await req.json();
+    const resolvedParams = await params;
 
-    if (!["pending", "approved", "rejected"].includes(status)) {
+    if (status !== undefined && !["pending", "approved", "rejected"].includes(status)) {
       return NextResponse.json({ message: "Invalid status" }, { status: 400 });
     }
 
+    if (role !== undefined && !["Super Admin", "Employee"].includes(role)) {
+      return NextResponse.json({ message: "Invalid role" }, { status: 400 });
+    }
+
+    if (role !== undefined && resolvedParams.id === session.user.id) {
+      return NextResponse.json({ message: "Cannot change your own role" }, { status: 400 });
+    }
+
+    const update: Record<string, string> = {};
+    if (status !== undefined) update.status = status;
+    if (role !== undefined) update.role = role;
+
     await dbConnect();
-    const resolvedParams = await params;
-    const updatedUser = await User.findByIdAndUpdate(resolvedParams.id, { status }, { new: true });
+    const updatedUser = await User.findByIdAndUpdate(resolvedParams.id, update, { new: true });
 
     if (!updatedUser) {
       return NextResponse.json({ message: "User not found" }, { status: 404 });

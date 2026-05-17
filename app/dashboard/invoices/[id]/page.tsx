@@ -46,7 +46,7 @@ export default function ViewInvoicePage() {
 
       const pageEls = printRef.current.querySelectorAll<HTMLElement>(
         "[data-invoice-page]",
-      );
+      );` `
 
       if (!pageEls.length) {
         toast.error("Invoice not found");
