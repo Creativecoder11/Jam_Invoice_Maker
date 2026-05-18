@@ -61,7 +61,7 @@ export default function FeedbackPage() {
         <Card>
           <CardHeader>
             <CardTitle>Submit Feedback</CardTitle>
-            <CardDescription>We'd love to hear your thoughts and suggestions.</CardDescription>
+            <CardDescription>We&apos;d love to hear your thoughts and suggestions.</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
