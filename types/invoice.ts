@@ -6,6 +6,29 @@ export type InvoiceItem = {
   subItems?: string[];
 };
 
+export type ReceiptLineItem = {
+  invoiceNo: string;
+  description: string;
+  amount: number;
+};
+
+export type ReceiptInfo = {
+  currency: string;
+  showInvoiceNo: boolean;
+  lineItems: ReceiptLineItem[];
+  paidAmount: number;       // Advance Amount
+  receivedAmount: number;   // Paid Amount
+  paymentMethod: "cash" | "cheque" | "accountTransfer" | "";
+  accountTransferName: string;
+  receivedBy: {
+    name: string;
+    designation: string;
+    companyName: string;
+    address: string;
+    mobile: string;
+  };
+};
+
 export type ServiceItem = {
   name: string;
   quantity: number;
@@ -61,6 +84,8 @@ export type InvoiceFormData = {
     text: string;
     points: string[];
   };
+
+  receiptInfo?: ReceiptInfo;
 
   status: "Paid" | "Unpaid" | "Hold" | "Cancelled";
 };

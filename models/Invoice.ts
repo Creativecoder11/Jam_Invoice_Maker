@@ -21,6 +21,12 @@ const serviceGroupSchema = new Schema({
   items: { type: [serviceItemSchema], default: [] },
 });
 
+const receiptLineItemSchema = new Schema({
+  invoiceNo:   { type: String, default: "" },
+  description: { type: String, default: "" },
+  amount:      { type: Number, default: 0 },
+});
+
 const invoiceSchema = new Schema(
   {
     invoiceNumber: { type: String, required: true },
@@ -62,8 +68,25 @@ const invoiceSchema = new Schema(
     total: { type: Number, required: true },
 
     notes: {
-      text: { type: String, default: "" },
+      text:   { type: String, default: "" },
       points: { type: [String], default: [] },
+    },
+
+    receiptInfo: {
+      currency:            { type: String, default: "BDT" },
+      showInvoiceNo:       { type: Boolean, default: true },
+      lineItems:           { type: [receiptLineItemSchema], default: [] },
+      paidAmount:          { type: Number, default: 0 },
+      receivedAmount:      { type: Number, default: 0 },
+      paymentMethod:       { type: String, default: "" },
+      accountTransferName: { type: String, default: "" },
+      receivedBy: {
+        name:        { type: String, default: "" },
+        designation: { type: String, default: "" },
+        companyName: { type: String, default: "" },
+        address:     { type: String, default: "" },
+        mobile:      { type: String, default: "" },
+      },
     },
     
     status: { type: String, enum: ["Paid", "Unpaid", "Hold", "Cancelled"], default: "Unpaid" },

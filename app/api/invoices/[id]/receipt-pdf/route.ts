@@ -29,7 +29,7 @@ export async function GET(
     }
 
     const pdfDocument = createReceiptPdfDocument(receipt) as ReactElement<DocumentProps>;
-    const pdfBuffer = await renderToBuffer(pdfDocument);
+    const pdfBuffer   = await renderToBuffer(pdfDocument);
 
     return new Response(pdfBuffer as BodyInit, {
       headers: {
@@ -40,9 +40,31 @@ export async function GET(
     });
   } catch (error) {
     console.error("Receipt PDF generation failed:", error);
-    return NextResponse.json(
-      { message: "PDF generation failed" },
-      { status: 500 },
-    );
+    return NextResponse.json({ message: "PDF generation failed" }, { status: 500 });
+  }
+}
+
+// POST — generate PDF from raw form data (used by create/edit pages before saving)
+export async function POST(req: Request) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    }
+
+    const data        = await req.json();
+    const pdfDocument = createReceiptPdfDocument(data) as ReactElement<DocumentProps>;
+    const pdfBuffer   = await renderToBuffer(pdfDocument);
+
+    return new Response(pdfBuffer as BodyInit, {
+      headers: {
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `attachment; filename="${data.invoiceNumber || "receipt"}.pdf"`,
+        "Cache-Control": "no-store",
+      },
+    });
+  } catch (error) {
+    console.error("Receipt PDF generation failed:", error);
+    return NextResponse.json({ message: "PDF generation failed" }, { status: 500 });
   }
 }

@@ -10,590 +10,300 @@ import {
 import { format } from "date-fns";
 import path from "node:path";
 import { readFileSync } from "node:fs";
-import { InvoiceFormData, InvoiceItem } from "@/types/invoice";
+import { InvoiceFormData, ReceiptInfo } from "@/types/invoice";
 import type { ReactElement, ReactNode } from "react";
+import { numberToWords } from "@/lib/numberToWords";
 
 const publicPath = path.join(process.cwd(), "public");
 
-type NodeRuntimeGlobal = typeof globalThis & {
-  require?: NodeRequire;
-};
-
+type NodeRuntimeGlobal = typeof globalThis & { require?: NodeRequire };
 declare const __non_webpack_require__: NodeRequire | undefined;
 
 function loadReactForPdfRenderer() {
-  const runtimeGlobal = globalThis as NodeRuntimeGlobal;
-  const runtimeRequire =
-    typeof __non_webpack_require__ === "function"
-      ? __non_webpack_require__
-      : runtimeGlobal.require;
-
-  if (!runtimeRequire) {
-    throw new Error("PDF renderer could not load the Node React runtime");
-  }
-
-  return runtimeRequire("react") as typeof import("react");
+  const g = globalThis as NodeRuntimeGlobal;
+  const r =
+    typeof __non_webpack_require__ === "function" ? __non_webpack_require__ : g.require;
+  if (!r) throw new Error("PDF renderer could not load the Node React runtime");
+  return r("react") as typeof import("react");
 }
-
 const { createElement } = loadReactForPdfRenderer();
 
-function pdfElement(
-  type: any,
-  props?: any,
-  ...children: ReactNode[]
-): ReactElement {
+function el(type: any, props?: any, ...children: ReactNode[]): ReactElement {
   return createElement(type, props, ...children) as ReactElement;
 }
 
 Font.register({
   family: "HelveticaNowDisplay",
   fonts: [
-    {
-      src: path.join(publicPath, "fonts", "HelveticaNowDisplay-Regular.ttf"),
-      fontWeight: 400,
-      fontStyle: "normal",
-    },
-    {
-      src: path.join(publicPath, "fonts", "HelveticaNowDisplay-Regular.ttf"),
-      fontWeight: 400,
-      fontStyle: "italic",
-    },
-    {
-      src: path.join(publicPath, "fonts", "HelveticaNowDisplay-Medium.ttf"),
-      fontWeight: 500,
-      fontStyle: "normal",
-    },
-    {
-      src: path.join(publicPath, "fonts", "HelveticaNowDisplay-Bold.ttf"),
-      fontWeight: 700,
-      fontStyle: "normal",
-    },
+    { src: path.join(publicPath, "fonts", "HelveticaNowDisplay-Regular.ttf"), fontWeight: 400 },
+    { src: path.join(publicPath, "fonts", "HelveticaNowDisplay-Medium.ttf"),  fontWeight: 500 },
+    { src: path.join(publicPath, "fonts", "HelveticaNowDisplay-Bold.ttf"),    fontWeight: 700 },
   ],
 });
 
-const jamrollLogoPath = path.join(publicPath, "assets", "Jamroll Logo.png");
-const jamrollLogoDataUri = `data:image/png;base64,${readFileSync(jamrollLogoPath).toString("base64")}`;
+const jamrollLogoUri = `data:image/png;base64,${readFileSync(path.join(publicPath, "assets", "Jamroll Logo.png")).toString("base64")}`;
 
-const STATUS_COLORS: Record<string, string> = {
-  Paid: "#16a34a",
-  Unpaid: "#7c3aed",
-  Hold: "#d97706",
-  Cancelled: "#dc2626",
-};
+const PURPLE = "#5A378F";
 
-const styles = StyleSheet.create({
-  page: {
-    width: 612,
-    minHeight: 842,
-    padding: 30,
-    backgroundColor: "#ffffff",
-    color: "#000000",
-    fontFamily: "HelveticaNowDisplay",
-    fontSize: 12,
-  },
-  content: {
-    flexGrow: 1,
-  },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 16,
-  },
-  logo: {
-    width: 73,
-    height: 100,
-    objectFit: "cover",
-    borderRadius: 4,
-  },
-  logoPlaceholder: {
-    width: 73,
-    height: 100,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#f3f4f6",
-    borderRadius: 4,
-  },
-  placeholderText: {
-    fontSize: 10,
-    color: "#9ca3af",
-  },
-  partyBlock: {
-    marginBottom: 8,
-  },
-  accentLabel: {
-    fontSize: 12,
-    fontWeight: 700,
-    color: "#5A378F",
-    marginBottom: 2,
-  },
-  partyName: {
-    fontWeight: 700,
-    fontSize: 11,
-  },
-  mutedText: {
-    fontSize: 11,
-    color: "#4b5563",
-  },
-  titleRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-end",
-    marginBottom: 14,
-  },
-  titleLeft: {
-    flexDirection: "column",
-  },
-  title: {
-    fontSize: 26,
-    fontWeight: 700,
-    textTransform: "uppercase",
-    letterSpacing: 2,
-    color: "#1e1e2e",
-  },
-  invoiceNum: {
-    fontSize: 12,
-    color: "#6b7280",
-    marginTop: 2,
-  },
-  titleRight: {
-    alignItems: "flex-end",
-  },
-  dateRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 4,
-  },
-  dateLabel: {
-    fontSize: 11,
-    color: "#6b7280",
-    marginRight: 6,
-  },
-  dateValue: {
-    fontSize: 12,
-    fontWeight: 700,
-  },
-  statusPill: {
-    paddingVertical: 2,
-    paddingHorizontal: 10,
-    borderRadius: 999,
-    fontSize: 10,
-    fontWeight: 700,
-    color: "#ffffff",
-    textTransform: "uppercase",
-  },
-  table: {
-    borderTopWidth: 2,
-    borderTopColor: "#5A378F",
-    paddingTop: 8,
-  },
-  tableHeader: {
-    flexDirection: "row",
-    color: "#5A378F",
-    fontWeight: 700,
-    fontSize: 11,
-    paddingBottom: 6,
-  },
-  descColumn: {
-    flex: 1,
-  },
-  numberColumn: {
-    width: 60,
-    textAlign: "center",
-  },
-  priceColumn: {
-    width: 90,
-    textAlign: "center",
-  },
-  amountColumn: {
-    width: 90,
-    textAlign: "right",
-  },
-  tableRow: {
-    flexDirection: "row",
-    borderTopWidth: 1,
-    borderTopColor: "#e5e7eb",
-    paddingVertical: 7,
-  },
-  itemName: {
-    fontWeight: 600,
-    fontSize: 12,
-  },
-  itemNote: {
-    fontSize: 10,
-    color: "#6b7280",
-    fontStyle: "italic",
-    marginTop: 2,
-  },
-  subItem: {
-    fontSize: 10,
-    color: "#4b5563",
-    marginTop: 2,
-  },
-  emptyText: {
-    color: "#9ca3af",
-    fontSize: 14,
-    textAlign: "center",
-    paddingVertical: 24,
-  },
-  footer: {
-    marginTop: 16,
-  },
-  totalsWrapper: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    marginBottom: 16,
-  },
-  totalsBox: {
-    width: 260,
-    borderTopWidth: 1,
-    borderTopColor: "#e5e7eb",
-    paddingTop: 8,
-  },
-  totalsRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 5,
-    fontSize: 12,
-  },
-  totalsLabel: {
-    color: "#6b7280",
-  },
-  totalsValue: {
-    fontWeight: 600,
-  },
-  grandTotalRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    borderTopWidth: 2,
-    borderTopColor: "#5A378F",
-    paddingTop: 6,
-    marginTop: 6,
-    fontSize: 14,
-    fontWeight: 700,
-  },
-  grandTotalLabel: {
-    color: "#5A378F",
-  },
-  grandTotalValue: {
-    color: "#5A378F",
-  },
-  paymentBox: {
-    backgroundColor: "#5A3691",
-    borderRadius: 6,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    color: "#ffffff",
-    marginBottom: 12,
-  },
-  paymentTitle: {
-    fontSize: 14,
-    fontWeight: 700,
-    color: "#ffffff",
-  },
-  paymentDetails: {
-    fontSize: 9,
-    lineHeight: 1.7,
-  },
-  paymentLine: {
-    flexDirection: "row",
-  },
-  paymentLineLabel: {
-    color: "#c4b5fd",
-    marginRight: 3,
-  },
-  paymentLineValue: {
-    fontWeight: 700,
-    color: "#ffffff",
-  },
-  thankYou: {
-    textAlign: "center",
-    fontSize: 11,
-    color: "#9ca3af",
-    fontStyle: "italic",
-    marginBottom: 12,
-  },
-  pageFooter: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    borderTopWidth: 1,
-    borderTopColor: "#e5e7eb",
-    paddingTop: 10,
-    marginTop: 16,
-  },
-  pageFooterText: {
-    color: "#4b5563",
-    fontSize: 11,
-  },
-  pageFooterLogo: {
-    width: 140,
-    height: 44,
-    objectFit: "contain",
-  },
+const s = StyleSheet.create({
+  page:         { width: 612, minHeight: 842, padding: 30, backgroundColor: "#fff", fontFamily: "HelveticaNowDisplay", fontSize: 11 },
+  content:      { flexGrow: 1 },
+
+  // header
+  headerRow:    { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 },
+  logo:         { width: 72, height: 72, objectFit: "contain" },
+  logoBox:      { width: 72, height: 72, backgroundColor: "#f3f4f6", alignItems: "center", justifyContent: "center", borderRadius: 4 },
+  logoText:     { fontSize: 9, color: "#9ca3af" },
+  companyBlock: { alignItems: "flex-end" },
+  companyName:  { fontWeight: 700, fontSize: 12, color: PURPLE },
+  companyInfo:  { fontSize: 10, color: "#374151", textAlign: "right" },
+
+  // title — centred to match preview
+  titleText:    { fontSize: 20, fontWeight: 700, letterSpacing: 2, textAlign: "center", color: "#1a1a1a", marginBottom: 8 },
+  hr:           { borderTopWidth: 1, borderTopColor: "#1a1a1a", marginBottom: 8 },
+  hrLight:      { borderTopWidth: 1, borderTopColor: "#9ca3af", marginBottom: 0 },
+
+  // bill to
+  billRow:      { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8, marginTop: 8 },
+  billLabel:    { fontWeight: 700, fontSize: 11, color: PURPLE, marginBottom: 4 },
+  billName:     { fontWeight: 700, fontSize: 12 },
+  billInfo:     { fontSize: 10, color: "#374151" },
+  invRow:       { flexDirection: "row", justifyContent: "flex-end", gap: 4, marginBottom: 4 },
+  invLabel:     { fontWeight: 700, fontSize: 11, color: PURPLE },
+  invValue:     { fontWeight: 700, fontSize: 11 },
+
+  // table
+  thCell:       { padding: "7 8", fontWeight: 700, fontSize: 10, backgroundColor: PURPLE, color: "#fff", borderWidth: 1, borderColor: PURPLE },
+  thRight:      { textAlign: "center" },
+  tdCell:       { padding: "6 8", fontSize: 11, borderWidth: 1, borderColor: "#e5e7eb" },
+  tdRight:      { textAlign: "center" },
+  tdBold:       { fontWeight: 700 },
+  tdGray:       { backgroundColor: "#f9fafb" },
+  tableRow:     { flexDirection: "row" },
+
+  // words
+  wordsBox:     { marginTop: 12, fontSize: 11, flexDirection: "row", flexWrap: "wrap" },
+  wordsLabel:   { fontWeight: 700, color: PURPLE },
+  wordsText:    { fontWeight: 700 },
+
+  // payment received in — horizontal row matching preview
+  paySection:   { marginTop: 14 },
+  sectionTitle: { fontWeight: 700, fontSize: 11, color: PURPLE, textDecoration: "underline", marginBottom: 8 },
+  pmInline:     { flexDirection: "row", alignItems: "center", gap: 14, flexWrap: "wrap" },
+  pmItem:       { flexDirection: "row", alignItems: "center", gap: 5 },
+  pmLabel:      { fontWeight: 700, fontSize: 11, color: PURPLE },
+  cbChecked:    { width: 15, height: 15, backgroundColor: PURPLE, borderRadius: 2, alignItems: "center", justifyContent: "center" },
+  // Checkmark drawn with border-strokes (L-shape rotated) — avoids missing font glyph
+  cbShape:      { width: 7, height: 4, borderBottomWidth: 1.5, borderLeftWidth: 1.5, borderColor: "#fff", transform: "rotate(-45deg)", marginBottom: 2 },
+  cbDash:       { color: "#9ca3af", fontSize: 12, fontWeight: 700, width: 15, textAlign: "center" },
+
+  divider:      { borderTopWidth: 1, borderTopColor: "#9ca3af", marginVertical: 12 },
+
+  // received by
+  receivedTitle: { fontWeight: 700, fontSize: 11, color: PURPLE, textDecoration: "underline", marginBottom: 8 },
+  receivedText:  { fontSize: 11, lineHeight: 1.7 },
+  receivedBold:  { fontWeight: 700 },
+
+  // footer
+  footer:       { flexDirection: "row", justifyContent: "space-between", alignItems: "center", borderTopWidth: 1, borderTopColor: "#e5e7eb", paddingTop: 8, marginTop: 16 },
+  footerText:   { color: "#4b5563", fontSize: 10 },
+  footerLogo:   { width: 130, height: 40, objectFit: "contain" },
 });
 
-type ReceiptPdfProps = {
-  receipt: Partial<InvoiceFormData>;
-};
+const defaultRI = (): ReceiptInfo => ({
+  currency: "BDT", showInvoiceNo: true, lineItems: [],
+  paidAmount: 0, receivedAmount: 0, paymentMethod: "", accountTransferName: "",
+  receivedBy: { name: "", designation: "", companyName: "", address: "", mobile: "" },
+});
 
 export function createReceiptPdfDocument(receipt: Partial<InvoiceFormData>) {
   const {
-    invoiceNumber = "REC-001",
-    name = "Receipt",
+    invoiceNumber = "",
     logoUrl,
     from = { name: "", email: "", phone: "", address: "" },
-    to = { name: "", email: "", phone: "", address: "" },
+    to   = { name: "", email: "", phone: "", address: "" },
     date = new Date(),
-    paymentInfo = { accountName: "", accountNumber: "", bankName: "", branch: "", swift: "", currency: "USD" },
-    items = [],
-    vat = 0,
-    discount = 0,
-    status = "Paid",
+    receiptInfo: ri = defaultRI(),
   } = receipt;
 
-  const currency = paymentInfo.currency || "USD";
-  const subtotal = items.reduce((s, i) => s + i.quantity * i.unitPrice, 0);
-  const vatAmount = ((subtotal - (discount ?? 0)) * (vat ?? 0)) / 100;
-  const grandTotal = subtotal + vatAmount - (discount ?? 0);
-  const statusColor = STATUS_COLORS[status] ?? "#6b7280";
+  const currency       = ri.currency || "BDT";
+  const showInvCol     = ri.showInvoiceNo !== false;
+  const totalDue       = (ri.lineItems || []).reduce((s, i) => s + (i.amount || 0), 0);
+  const paid           = ri.paidAmount     || 0;
+  const received       = ri.receivedAmount || 0;
+  const currentDue     = totalDue - paid - received;
+  const words          = numberToWords(Math.abs(currentDue), currency);
 
-  return pdfElement(
-    Document,
-    null,
-    pdfElement(
-      Page,
-      { size: [612, 842], style: styles.page, wrap: true },
-      pdfElement(
-        View,
-        { style: styles.content },
+  const invColW = showInvCol ? "26%" : "0%";
+  const amtColW = "22%";
 
-        // Header: logo + from/to
-        pdfElement(
-          View,
-          { style: styles.header },
+  // payment method options — same order as preview
+  const pmOptions = [
+    { key: "cash"            as const, label: "Cash" },
+    { key: "cheque"          as const, label: "Cheque" },
+    { key: "accountTransfer" as const, label: "Acc. Transfer" },
+  ];
+
+  return el(
+    Document, null,
+    el(Page, { size: [612, 842], style: s.page, wrap: true },
+      el(View, { style: s.content },
+
+        // ── Header ──────────────────────────────────────────────────────
+        el(View, { style: s.headerRow },
           logoUrl
-            ? pdfElement(Image, { src: logoUrl, style: styles.logo })
-            : pdfElement(
-                View,
-                { style: styles.logoPlaceholder },
-                pdfElement(Text, { style: styles.placeholderText }, "Logo"),
-              ),
-          pdfElement(
-            View,
-            { style: { alignItems: "flex-end" } },
-            // Issued by
-            pdfElement(
-              View,
-              { style: [styles.partyBlock, { alignItems: "flex-end" }] },
-              pdfElement(Text, { style: styles.accentLabel }, "Issued by:"),
-              pdfElement(Text, { style: styles.partyName }, from.name),
-              from.email ? pdfElement(Text, { style: styles.mutedText }, from.email) : null,
-              from.phone ? pdfElement(Text, { style: styles.mutedText }, from.phone) : null,
+            ? el(Image, { src: logoUrl, style: s.logo })
+            : el(View, { style: s.logoBox }, el(Text, { style: s.logoText }, "Logo")),
+          el(View, { style: s.companyBlock },
+            el(Text, { style: s.companyName }, from.name || ""),
+            from.address ? el(Text, { style: s.companyInfo }, from.address) : null,
+            from.phone   ? el(Text, { style: s.companyInfo }, from.phone)   : null,
+            from.email   ? el(Text, { style: s.companyInfo }, from.email)   : null,
+          ),
+        ),
+
+        // ── Title (centred) ─────────────────────────────────────────────
+        el(Text, { style: s.titleText }, "PAYMENT RECEIPT"),
+        el(View, { style: s.hr }),
+
+        // ── Bill To + Invoice No / Date ─────────────────────────────────
+        el(View, { style: s.billRow },
+          el(View, {},
+            el(Text, { style: s.billLabel }, "BILL TO:"),
+            el(Text, { style: s.billName  }, to.name || ""),
+            to.address ? el(Text, { style: s.billInfo }, to.address) : null,
+            to.phone   ? el(Text, { style: s.billInfo }, `M: ${to.phone}`) : null,
+            to.email   ? el(Text, { style: s.billInfo }, to.email)   : null,
+          ),
+          el(View, { style: { alignItems: "flex-end" } },
+            el(View, { style: s.invRow },
+              el(Text, { style: s.invLabel }, "INVOICE NO :"),
+              el(Text, { style: s.invValue }, invoiceNumber || "—"),
             ),
-            // Issued to
-            pdfElement(
-              View,
-              { style: [styles.partyBlock, { alignItems: "flex-end" }] },
-              pdfElement(Text, { style: styles.accentLabel }, "Issued to:"),
-              pdfElement(Text, { style: styles.partyName }, to.name),
-              to.address ? pdfElement(Text, { style: styles.mutedText }, to.address) : null,
-              to.email ? pdfElement(Text, { style: styles.mutedText }, to.email) : null,
-              to.phone ? pdfElement(Text, { style: styles.mutedText }, to.phone) : null,
+            el(View, { style: s.invRow },
+              el(Text, { style: s.invLabel }, "DATE :"),
+              el(Text, { style: s.invValue }, format(new Date(date), "dd/MM/yyyy")),
             ),
           ),
         ),
 
-        // Title row
-        pdfElement(
-          View,
-          { style: styles.titleRow },
-          pdfElement(
-            View,
-            { style: styles.titleLeft },
-            pdfElement(Text, { style: styles.title }, name),
-            pdfElement(Text, { style: styles.invoiceNum }, `#${invoiceNumber}`),
-          ),
-          pdfElement(
-            View,
-            { style: styles.titleRight },
-            pdfElement(
-              View,
-              { style: styles.dateRow },
-              pdfElement(Text, { style: styles.dateLabel }, "Date:"),
-              pdfElement(
-                Text,
-                { style: styles.dateValue },
-                format(new Date(date), "MMM dd, yyyy"),
+        el(View, { style: s.hrLight }),
+
+        // ── Table: column headers (no PURPOSE row — matches preview) ────
+        el(View, { style: s.tableRow },
+          showInvCol
+            ? el(View, { style: [s.thCell, { width: invColW }] }, el(Text, {}, "INVOICE NO"))
+            : null,
+          el(View, { style: [s.thCell, { flex: 1 }] }, el(Text, {}, "DESCRIPTION")),
+          el(View, { style: [s.thCell, s.thRight, { width: amtColW }] }, el(Text, {}, "DUE AMOUNT")),
+        ),
+
+        // ── Table: data rows ────────────────────────────────────────────
+        ...(ri.lineItems || []).length > 0
+          ? (ri.lineItems || []).map((item, idx) =>
+              el(View, { key: String(idx), style: [s.tableRow, idx % 2 !== 0 ? s.tdGray : {}] },
+                showInvCol
+                  ? el(View, { style: [s.tdCell, { width: invColW }] }, el(Text, {}, item.invoiceNo || "—"))
+                  : null,
+                el(View, { style: [s.tdCell, { flex: 1 }] }, el(Text, {}, item.description)),
+                el(View, { style: [s.tdCell, s.tdRight, { width: amtColW }] },
+                  el(Text, {}, item.amount.toLocaleString()),
+                ),
               ),
-            ),
-            pdfElement(
-              Text,
-              { style: [styles.statusPill, { backgroundColor: statusColor }] },
-              status,
-            ),
+            )
+          : [el(View, { key: "empty", style: s.tableRow },
+              el(View, { style: [s.tdCell, { flex: 1, textAlign: "center", color: "#9ca3af" }] },
+                el(Text, {}, "No items added"),
+              ),
+            )],
+
+        // ── Table: summary rows ─────────────────────────────────────────
+        el(View, { style: [s.tableRow, s.tdGray] },
+          el(View, { style: [s.tdCell, s.tdBold, { flex: 1 }] },
+            el(Text, {}, `TOTAL DUE AMOUNT (${currency})`),
+          ),
+          el(View, { style: [s.tdCell, s.tdBold, s.tdRight, { width: amtColW }] },
+            el(Text, {}, totalDue.toLocaleString()),
+          ),
+        ),
+        // Advance Amount row — only when > 0
+        paid > 0
+          ? el(View, { style: [s.tableRow, s.tdGray] },
+              el(View, { style: [s.tdCell, s.tdBold, { flex: 1 }] },
+                el(Text, {}, `ADVANCE AMOUNT (${currency})`),
+              ),
+              el(View, { style: [s.tdCell, s.tdBold, s.tdRight, { width: amtColW }] },
+                el(Text, {}, paid.toLocaleString()),
+              ),
+            )
+          : null,
+        // Paid Amount row — only when > 0
+        received > 0
+          ? el(View, { style: [s.tableRow, s.tdGray] },
+              el(View, { style: [s.tdCell, s.tdBold, { flex: 1 }] },
+                el(Text, {}, `PAID AMOUNT (${currency})`),
+              ),
+              el(View, { style: [s.tdCell, s.tdBold, s.tdRight, { width: amtColW }] },
+                el(Text, {}, received.toLocaleString()),
+              ),
+            )
+          : null,
+        // Current Due row (always shown)
+        el(View, { style: [s.tableRow, s.tdGray] },
+          el(View, { style: [s.tdCell, s.tdBold, { flex: 1, color: PURPLE }] },
+            el(Text, {}, `CURRENT DUE AMOUNT (${currency})`),
+          ),
+          el(View, { style: [s.tdCell, s.tdBold, s.tdRight, { width: amtColW, color: PURPLE }] },
+            el(Text, {}, currentDue.toLocaleString()),
           ),
         ),
 
-        // Items table
-        pdfElement(
-          View,
-          { style: styles.table },
-          pdfElement(
-            View,
-            { style: styles.tableHeader, fixed: true },
-            pdfElement(Text, { style: styles.descColumn }, "Description"),
-            pdfElement(Text, { style: styles.numberColumn }, "Qty"),
-            pdfElement(Text, { style: styles.priceColumn }, "Unit Price"),
-            pdfElement(Text, { style: styles.amountColumn }, "Amount"),
-          ),
-          items.length > 0
-            ? items.map((item, index) =>
-                pdfElement(ReceiptItemRow, {
-                  key: `${item.name}-${index}`,
-                  item,
-                  index,
-                  currency,
-                }),
-              )
-            : pdfElement(Text, { style: styles.emptyText }, "No items added"),
+        // ── Due in words (before payment section — matches preview) ─────
+        el(View, { style: s.wordsBox },
+          el(Text, { style: s.wordsLabel }, "Due Payment In Words: "),
+          el(Text, { style: s.wordsText  }, words),
         ),
 
-        // Footer: totals + payment + thank you
-        pdfElement(
-          View,
-          { style: styles.footer, wrap: false },
-          pdfElement(
-            View,
-            { style: styles.totalsWrapper },
-            pdfElement(
-              View,
-              { style: styles.totalsBox },
-              pdfElement(
-                View,
-                { style: styles.totalsRow },
-                pdfElement(Text, { style: styles.totalsLabel }, "Sub-Total"),
-                pdfElement(Text, { style: styles.totalsValue }, `${currency} ${subtotal.toFixed(2)}`),
-              ),
-              (vat ?? 0) > 0
-                ? pdfElement(
-                    View,
-                    { style: styles.totalsRow },
-                    pdfElement(Text, { style: styles.totalsLabel }, `VAT (${vat}%)`),
-                    pdfElement(Text, { style: styles.totalsValue }, `${currency} ${vatAmount.toFixed(2)}`),
-                  )
-                : null,
-              (discount ?? 0) > 0
-                ? pdfElement(
-                    View,
-                    { style: styles.totalsRow },
-                    pdfElement(Text, { style: styles.totalsLabel }, "Discount"),
-                    pdfElement(Text, { style: styles.totalsValue }, `- ${currency} ${Number(discount).toFixed(2)}`),
-                  )
-                : null,
-              pdfElement(
-                View,
-                { style: styles.grandTotalRow },
-                pdfElement(Text, { style: styles.grandTotalLabel }, "TOTAL"),
-                pdfElement(Text, { style: styles.grandTotalValue }, `${currency} ${grandTotal.toFixed(2)}`),
-              ),
-            ),
-          ),
-          pdfElement(
-            View,
-            { style: styles.paymentBox },
-            pdfElement(Text, { style: styles.paymentTitle }, "Payment Information"),
-            pdfElement(
-              View,
-              { style: styles.paymentDetails },
-              paymentInfo.accountNumber
-                ? pdfElement(
-                    View,
-                    { style: styles.paymentLine },
-                    pdfElement(Text, { style: styles.paymentLineLabel }, "Account:"),
-                    pdfElement(Text, { style: styles.paymentLineValue }, paymentInfo.accountNumber),
-                  )
-                : null,
-              paymentInfo.swift
-                ? pdfElement(
-                    View,
-                    { style: styles.paymentLine },
-                    pdfElement(Text, { style: styles.paymentLineLabel }, "SWIFT:"),
-                    pdfElement(Text, { style: styles.paymentLineValue }, paymentInfo.swift),
-                  )
-                : null,
-              paymentInfo.bankName
-                ? pdfElement(
-                    View,
-                    { style: styles.paymentLine },
-                    pdfElement(Text, { style: styles.paymentLineLabel }, "Bank:"),
-                    pdfElement(Text, { style: styles.paymentLineValue }, paymentInfo.bankName),
-                  )
-                : null,
-              paymentInfo.branch
-                ? pdfElement(
-                    View,
-                    { style: styles.paymentLine },
-                    pdfElement(Text, { style: styles.paymentLineLabel }, "Branch:"),
-                    pdfElement(Text, { style: styles.paymentLineValue }, paymentInfo.branch),
-                  )
-                : null,
-            ),
-          ),
-          pdfElement(
-            Text,
-            { style: styles.thankYou },
-            "Thank you for your business!",
+        // ── Payment Received In (horizontal row — matches preview) ──────
+        el(View, { style: s.paySection },
+          el(Text, { style: s.sectionTitle }, "PAYMENT RECEIVED IN :"),
+          el(View, { style: s.pmInline },
+            ...pmOptions.map(({ key, label }) => {
+              const isChecked  = ri.paymentMethod === key;
+              const extraLabel = isChecked && key === "accountTransfer" && ri.accountTransferName
+                ? ` (${ri.accountTransferName})`
+                : "";
+              return el(View, { key, style: s.pmItem },
+                el(Text, { style: s.pmLabel }, label + extraLabel),
+                isChecked
+                  ? el(View, { style: s.cbChecked }, el(View, { style: s.cbShape }))
+                  : el(Text, { style: s.cbDash }, "—"),
+              );
+            }),
           ),
         ),
+
+        // ── Divider ─────────────────────────────────────────────────────
+        el(View, { style: s.divider }),
+
+        // ── Received By (no date line — matches preview) ────────────────
+        el(Text, { style: s.receivedTitle }, "RECEIVED BY :"),
+        ri.receivedBy.name        ? el(Text, { style: [s.receivedText, s.receivedBold] }, ri.receivedBy.name)        : null,
+        ri.receivedBy.designation ? el(Text, { style: s.receivedText }, ri.receivedBy.designation)                   : null,
+        ri.receivedBy.companyName ? el(Text, { style: s.receivedText }, ri.receivedBy.companyName)                   : null,
+        ri.receivedBy.address     ? el(Text, { style: s.receivedText }, ri.receivedBy.address)                       : null,
+        ri.receivedBy.mobile      ? el(Text, { style: s.receivedText }, `M: ${ri.receivedBy.mobile}`)                : null,
       ),
 
-      // Page footer (fixed — shows on every page)
-      pdfElement(
-        View,
-        { style: styles.pageFooter, fixed: true },
-        pdfElement(
-          View,
-          { style: styles.pageFooterText },
-          pdfElement(Text, null, "+880 1784 398 934"),
-          pdfElement(Text, null, "info@jamroll.xyz"),
-          pdfElement(Text, null, "www.jamroll.xyz"),
+      // ── Footer (fixed at bottom of every page) ───────────────────────
+      el(View, { style: s.footer, fixed: true },
+        el(View, { style: s.footerText },
+          el(Text, {}, "+880 1784 398 934"),
+          el(Text, {}, "info@jamroll.xyz"),
+          el(Text, {}, "www.jamroll.xyz"),
         ),
-        pdfElement(Image, { src: jamrollLogoDataUri, style: styles.pageFooterLogo }),
+        el(Image, { src: jamrollLogoUri, style: s.footerLogo }),
       ),
-    ),
-  );
-}
-
-function ReceiptItemRow({
-  item,
-  index,
-  currency,
-}: {
-  item: InvoiceItem;
-  index: number;
-  currency: string;
-}) {
-  return pdfElement(
-    View,
-    { style: styles.tableRow, wrap: false },
-    pdfElement(
-      View,
-      { style: styles.descColumn },
-      pdfElement(Text, { style: styles.itemName }, `${index + 1}. ${item.name}`),
-      item.note ? pdfElement(Text, { style: styles.itemNote }, item.note) : null,
-      item.subItems?.map((sub, si) =>
-        pdfElement(Text, { key: `${sub}-${si}`, style: styles.subItem }, `— ${sub}`),
-      ),
-    ),
-    pdfElement(Text, { style: [styles.numberColumn, { fontSize: 12 }] }, String(item.quantity)),
-    pdfElement(Text, { style: [styles.priceColumn, { fontSize: 12 }] }, `${currency} ${item.unitPrice.toFixed(2)}`),
-    pdfElement(
-      Text,
-      { style: [styles.amountColumn, { fontSize: 12, fontWeight: 600 }] },
-      `${currency} ${(item.quantity * item.unitPrice).toFixed(2)}`,
     ),
   );
 }

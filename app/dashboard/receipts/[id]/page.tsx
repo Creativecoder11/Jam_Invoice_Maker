@@ -10,38 +10,39 @@ import { Spinner } from "@/components/ui/spinner";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function ViewReceiptPage() {
-  const { id } = useParams();
-  const router = useRouter();
-  const [data, setData]           = useState<any>(null);
-  const [loading, setLoading]     = useState(true);
+  const { id }   = useParams();
+  const router   = useRouter();
+
+  const [data, setData]               = useState<any>(null);
+  const [loading, setLoading]         = useState(true);
   const [downloading, setDownloading] = useState(false);
 
   useEffect(() => {
     fetch(`/api/invoices/${id}`)
       .then((res) => { if (!res.ok) throw new Error("Not found"); return res.json(); })
-      .then((d) => { setData(d); setLoading(false); })
-      .catch(() => { toast.error("Receipt not found"); setLoading(false); });
+      .then((d)   => { setData(d); setLoading(false); })
+      .catch(()   => { toast.error("Receipt not found"); setLoading(false); });
   }, [id]);
 
   const handleDownloadPDF = async () => {
+    setDownloading(true);
+    const tid = toast.loading("Generating PDF…");
     try {
-      setDownloading(true);
       const res = await fetch(`/api/invoices/${id}/receipt-pdf`);
       if (!res.ok) throw new Error("PDF generation failed");
-
       const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement("a");
+      a.href     = url;
       a.download = `${data?.invoiceNumber || "receipt"}.pdf`;
       document.body.appendChild(a);
       a.click();
       a.remove();
       URL.revokeObjectURL(url);
-      toast.success("PDF downloaded");
-    } catch (error) {
-      console.error(error);
-      toast.error("PDF generation failed");
+      toast.success("PDF downloaded", { id: tid });
+    } catch {
+      toast.dismiss(tid);
+      toast.error("Failed to generate PDF");
     } finally {
       setDownloading(false);
     }
