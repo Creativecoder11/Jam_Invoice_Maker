@@ -13,6 +13,7 @@ import {
   MessageSquare,
   UserCircle,
   ContactRound,
+  ReceiptText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,7 @@ const navigation = [
   { name: "Invoices", href: "/dashboard/invoices", icon: FileText },
   { name: "Invoice Services", href: "/dashboard/invoices2", icon: FileText },
   { name: "Quotations", href: "/dashboard/quotations", icon: FileText },
+  { name: "Receipts", href: "/dashboard/receipts", icon: ReceiptText },
   { name: "Clients", href: "/dashboard/clients", icon: ContactRound },
   { name: "Users", href: "/dashboard/users", icon: Users },
   { name: "Profile", href: "/dashboard/profile", icon: UserCircle },

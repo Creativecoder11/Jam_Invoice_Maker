@@ -22,7 +22,7 @@ export type ServiceGroup = {
 export type InvoiceFormData = {
   invoiceNumber: string;
   name: string;
-  type: "invoice" | "invoice2" | "quotation";
+  type: "invoice" | "invoice2" | "quotation" | "receipt";
   logoUrl?: string;
   
   from: {

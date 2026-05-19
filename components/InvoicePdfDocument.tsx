@@ -126,7 +126,7 @@ const styles = StyleSheet.create({
     color: "#9ca3af",
   },
   clientBlock: {
-    width: 240,
+    width: 130,
   },
   accentLabel: {
     color: "#5A378F",
@@ -143,7 +143,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 700,
     textTransform: "uppercase",
-    marginRight: 24,
+    marginRight: 4,
   },
   datesRow: {
     flexDirection: "row",
@@ -268,7 +268,7 @@ const styles = StyleSheet.create({
     fontWeight: 700,
   },
   paymentDetails: {
-    width: 210,
+    width: 140,
   },
   paymentLine: {
     flexDirection: "row",

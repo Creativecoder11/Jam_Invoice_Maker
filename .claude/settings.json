@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir -p /Users/nurmohammadkawser/Downloads/jamroll-invoicemaker/app/dashboard/receipts/\\\\[id\\\\]/edit)"
+    ],
+    "additionalDirectories": [
+      "/Users/nurmohammadkawser/Downloads/jamroll-invoicemaker/app/dashboard/receipts/[id]"
+    ]
+  }
+}
