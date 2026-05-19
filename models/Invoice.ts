@@ -57,13 +57,21 @@ const invoiceSchema = new Schema(
     items: { type: [itemSchema], default: [] },
     services: { type: [serviceGroupSchema], default: [] },
     
-    vat: { type: Number, default: 0 }, // percentage
-    discount: { type: Number, default: 0 }, // absolute amount
+    vat: { type: Number, default: 0 },
+    discount: { type: Number, default: 0 },
     total: { type: Number, required: true },
+
+    notes: {
+      text: { type: String, default: "" },
+      points: { type: [String], default: [] },
+    },
     
     status: { type: String, enum: ["Paid", "Unpaid", "Hold", "Cancelled"], default: "Unpaid" },
-    
+
     creatorId: { type: Schema.Types.ObjectId, ref: "User", required: true },
+
+    isDeleted:  { type: Boolean, default: false },
+    deletedAt:  { type: Date },
   },
   { timestamps: true }
 );

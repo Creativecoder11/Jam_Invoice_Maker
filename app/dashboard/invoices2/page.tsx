@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { InvoiceFormData } from "@/types/invoice";
 import { Spinner } from "@/components/ui/spinner";
 import { Skeleton } from "@/components/ui/skeleton";
+import { DeleteConfirmModal } from "@/components/DeleteConfirmModal";
 
 type Invoice = InvoiceFormData & { _id: string; createdAt: string };
 type SortField = "invoiceNumber" | "clientName" | "date" | "total";
@@ -107,6 +108,7 @@ export default function Invoices2Page() {
   const [sortDir, setSortDir]     = useState<SortDir>("desc");
   const [selected, setSelected]   = useState<Set<string>>(new Set());
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Invoice | null>(null);
 
   useEffect(() => {
     fetch("/api/invoices?type=invoice2")
@@ -130,15 +132,17 @@ export default function Invoices2Page() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!window.confirm("Delete this invoice? This cannot be undone.")) return;
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    const id = deleteTarget._id;
     setDeletingId(id);
     try {
       const res = await fetch(`/api/invoices/${id}`, { method: "DELETE" });
       if (res.ok) {
         setInvoices((prev) => prev.filter((i) => i._id !== id));
         setSelected((prev) => { const next = new Set(prev); next.delete(id); return next; });
-        toast.success("Invoice deleted");
+        setDeleteTarget(null);
+        toast.success("Invoice moved to trash");
       } else {
         toast.error("Failed to delete invoice");
       }
@@ -204,6 +208,15 @@ export default function Invoices2Page() {
 
   return (
     <div className="space-y-5">
+      <DeleteConfirmModal
+        open={!!deleteTarget}
+        onOpenChange={(v) => { if (!v) setDeleteTarget(null); }}
+        itemName={deleteTarget?.invoiceNumber}
+        itemLabel="invoice"
+        onConfirm={handleDelete}
+        isDeleting={!!deletingId}
+      />
+
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Invoice 2</h1>
         <p className="text-sm text-gray-400 mt-0.5">Manage and track all your Invoice 2 records.</p>
@@ -270,7 +283,7 @@ export default function Invoices2Page() {
         </div>
 
         {/* Table */}
-        <div className="overflow-x-auto">
+        <div className="">
           {loading ? (
             <table className="w-full text-sm">
               <thead>
@@ -387,7 +400,7 @@ export default function Invoices2Page() {
                           {isSuperAdmin && (
                             <RowMenu
                               onDraft={() => handleStatusChange(inv._id, "Hold")}
-                              onDelete={() => handleDelete(inv._id)}
+                              onDelete={() => setDeleteTarget(inv)}
                               isDeleting={deletingId === inv._id}
                             />
                           )}

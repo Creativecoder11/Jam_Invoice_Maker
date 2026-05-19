@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { InvoiceFormData } from "@/types/invoice";
 import { Spinner } from "@/components/ui/spinner";
 import { Skeleton } from "@/components/ui/skeleton";
+import { DeleteConfirmModal } from "@/components/DeleteConfirmModal";
 
 type Invoice = InvoiceFormData & { _id: string; createdAt: string };
 type SortField = "invoiceNumber" | "clientName" | "date" | "total";
@@ -63,7 +64,7 @@ function RowMenu({ onDraft, onDelete, isDeleting }: { onDraft: () => void; onDel
         <MoreHorizontal className="h-4 w-4 text-gray-400" />
       </button>
       {open && (
-        <div className="absolute right-0 top-full mt-1 w-40 bg-white border border-gray-100 rounded-xl shadow-xl z-50 overflow-hidden">
+        <div className="absolute right-0 top-full mt-1 w-40 bg-white border border-gray-100 rounded-xl shadow-xl z-150 ">
           <button
             onClick={() => { onDraft(); setOpen(false); }}
             className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 text-left"
@@ -110,6 +111,7 @@ export default function InvoicesPage() {
   const [sortDir, setSortDir]     = useState<SortDir>("desc");
   const [selected, setSelected]   = useState<Set<string>>(new Set());
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Invoice | null>(null);
 
   useEffect(() => {
     fetch("/api/invoices?type=invoice")
@@ -134,15 +136,17 @@ export default function InvoicesPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!window.confirm("Delete this invoice? This cannot be undone.")) return;
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    const id = deleteTarget._id;
     setDeletingId(id);
     try {
       const res = await fetch(`/api/invoices/${id}`, { method: "DELETE" });
       if (res.ok) {
         setInvoices((prev) => prev.filter((i) => i._id !== id));
         setSelected((prev) => { const next = new Set(prev); next.delete(id); return next; });
-        toast.success("Invoice deleted");
+        setDeleteTarget(null);
+        toast.success("Invoice moved to trash");
       } else {
         toast.error("Failed to delete invoice");
       }
@@ -210,6 +214,15 @@ export default function InvoicesPage() {
 
   return (
     <div className="space-y-5">
+      <DeleteConfirmModal
+        open={!!deleteTarget}
+        onOpenChange={(v) => { if (!v) setDeleteTarget(null); }}
+        itemName={deleteTarget?.invoiceNumber}
+        itemLabel="invoice"
+        onConfirm={handleDelete}
+        isDeleting={!!deletingId}
+      />
+
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Invoices</h1>
         <p className="text-sm text-gray-400 mt-0.5">Manage and track all your invoices.</p>
@@ -282,7 +295,7 @@ export default function InvoicesPage() {
         </div>
 
         {/* Table */}
-        <div className="overflow-x-auto">
+        <div className="">
           {loading ? (
             <table className="w-full text-sm">
               <thead>
@@ -401,7 +414,7 @@ export default function InvoicesPage() {
                           {isSuperAdmin && (
                             <RowMenu
                               onDraft={() => handleStatusChange(inv._id, "Hold")}
-                              onDelete={() => handleDelete(inv._id)}
+                              onDelete={() => setDeleteTarget(inv)}
                               isDeleting={deletingId === inv._id}
                             />
                           )}

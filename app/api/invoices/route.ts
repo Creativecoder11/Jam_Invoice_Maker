@@ -40,7 +40,7 @@ export async function GET(req: Request) {
 
     await dbConnect();
 
-    const query: any = { type };
+    const query: any = { type, isDeleted: { $ne: true } };
     if (status && status !== "ALL") {
       query.status = status;
     }

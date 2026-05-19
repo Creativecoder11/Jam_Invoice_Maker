@@ -56,7 +56,12 @@ export type InvoiceFormData = {
   vat: number;
   discount: number;
   total: number;
-  
+
+  notes?: {
+    text: string;
+    points: string[];
+  };
+
   status: "Paid" | "Unpaid" | "Hold" | "Cancelled";
 };
 

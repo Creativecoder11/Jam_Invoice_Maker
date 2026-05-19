@@ -7,19 +7,18 @@ import {
   LayoutDashboard,
   FileText,
   Users,
-  Settings,
   LogOut,
   Menu,
   MessageSquare,
   UserCircle,
   ContactRound,
   ReceiptText,
+  Trash2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { useState } from "react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -31,6 +30,7 @@ const navigation = [
   { name: "Users", href: "/dashboard/users", icon: Users },
   { name: "Profile", href: "/dashboard/profile", icon: UserCircle },
   { name: "Feedback", href: "/dashboard/feedback", icon: MessageSquare },
+  { name: "Trash", href: "/dashboard/trash", icon: Trash2 },
 ];
 
 const NavLinks = ({ navigation, pathname, setSidebarOpen }: { navigation: any[], pathname: string, setSidebarOpen: (v: boolean) => void }) => (
@@ -52,7 +52,7 @@ const NavLinks = ({ navigation, pathname, setSidebarOpen }: { navigation: any[],
           <item.icon
             className={cn(
               isActive ? "text-white" : "text-slate-400 hover:text-white",
-              "w-5 h-5 flex-shrink-0"
+              "w-5 h-5 shrink-0"
             )}
             aria-hidden="true"
           />
@@ -87,7 +87,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 className="flex items-center space-x-3 px-4 py-2 text-slate-400 hover:text-red-400 cursor-pointer transition-colors"
                 onClick={() => signOut({ callbackUrl: "/login" })}
               >
-                <LogOut className="w-5 h-5 flex-shrink-0" />
+                <LogOut className="w-5 h-5 shrink-0" />
                 <span className="font-medium">Logout</span>
               </div>
             </div>
@@ -110,7 +110,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               className="flex items-center space-x-3 px-4 py-2 text-slate-400 hover:text-red-400 cursor-pointer transition-colors"
               onClick={() => signOut({ callbackUrl: "/login" })}
             >
-              <LogOut className="w-5 h-5 flex-shrink-0" />
+              <LogOut className="w-5 h-5 shrink-0" />
               <span className="font-medium">Logout</span>
             </div>
           </div>
@@ -151,7 +151,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 {session?.user?.image ? (
                   <img src={session.user.image} alt={session.user.name || "Avatar"} className="w-full h-full object-cover" />
                 ) : (
-                  <div className="w-full h-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white text-xs font-bold">
+                  <div className="w-full h-full bg-linear-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white text-xs font-bold">
                     {(session?.user?.name || "U").charAt(0).toUpperCase()}
                   </div>
                 )}

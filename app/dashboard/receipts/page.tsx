@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { InvoiceFormData } from "@/types/invoice";
 import { Spinner } from "@/components/ui/spinner";
 import { Skeleton } from "@/components/ui/skeleton";
+import { DeleteConfirmModal } from "@/components/DeleteConfirmModal";
 
 type Receipt = InvoiceFormData & { _id: string; createdAt: string };
 type SortField = "invoiceNumber" | "clientName" | "date" | "total";
@@ -105,6 +106,7 @@ export default function ReceiptsPage() {
   const [sortDir, setSortDir]     = useState<SortDir>("desc");
   const [selected, setSelected]   = useState<Set<string>>(new Set());
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Receipt | null>(null);
 
   useEffect(() => {
     fetch("/api/invoices?type=receipt")
@@ -126,15 +128,17 @@ export default function ReceiptsPage() {
     } catch { toast.error("An error occurred"); }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!window.confirm("Delete this receipt? This cannot be undone.")) return;
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    const id = deleteTarget._id;
     setDeletingId(id);
     try {
       const res = await fetch(`/api/invoices/${id}`, { method: "DELETE" });
       if (res.ok) {
         setReceipts((prev) => prev.filter((r) => r._id !== id));
         setSelected((prev) => { const next = new Set(prev); next.delete(id); return next; });
-        toast.success("Receipt deleted");
+        setDeleteTarget(null);
+        toast.success("Receipt moved to trash");
       } else toast.error("Failed to delete receipt");
     } catch { toast.error("An error occurred"); }
     finally { setDeletingId(null); }
@@ -239,6 +243,15 @@ export default function ReceiptsPage() {
 
   return (
     <div className="space-y-5">
+      <DeleteConfirmModal
+        open={!!deleteTarget}
+        onOpenChange={(v) => { if (!v) setDeleteTarget(null); }}
+        itemName={deleteTarget?.invoiceNumber}
+        itemLabel="receipt"
+        onConfirm={handleDelete}
+        isDeleting={!!deletingId}
+      />
+
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Receipts</h1>
         <p className="text-sm text-gray-400 mt-0.5">Manage and track all your receipts.</p>
@@ -248,7 +261,7 @@ export default function ReceiptsPage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {statCards.map(({ label, value, sub, icon: Icon, color, bg }) => (
           <div key={label} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-center gap-4">
-            <div className={`w-11 h-11 rounded-xl ${bg} flex items-center justify-center flex-shrink-0`}>
+            <div className={`w-11 h-11 rounded-xl ${bg} flex items-center justify-center shrink-0`}>
               <Icon className={`w-5 h-5 ${color}`} />
             </div>
             <div className="min-w-0">
@@ -322,7 +335,7 @@ export default function ReceiptsPage() {
         </div>
 
         {/* Table */}
-        <div className="overflow-x-auto">
+        <div className="">
           {loading ? (
             <table className="w-full text-sm">
               <thead>
@@ -436,7 +449,7 @@ export default function ReceiptsPage() {
                           {isSuperAdmin && (
                             <RowMenu
                               onHold={() => handleStatusChange(rec._id, "Hold")}
-                              onDelete={() => handleDelete(rec._id)}
+                              onDelete={() => setDeleteTarget(rec)}
                               isDeleting={deletingId === rec._id}
                             />
                           )}

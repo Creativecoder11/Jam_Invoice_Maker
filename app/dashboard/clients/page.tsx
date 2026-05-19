@@ -11,6 +11,7 @@ import { Plus, Search, Edit, Trash2, X, Check, Building2, Mail, Phone, MapPin } 
 import { ClientData } from "@/types/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
+import { DeleteConfirmModal } from "@/components/DeleteConfirmModal";
 
 const EMPTY_FORM = { name: "", companyName: "", email: "", phone: "", address: "" };
 
@@ -76,6 +77,7 @@ export default function ClientsPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<ClientData | null>(null);
 
   useEffect(() => {
     fetch("/api/clients")
@@ -140,14 +142,16 @@ export default function ClientsPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!window.confirm("Delete this client? This cannot be undone.")) return;
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    const id = deleteTarget._id;
     setDeletingId(id);
     try {
       const res = await fetch(`/api/clients/${id}`, { method: "DELETE" });
       if (res.ok) {
         setClients((prev) => prev.filter((c) => c._id !== id));
-        toast.success("Client deleted");
+        setDeleteTarget(null);
+        toast.success("Client moved to trash");
       } else {
         toast.error("Failed to delete");
       }
@@ -160,6 +164,15 @@ export default function ClientsPage() {
 
   return (
     <div className="space-y-5">
+      <DeleteConfirmModal
+        open={!!deleteTarget}
+        onOpenChange={(v) => { if (!v) setDeleteTarget(null); }}
+        itemName={deleteTarget?.name}
+        itemLabel="client"
+        onConfirm={handleDelete}
+        isDeleting={!!deletingId}
+      />
+
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Clients</h1>
         <p className="text-sm text-gray-400 mt-0.5">Manage preset client info to auto-fill invoices.</p>
@@ -281,7 +294,7 @@ export default function ClientsPage() {
                           <Edit className="h-4 w-4 text-gray-400" />
                         </button>
                         <button
-                          onClick={() => handleDelete(client._id)}
+                          onClick={() => setDeleteTarget(client)}
                           disabled={deletingId === client._id}
                           className="p-1.5 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50"
                           title="Delete"

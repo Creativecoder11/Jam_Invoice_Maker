@@ -1,12 +1,10 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Download, Printer, ArrowLeft } from "lucide-react";
-import { ReceiptPreview, PAGE_WIDTH_R, PAGE_HEIGHT_R } from "@/components/ReceiptPreview";
-import html2canvas from "html2canvas";
-import { jsPDF } from "jspdf";
+import { ReceiptPreview } from "@/components/ReceiptPreview";
 import { toast } from "sonner";
 import { Spinner } from "@/components/ui/spinner";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -17,7 +15,6 @@ export default function ViewReceiptPage() {
   const [data, setData]           = useState<any>(null);
   const [loading, setLoading]     = useState(true);
   const [downloading, setDownloading] = useState(false);
-  const printRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetch(`/api/invoices/${id}`)
@@ -27,28 +24,20 @@ export default function ViewReceiptPage() {
   }, [id]);
 
   const handleDownloadPDF = async () => {
-    if (!printRef.current) { toast.error("Receipt not found"); return; }
     try {
       setDownloading(true);
-      const pageEls = printRef.current.querySelectorAll<HTMLElement>("[data-invoice-page]");
-      if (!pageEls.length) { toast.error("Receipt not found"); return; }
+      const res = await fetch(`/api/invoices/${id}/receipt-pdf`);
+      if (!res.ok) throw new Error("PDF generation failed");
 
-      const pdf = new jsPDF({ orientation: "portrait", unit: "pt", format: [PAGE_WIDTH_R, PAGE_HEIGHT_R] });
-      for (let i = 0; i < pageEls.length; i++) {
-        const canvas = await html2canvas(pageEls[i], {
-          scale: 3, useCORS: true, allowTaint: false, logging: false,
-          backgroundColor: "#ffffff", scrollX: 0, scrollY: 0,
-          onclone: (_doc, clonedEl) => {
-            clonedEl.style.marginBottom = "0";
-            let p: HTMLElement | null = clonedEl.parentElement;
-            while (p && p.tagName !== "BODY") { p.style.transform = "none"; p.style.zoom = "1"; p = p.parentElement; }
-          },
-        });
-        const imgData = canvas.toDataURL("image/png", 1.0);
-        if (i > 0) pdf.addPage([PAGE_WIDTH_R, PAGE_HEIGHT_R], "portrait");
-        pdf.addImage(imgData, "PNG", 0, 0, PAGE_WIDTH_R, PAGE_HEIGHT_R);
-      }
-      pdf.save(`${data.invoiceNumber || "receipt"}.pdf`);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${data?.invoiceNumber || "receipt"}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
       toast.success("PDF downloaded");
     } catch (error) {
       console.error(error);
@@ -106,7 +95,7 @@ export default function ViewReceiptPage() {
 
       <div className="overflow-x-auto bg-muted/20 p-8 rounded-xl border flex justify-center print:p-0 print:border-none print:bg-white print:overflow-visible">
         <div className="scale-75 md:scale-100 origin-top print:scale-100">
-          <ReceiptPreview data={data} ref={printRef} />
+          <ReceiptPreview data={data} />
         </div>
       </div>
     </div>

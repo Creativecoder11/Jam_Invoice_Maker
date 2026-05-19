@@ -22,7 +22,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   }
 }
 
-export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await getServerSession(authOptions);
     if (!session || session.user.role !== "Super Admin") {
@@ -31,9 +31,21 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
 
     const { id } = await params;
     await dbConnect();
-    const client = await Client.findByIdAndDelete(id);
+
+    const { searchParams } = new URL(req.url);
+    if (searchParams.get("permanent") === "true") {
+      const client = await Client.findByIdAndDelete(id);
+      if (!client) return NextResponse.json({ message: "Not found" }, { status: 404 });
+      return NextResponse.json({ message: "Permanently deleted" });
+    }
+
+    const client = await Client.findByIdAndUpdate(
+      id,
+      { isDeleted: true, deletedAt: new Date() },
+      { new: true },
+    );
     if (!client) return NextResponse.json({ message: "Not found" }, { status: 404 });
-    return NextResponse.json({ message: "Deleted" });
+    return NextResponse.json({ message: "Moved to trash" });
   } catch (error: any) {
     return NextResponse.json({ message: error.message || "Internal Error" }, { status: 500 });
   }

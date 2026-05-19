@@ -17,7 +17,7 @@ const HEADER_H = 165;
 const TITLE_H = 60;
 const TABLE_HEADER_H = 32;
 const FIRST_PAGE_GAP = 32;
-const FOOTER_H = 200;
+const FOOTER_H = 10;
 
 const USABLE_H = PAGE_HEIGHT - PADDING * 2 - BOTTOM_FOOTER_H;
 
@@ -87,6 +87,7 @@ export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
       invoiceNumber = "INV-001",
       name = "Invoice",
       logoUrl,
+      type,
       to = { name: "", email: "", phone: "", address: "" },
       date = new Date(),
       dueDate = new Date(),
@@ -98,10 +99,13 @@ export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
         swift: "",
         currency: "$",
       },
+      notes,
       items = [],
       vat = 0,
       discount = 0,
     } = data;
+
+    const isQuotation = type === "quotation";
 
     const subtotal = items.reduce(
       (acc, item) => acc + item.quantity * item.unitPrice,
@@ -560,145 +564,110 @@ export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
                   </div>
 
                   <div style={{ width: "100%" }}>
-                    <div
-                      style={{
-                        width: "100%",
-                        color: "white",
-                        padding: "10px 32px 10px 32px",
-                        border: "1px solid #5A378F",
-                        backgroundColor: "#5A3691",
-                        gap: "8px",
-                        marginTop: "8px",
-                        verticalAlign: "top",
-                      }}
-                    >
-                      <div
-                        style={{
-                          display: "flex",
-                          flexDirection: "row",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                        }}
-                      >
-                        <div>
+                    {isQuotation ? (
+                      /* Notes block for quotations */
+                      (notes?.text || (notes?.points && notes.points.length > 0)) ? (
+                        <div
+                          style={{
+                            width: "100%",
+                            padding: "10px 16px",
+                            border: "1px solid #5A378F",
+                            backgroundColor: "#5A3691",
+                            marginTop: "8px",
+                          }}
+                        >
                           <h3
                             style={{
-                              fontSize: "16px",
+                              fontSize: "12px",
                               fontWeight: "bold",
+                              color: "white",
                               margin: 0,
+                              marginBottom: "6px",
                             }}
                           >
-                            Payment Information:
+                            Notes:
                           </h3>
+                          {notes?.text && (
+                            <p
+                              style={{
+                                fontSize: "10px",
+                                color: "white",
+                                margin: 0,
+                                marginBottom: notes?.points?.length ? "6px" : 0,
+                                whiteSpace: "pre-line",
+                              }}
+                            >
+                              {notes.text}
+                            </p>
+                          )}
+                          {notes?.points && notes.points.length > 0 && (
+                            <ul style={{ margin: 0, padding: 0, listStyle: "none" }}>
+                              {notes.points.map((pt, i) => (
+                                <li
+                                  key={i}
+                                  style={{ fontSize: "10px", color: "white", margin: 0, marginBottom: "2px" }}
+                                >
+                                  • {pt}
+                                </li>
+                              ))}
+                            </ul>
+                          )}
                         </div>
-                        <div style={{ textAlign: "left", fontSize: "10px" }}>
-                          <div
-                            style={{
-                              display: "flex",
-                              flexDirection: "row",
-                              gap: "4px",
-                            }}
-                          >
-                            <p
+                      ) : null
+                    ) : (
+                      /* Payment info block for invoices */
+                      <div
+                        style={{
+                          width: "100%",
+                          color: "white",
+                          padding: "10px 32px 10px 32px",
+                          border: "1px solid #5A378F",
+                          backgroundColor: "#5A3691",
+                          gap: "8px",
+                          marginTop: "8px",
+                          verticalAlign: "top",
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: "flex",
+                            flexDirection: "row",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                          }}
+                        >
+                          <div>
+                            <h3
                               style={{
-                                fontSize: "8px",
-                                color: "white",
-                                margin: 0,
-                              }}
-                            >
-                              Account Number:
-                            </p>
-                            <h4
-                              style={{
-                                fontSize: "8px",
+                                fontSize: "16px",
                                 fontWeight: "bold",
                                 margin: 0,
                               }}
                             >
-                              {paymentInfo.accountNumber}
-                            </h4>
+                              Payment Information:
+                            </h3>
                           </div>
-                          <div
-                            style={{
-                              display: "flex",
-                              flexDirection: "row",
-                              gap: "4px",
-                            }}
-                          >
-                            <p
-                              style={{
-                                fontSize: "8px",
-                                color: "white",
-                                margin: 0,
-                              }}
-                            >
-                              SWIFT Code:
-                            </p>
-                            <h4
-                              style={{
-                                fontSize: "8px",
-                                fontWeight: "bold",
-                                margin: 0,
-                              }}
-                            >
-                              {paymentInfo.swift}
-                            </h4>
-                          </div>
-                          <div
-                            style={{
-                              display: "flex",
-                              flexDirection: "row",
-                              gap: "4px",
-                            }}
-                          >
-                            <p
-                              style={{
-                                fontSize: "8px",
-                                color: "white",
-                                margin: 0,
-                              }}
-                            >
-                              Bank Name:
-                            </p>
-                            <h4
-                              style={{
-                                fontSize: "8px",
-                                fontWeight: "bold",
-                                margin: 0,
-                              }}
-                            >
-                              {paymentInfo.bankName}
-                            </h4>
-                          </div>
-                          <div
-                            style={{
-                              display: "flex",
-                              flexDirection: "row",
-                              gap: "4px",
-                            }}
-                          >
-                            <p
-                              style={{
-                                fontSize: "8px",
-                                color: "white",
-                                margin: 0,
-                              }}
-                            >
-                              Branch:
-                            </p>
-                            <h4
-                              style={{
-                                fontSize: "8px",
-                                fontWeight: "bold",
-                                margin: 0,
-                              }}
-                            >
-                              {paymentInfo.branch}
-                            </h4>
+                          <div style={{ textAlign: "left", fontSize: "10px" }}>
+                            <div style={{ display: "flex", flexDirection: "row", gap: "4px" }}>
+                              <p style={{ fontSize: "8px", color: "white", margin: 0 }}>Account Number:</p>
+                              <h4 style={{ fontSize: "8px", fontWeight: "bold", margin: 0 }}>{paymentInfo.accountNumber}</h4>
+                            </div>
+                            <div style={{ display: "flex", flexDirection: "row", gap: "4px" }}>
+                              <p style={{ fontSize: "8px", color: "white", margin: 0 }}>SWIFT Code:</p>
+                              <h4 style={{ fontSize: "8px", fontWeight: "bold", margin: 0 }}>{paymentInfo.swift}</h4>
+                            </div>
+                            <div style={{ display: "flex", flexDirection: "row", gap: "4px" }}>
+                              <p style={{ fontSize: "8px", color: "white", margin: 0 }}>Bank Name:</p>
+                              <h4 style={{ fontSize: "8px", fontWeight: "bold", margin: 0 }}>{paymentInfo.bankName}</h4>
+                            </div>
+                            <div style={{ display: "flex", flexDirection: "row", gap: "4px" }}>
+                              <p style={{ fontSize: "8px", color: "white", margin: 0 }}>Branch:</p>
+                              <h4 style={{ fontSize: "8px", fontWeight: "bold", margin: 0 }}>{paymentInfo.branch}</h4>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
+                    )}
                   </div>
                 </div>
               )}

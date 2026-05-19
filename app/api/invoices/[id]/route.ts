@@ -58,13 +58,25 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
 
     await dbConnect();
     const resolvedParams = await params;
-    const invoice = await Invoice.findByIdAndDelete(resolvedParams.id);
+
+    const { searchParams } = new URL(req.url);
+    if (searchParams.get("permanent") === "true") {
+      const invoice = await Invoice.findByIdAndDelete(resolvedParams.id);
+      if (!invoice) return NextResponse.json({ message: "Not Found" }, { status: 404 });
+      return NextResponse.json({ message: "Permanently deleted" });
+    }
+
+    const invoice = await Invoice.findByIdAndUpdate(
+      resolvedParams.id,
+      { isDeleted: true, deletedAt: new Date() },
+      { new: true },
+    );
 
     if (!invoice) {
       return NextResponse.json({ message: "Not Found" }, { status: 404 });
     }
 
-    return NextResponse.json({ message: "Deleted" });
+    return NextResponse.json({ message: "Moved to trash" });
   } catch (error) {
     return NextResponse.json({ message: "Internal Error" }, { status: 500 });
   }

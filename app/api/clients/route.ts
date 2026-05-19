@@ -10,7 +10,7 @@ export async function GET() {
     if (!session) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
 
     await dbConnect();
-    const clients = await Client.find({}).sort({ name: 1 }).lean();
+    const clients = await Client.find({ isDeleted: { $ne: true } }).sort({ name: 1 }).lean();
     return NextResponse.json(clients);
   } catch (error) {
     return NextResponse.json({ message: "Internal Error" }, { status: 500 });

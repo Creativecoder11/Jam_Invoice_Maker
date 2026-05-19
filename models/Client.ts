@@ -8,6 +8,9 @@ const clientSchema = new Schema(
     phone: { type: String, default: "" },
     address: { type: String, default: "" },
     creatorId: { type: Schema.Types.ObjectId, ref: "User", required: true },
+
+    isDeleted:  { type: Boolean, default: false },
+    deletedAt:  { type: Date },
   },
   { timestamps: true }
 );

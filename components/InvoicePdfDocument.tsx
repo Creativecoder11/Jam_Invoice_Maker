@@ -307,7 +307,9 @@ export function InvoicePdfDocument({ invoice }: InvoicePdfDocumentProps) {
 export function createInvoicePdfDocument(
   invoice: Partial<InvoiceFormData & Invoice2FormData>,
 ) {
-  const isInvoice2 = invoice.type === "invoice2";
+  const docType = invoice.type as string | undefined;
+  const isInvoice2 = docType === "invoice2";
+  const isQuotation = docType === "quotation";
   const paymentInfo = withPaymentDefaults(invoice.paymentInfo);
   const currency = paymentInfo.currency || "USD";
 
@@ -324,16 +326,15 @@ export function createInvoicePdfDocument(
         pdfElement(InvoiceTitle, { invoice }),
         pdfElement(InvoiceDates, { invoice }),
         isInvoice2
-          ? pdfElement(ServiceTable, {
-              services: invoice.services ?? [],
-              currency,
-            })
+          ? pdfElement(ServiceTable, { services: invoice.services ?? [], currency })
           : pdfElement(ItemTable, { items: invoice.items ?? [], currency }),
         pdfElement(TotalsBlock, {
           rows: isInvoice2
             ? buildServiceTotalRows(invoice, currency)
             : buildItemTotalRows(invoice, currency),
           paymentInfo,
+          isQuotation,
+          notes: invoice.notes,
         }),
       ),
       pdfElement(InvoiceFooter),
@@ -377,19 +378,20 @@ function InvoiceTitle({ invoice }: InvoicePdfDocumentProps) {
 }
 
 function InvoiceDates({ invoice }: InvoicePdfDocumentProps) {
+  const isQuotation = (invoice.type as string) === "quotation";
   return pdfElement(
     View,
     { style: styles.datesRow },
     pdfElement(
       View,
       { style: styles.dateItem },
-      pdfElement(Text, { style: styles.dateLabel }, "Invoice Date:"),
+      pdfElement(Text, { style: styles.dateLabel }, isQuotation ? "Quotation Date:" : "Invoice Date:"),
       pdfElement(Text, { style: styles.mutedText }, formatDate(invoice.date)),
     ),
     pdfElement(
       View,
       { style: styles.dateItem },
-      pdfElement(Text, { style: styles.dateLabel }, "Due Date:"),
+      pdfElement(Text, { style: styles.dateLabel }, isQuotation ? "Valid Until:" : "Due Date:"),
       pdfElement(Text, { style: styles.mutedText }, formatDate(invoice.dueDate)),
     ),
   );
@@ -515,10 +517,16 @@ function ItemRow({
 function TotalsBlock({
   rows,
   paymentInfo,
+  isQuotation,
+  notes,
 }: {
   rows: TotalRow[];
   paymentInfo: ReturnType<typeof withPaymentDefaults>;
+  isQuotation?: boolean;
+  notes?: { text?: string; points?: string[] };
 }) {
+  const hasNotes = isQuotation && (notes?.text || (notes?.points && notes.points.length > 0));
+
   return pdfElement(
     View,
     { style: styles.totals, wrap: false },
@@ -530,23 +538,37 @@ function TotalsBlock({
         pdfElement(Text, { style: styles.totalValue }, row.value),
       ),
     ),
-    pdfElement(
-      View,
-      { style: styles.paymentBox },
-      pdfElement(
-        View,
-        { style: styles.paymentRow },
-        pdfElement(Text, { style: styles.paymentTitle }, "Payment Information:"),
-        pdfElement(
+    isQuotation
+      ? hasNotes
+        ? pdfElement(
+            View,
+            { style: styles.paymentBox },
+            pdfElement(Text, { style: [styles.paymentTitle, { marginBottom: 6 }] }, "Notes:"),
+            notes?.text
+              ? pdfElement(Text, { style: { fontSize: 10, color: "white", marginBottom: notes?.points?.length ? 6 : 0 } }, notes.text)
+              : null,
+            ...(notes?.points ?? []).map((pt, i) =>
+              pdfElement(Text, { key: String(i), style: { fontSize: 10, color: "white", marginBottom: 2 } }, `• ${pt}`),
+            ),
+          )
+        : null
+      : pdfElement(
           View,
-          { style: styles.paymentDetails },
-          pdfElement(PaymentLine, { label: "Account Number:", value: paymentInfo.accountNumber }),
-          pdfElement(PaymentLine, { label: "SWIFT Code:", value: paymentInfo.swift }),
-          pdfElement(PaymentLine, { label: "Bank Name:", value: paymentInfo.bankName }),
-          pdfElement(PaymentLine, { label: "Branch:", value: paymentInfo.branch }),
+          { style: styles.paymentBox },
+          pdfElement(
+            View,
+            { style: styles.paymentRow },
+            pdfElement(Text, { style: styles.paymentTitle }, "Payment Information:"),
+            pdfElement(
+              View,
+              { style: styles.paymentDetails },
+              pdfElement(PaymentLine, { label: "Account Number:", value: paymentInfo.accountNumber }),
+              pdfElement(PaymentLine, { label: "SWIFT Code:", value: paymentInfo.swift }),
+              pdfElement(PaymentLine, { label: "Bank Name:", value: paymentInfo.bankName }),
+              pdfElement(PaymentLine, { label: "Branch:", value: paymentInfo.branch }),
+            ),
+          ),
         ),
-      ),
-    ),
   );
 }
 
