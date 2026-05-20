@@ -92,8 +92,8 @@ const jamrollLogoDataUri = `data:image/png;base64,${readFileSync(jamrollLogoPath
 const styles = StyleSheet.create({
   page: {
     width: 612,
-    minHeight: 842,
     padding: 30,
+    paddingBottom: 80,
     backgroundColor: "#ffffff",
     color: "#000000",
     fontFamily: "HelveticaNowDisplay",
@@ -108,18 +108,16 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   logo: {
-    width: 73,
-    height: 110,
-    objectFit: "cover",
-    borderRadius: 4,
+    width: 80,
+    height: 80,
+    objectFit: "contain",
   },
   logoPlaceholder: {
-    width: 73,
-    height: 110,
+    width: 80,
+    height: 80,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "#f3f4f6",
-    borderRadius: 4,
   },
   placeholderText: {
     fontSize: 10,
@@ -282,13 +280,16 @@ const styles = StyleSheet.create({
     fontWeight: 700,
   },
   footer: {
+    position: "absolute",
+    bottom: 30,
+    left: 30,
+    right: 30,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     borderTopWidth: 1,
     borderTopColor: "#e5e7eb",
     paddingTop: 8,
-    marginTop: 16,
   },
   footerText: {
     color: "#4b5563",
@@ -326,8 +327,8 @@ export function createInvoicePdfDocument(
         pdfElement(InvoiceTitle, { invoice }),
         pdfElement(InvoiceDates, { invoice }),
         isInvoice2
-          ? pdfElement(ServiceTable, { services: invoice.services ?? [], currency })
-          : pdfElement(ItemTable, { items: invoice.items ?? [], currency }),
+          ? pdfElement(ServiceTable, { services: invoice.services ?? [] })
+          : pdfElement(ItemTable, { items: invoice.items ?? [] }),
         pdfElement(TotalsBlock, {
           rows: isInvoice2
             ? buildServiceTotalRows(invoice, currency)
@@ -397,13 +398,7 @@ function InvoiceDates({ invoice }: InvoicePdfDocumentProps) {
   );
 }
 
-function ItemTable({
-  items,
-  currency,
-}: {
-  items: InvoiceItem[];
-  currency: string;
-}) {
+function ItemTable({ items }: { items: InvoiceItem[] }) {
   return pdfElement(
     View,
     { style: styles.table },
@@ -417,24 +412,13 @@ function ItemTable({
     ),
     items.length > 0
       ? items.map((item, index) =>
-          pdfElement(ItemRow, {
-            key: `${item.name}-${index}`,
-            item,
-            indexLabel: `${index + 1}.`,
-            currency,
-          }),
+          pdfElement(ItemRow, { key: `${item.name}-${index}`, item, indexLabel: `${index + 1}.` }),
         )
       : pdfElement(Text, { style: styles.emptyText }, "No items added"),
   );
 }
 
-function ServiceTable({
-  services,
-  currency,
-}: {
-  services: ServiceGroup[];
-  currency: string;
-}) {
+function ServiceTable({ services }: { services: ServiceGroup[] }) {
   return pdfElement(
     View,
     { style: styles.table },
@@ -450,7 +434,7 @@ function ServiceTable({
       ? services.map((service, serviceIndex) =>
           pdfElement(
             View,
-            { key: `${service.serviceName}-${serviceIndex}`, wrap: false },
+            { key: `${service.serviceName}-${serviceIndex}` },
             pdfElement(
               Text,
               { style: styles.serviceHeader },
@@ -461,7 +445,6 @@ function ServiceTable({
                 key: `${item.name}-${itemIndex}`,
                 item,
                 indexLabel: `${itemIndex + 1}.`,
-                currency,
                 indented: true,
               }),
             ),
@@ -472,7 +455,7 @@ function ServiceTable({
               pdfElement(
                 Text,
                 { style: styles.serviceSubtotalValue },
-                `${currency} ${sumItems(service.items).toFixed(2)}`,
+                formatMoney(sumItems(service.items)),
               ),
             ),
           ),
@@ -484,12 +467,10 @@ function ServiceTable({
 function ItemRow({
   item,
   indexLabel,
-  currency,
   indented = false,
 }: {
   item: InvoiceItem | ServiceItem;
   indexLabel: string;
-  currency: string;
   indented?: boolean;
 }) {
   return pdfElement(
@@ -505,12 +486,8 @@ function ItemRow({
       ),
     ),
     pdfElement(Text, { style: styles.numberColumn }, item.quantity),
-    pdfElement(Text, { style: styles.numberColumn }, `${currency} ${formatMoney(item.unitPrice)}`),
-    pdfElement(
-      Text,
-      { style: styles.numberColumn },
-      `${currency} ${formatMoney(item.quantity * item.unitPrice)}`,
-    ),
+    pdfElement(Text, { style: styles.numberColumn }, formatMoney(item.unitPrice)),
+    pdfElement(Text, { style: styles.numberColumn }, formatMoney(item.quantity * item.unitPrice)),
   );
 }
 
@@ -529,7 +506,7 @@ function TotalsBlock({
 
   return pdfElement(
     View,
-    { style: styles.totals, wrap: false },
+    { style: styles.totals },
     rows.map((row) =>
       pdfElement(
         View,
@@ -600,29 +577,28 @@ function buildItemTotalRows(
   invoice: Partial<InvoiceFormData & Invoice2FormData>,
   currency: string,
 ): TotalRow[] {
-  const subtotal = sumItems(invoice.items ?? []);
-  const discount = invoice.discount ?? 0;
-  const vat = invoice.vat ?? 0;
-  const vatAmount = ((subtotal - discount) * vat) / 100;
-  const total = subtotal + vatAmount - discount;
+  const subtotal    = sumItems(invoice.items ?? []);
+  const discount    = invoice.discount    ?? 0;
+  const advancePaid = invoice.advancePaid ?? 0;
+  const vat         = invoice.vat         ?? 0;
+  const vatAmount   = ((subtotal - discount) * vat) / 100;
+  const total       = subtotal + vatAmount - discount - advancePaid;
 
-  return buildTotalRows(subtotal, vat, vatAmount, discount, total, currency);
+  return buildTotalRows(subtotal, vat, vatAmount, discount, advancePaid, total, currency);
 }
 
 function buildServiceTotalRows(
   invoice: Partial<InvoiceFormData & Invoice2FormData>,
   currency: string,
 ): TotalRow[] {
-  const subtotal = (invoice.services ?? []).reduce(
-    (total, service) => total + sumItems(service.items),
-    0,
-  );
-  const discount = invoice.discount ?? 0;
-  const vat = invoice.vat ?? 0;
-  const vatAmount = ((subtotal - discount) * vat) / 100;
-  const total = subtotal + vatAmount - discount;
+  const subtotal    = (invoice.services ?? []).reduce((t, s) => t + sumItems(s.items), 0);
+  const discount    = invoice.discount    ?? 0;
+  const advancePaid = invoice.advancePaid ?? 0;
+  const vat         = invoice.vat         ?? 0;
+  const vatAmount   = ((subtotal - discount) * vat) / 100;
+  const total       = subtotal + vatAmount - discount - advancePaid;
 
-  return buildTotalRows(subtotal, vat, vatAmount, discount, total, currency);
+  return buildTotalRows(subtotal, vat, vatAmount, discount, advancePaid, total, currency);
 }
 
 function buildTotalRows(
@@ -630,34 +606,27 @@ function buildTotalRows(
   vat: number,
   vatAmount: number,
   discount: number,
+  advancePaid: number,
   total: number,
   currency: string,
 ): TotalRow[] {
   const rows: TotalRow[] = [
-    {
-      label: "Sub-Total",
-      value: `${formatMoney(subtotal)} (${currency})`,
-    },
+    { label: "Sub-Total", value: fmt(currency, subtotal) },
   ];
 
   if (vat > 0) {
-    rows.push({
-      label: `VAT (${vat}%)`,
-      value: `${formatMoney(vatAmount)} (${currency})`,
-    });
+    rows.push({ label: `VAT (${vat}%)`, value: fmt(currency, vatAmount) });
   }
 
   if (discount > 0) {
-    rows.push({
-      label: "Discount (-)",
-      value: `${formatMoney(discount)} (${currency})`,
-    });
+    rows.push({ label: "Discount (-)", value: fmt(currency, discount) });
   }
 
-  rows.push({
-    label: "Grand Total",
-    value: `${formatMoney(total)} (${currency})`,
-  });
+  if (advancePaid > 0) {
+    rows.push({ label: "Advance Paid (-)", value: fmt(currency, advancePaid) });
+  }
+
+  rows.push({ label: "Grand Total", value: fmt(currency, total) });
 
   return rows;
 }
@@ -685,4 +654,8 @@ function formatDate(date: Date | string | undefined) {
 
 function formatMoney(value: number) {
   return Number(value).toFixed(2);
+}
+
+function fmt(currency: string, value: number) {
+  return `${formatMoney(value)} (${currency})`;
 }

@@ -37,7 +37,7 @@ export default function EditInvoicePage() {
     to:   { name: "", email: "", phone: "", address: "" },
     paymentInfo: { accountName: "", accountNumber: "", bankName: "", branch: "", swift: "", currency: "USD" },
     items: [{ name: "", quantity: 1, unitPrice: 0, note: "", subItems: [] }],
-    vat: 0, discount: 0, total: 0,
+    vat: 0, discount: 0, advancePaid: 0, total: 0,
   });
 
   // Load existing invoice
@@ -60,8 +60,8 @@ export default function EditInvoicePage() {
     [formData.items],
   );
   const liveTotal = useMemo(
-    () => (subtotal - (formData.discount || 0)) * (1 + (formData.vat || 0) / 100),
-    [subtotal, formData.discount, formData.vat],
+    () => (subtotal - (formData.discount || 0)) * (1 + (formData.vat || 0) / 100) - (formData.advancePaid || 0),
+    [subtotal, formData.discount, formData.vat, formData.advancePaid],
   );
 
   // ── Field helpers ───────────────────────────────────────────────────────────
@@ -318,6 +318,7 @@ export default function EditInvoicePage() {
                 <div className="grid grid-cols-2 gap-4 pt-4">
                   <div className="space-y-2"><Label>Discount</Label><Input type="number" step="0.01" value={formData.discount} onChange={(e) => setFormData({ ...formData, discount: Number(e.target.value) })} /></div>
                   <div className="space-y-2"><Label>VAT (%)</Label><Input type="number" step="0.1" value={formData.vat} onChange={(e) => setFormData({ ...formData, vat: Number(e.target.value) })} /></div>
+                  <div className="space-y-2"><Label>Advance Paid Amount</Label><Input type="number" step="0.01" value={formData.advancePaid} onChange={(e) => setFormData({ ...formData, advancePaid: Number(e.target.value) })} /></div>
                 </div>
                 <div className="pt-4 border-t space-y-1.5 text-sm">
                   <div className="flex justify-between text-gray-600"><span>Subtotal</span><span>${subtotal.toFixed(2)}</span></div>

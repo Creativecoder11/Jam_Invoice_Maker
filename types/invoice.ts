@@ -75,9 +75,10 @@ export type InvoiceFormData = {
   };
   
   items: InvoiceItem[];
-  
+
   vat: number;
   discount: number;
+  advancePaid: number;
   total: number;
 
   notes?: {
@@ -126,6 +127,7 @@ export type Invoice2FormData = {
 
   vat: number;
   discount: number;
+  advancePaid: number;
   total: number;
 
   status: "Paid" | "Unpaid" | "Hold" | "Cancelled";

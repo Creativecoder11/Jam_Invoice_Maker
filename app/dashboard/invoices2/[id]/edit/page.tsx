@@ -165,6 +165,7 @@ export default function EditInvoice2Page() {
     services: [defaultService()],
     vat: 0,
     discount: 0,
+    advancePaid: 0,
     total: 0,
   });
 
@@ -189,8 +190,8 @@ export default function EditInvoice2Page() {
     [formData.services],
   );
   const liveTotal = useMemo(
-    () => (grandSubtotal - (formData.discount || 0)) * (1 + (formData.vat || 0) / 100),
-    [grandSubtotal, formData.discount, formData.vat],
+    () => (grandSubtotal - (formData.discount || 0)) * (1 + (formData.vat || 0) / 100) - (formData.advancePaid || 0),
+    [grandSubtotal, formData.discount, formData.vat, formData.advancePaid],
   );
 
   // ── Field helpers ───────────────────────────────────────────────────────────
@@ -402,6 +403,12 @@ export default function EditInvoice2Page() {
                     <Label className="shrink-0">VAT (%)</Label>
                     <Input type="number" step="0.1" value={formData.vat}
                       onChange={(e) => setFormData({ ...formData, vat: Number(e.target.value) })}
+                  />
+                  </div>
+                  <div className="flex justify-between items-center gap-4">
+                    <Label className="shrink-0">Advance Paid</Label>
+                    <Input type="number" step="0.01" value={formData.advancePaid}
+                      onChange={(e) => setFormData({ ...formData, advancePaid: Number(e.target.value) })}
                       className="w-32 h-7 text-sm text-right" />
                   </div>
                   <div className="flex justify-between font-bold text-base pt-2 border-t">

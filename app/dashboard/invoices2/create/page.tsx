@@ -257,6 +257,7 @@ export default function CreateInvoice2Page() {
     services: [defaultService()],
     vat: 0,
     discount: 0,
+    advancePaid: 0,
     total: 0,
   });
 
@@ -271,7 +272,7 @@ export default function CreateInvoice2Page() {
 
   // ── Computed totals ─────────────────────────────────────────────────────────
   const grandSubtotal = (formData.services || []).reduce((s, svc) => s + svc.items.reduce((a, i) => a + i.quantity * i.unitPrice, 0), 0);
-  const totalAmount   = (grandSubtotal - (formData.discount || 0)) * (1 + (formData.vat || 0) / 100);
+  const totalAmount   = (grandSubtotal - (formData.discount || 0)) * (1 + (formData.vat || 0) / 100) - (formData.advancePaid || 0);
   if (formData.total !== totalAmount) setFormData((p) => ({ ...p, total: totalAmount }));
 
   // ── Client helpers ──────────────────────────────────────────────────────────
@@ -399,6 +400,15 @@ export default function CreateInvoice2Page() {
                     <Input type="file" accept="image/*" onChange={handleLogoUpload} disabled={uploadingLogo} />
                     {uploadingLogo && <p className="text-xs text-muted-foreground flex items-center gap-1.5"><Spinner className="h-3 w-3" /> Uploading…</p>}
                   </div>
+                  <div className="pt-4 border-t space-y-4">
+                    <h3 className="font-semibold text-sm">Your Company (From)</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2"><Label>Company Name</Label><Input value={formData.from?.name} onChange={(e) => updateFrom("name", e.target.value)} /></div>
+                      <div className="space-y-2"><Label>Email</Label><Input value={formData.from?.email} onChange={(e) => updateFrom("email", e.target.value)} /></div>
+                      <div className="space-y-2"><Label>Phone</Label><Input value={formData.from?.phone} onChange={(e) => updateFrom("phone", e.target.value)} /></div>
+                      <div className="space-y-2"><Label>Address</Label><Textarea value={formData.from?.address} onChange={(e) => updateFrom("address", e.target.value)} /></div>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             </TabsContent>
@@ -467,6 +477,12 @@ export default function CreateInvoice2Page() {
                       <Label className="shrink-0">VAT (%)</Label>
                       <Input type="number" step="0.1" value={formData.vat}
                         onChange={(e) => setFormData({ ...formData, vat: Number(e.target.value) })}
+                        className="w-32 h-7 text-sm text-right" />
+                    </div>
+                    <div className="flex justify-between items-center gap-4">
+                      <Label className="shrink-0">Advance Paid</Label>
+                      <Input type="number" step="0.01" value={formData.advancePaid}
+                        onChange={(e) => setFormData({ ...formData, advancePaid: Number(e.target.value) })}
                         className="w-32 h-7 text-sm text-right" />
                     </div>
                     <div className="flex justify-between font-bold text-base pt-2 border-t">

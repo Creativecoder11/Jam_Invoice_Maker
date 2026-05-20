@@ -42,7 +42,7 @@ const invoiceSchema = new Schema(
     },
     
     to: {
-      name: { type: String, required: true },
+      name: { type: String },
       email: { type: String },
       phone: { type: String },
       address: { type: String },
@@ -65,6 +65,7 @@ const invoiceSchema = new Schema(
     
     vat: { type: Number, default: 0 },
     discount: { type: Number, default: 0 },
+    advancePaid: { type: Number, default: 0 },
     total: { type: Number, required: true },
 
     notes: {

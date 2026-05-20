@@ -106,6 +106,7 @@ export const Invoice2Preview = forwardRef<HTMLDivElement, Invoice2PreviewProps>(
       invoiceNumber = "INV2-001",
       name = "Invoice",
       logoUrl,
+      from = { name: "", email: "", phone: "", address: "" },
       to = { name: "", email: "", phone: "", address: "" },
       date = new Date(),
       dueDate = new Date(),
@@ -120,6 +121,7 @@ export const Invoice2Preview = forwardRef<HTMLDivElement, Invoice2PreviewProps>(
       services = [],
       vat = 0,
       discount = 0,
+      advancePaid = 0,
     } = data;
 
     const currency = paymentInfo.currency || "USD";
@@ -130,7 +132,7 @@ export const Invoice2Preview = forwardRef<HTMLDivElement, Invoice2PreviewProps>(
       0,
     );
     const vatAmount = ((grandSubtotal - (discount ?? 0)) * (vat ?? 0)) / 100;
-    const grandTotal = grandSubtotal + vatAmount - (discount ?? 0);
+    const grandTotal = grandSubtotal + vatAmount - (discount ?? 0) - (advancePaid ?? 0);
 
     const flatRows = flattenServices(services, currency);
     const pages = buildPages2(flatRows);
@@ -168,44 +170,52 @@ export const Invoice2Preview = forwardRef<HTMLDivElement, Invoice2PreviewProps>(
                     marginBottom: "14px",
                   }}
                 >
-                  <div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                     {logoUrl ? (
                       <img
                         src={logoUrl}
                         crossOrigin="anonymous"
                         style={{
-                          width: "73px",
-                          height: "110px",
-                          objectFit: "cover",
-                          borderRadius: "4px",
+                          width: "120px",
+                          height: "120px",
+                          objectFit: "contain",
+                          objectPosition: "left",
                         }}
                         alt="Logo"
                       />
                     ) : (
                       <div
                         style={{
-                          width: "73px",
-                          height: "110px",
+                          width: "80px",
+                          height: "80px",
                           background: "#f3f4f6",
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
                           fontSize: "10px",
                           color: "#9ca3af",
-                          borderRadius: "4px",
                         }}
                       >
                         Logo
                       </div>
                     )}
                   </div>
-                  <div style={{ textAlign: "left", fontSize: "12px" }}>
+                  <div style={{ textAlign: "left", fontSize: "12px", width: "150px" }}>
+                    {from.name && (
+                      <div style={{ fontSize: "11px" }}>
+                        <h4 style={{ color: "#5A378F", fontWeight: "bold", margin: 0 }}>From:</h4>
+                        <p style={{ fontWeight: 700, margin: 0 }}>{from.name}</p>
+                        {from.address && <p style={{ color: "#4b5563", margin: 0 }}>{from.address}</p>}
+                        {from.phone   && <p style={{ color: "#4b5563", margin: 0 }}>{from.phone}</p>}
+                        {from.email   && <p style={{ color: "#4b5563", margin: 0 }}>{from.email}</p>}
+                      </div>
+                    )}
                     <div>
                       <h4
                         style={{
                           color: "#5A378F",
                           fontWeight: "bold",
-                          margin: 0,
+                          marginTop: "10px",
                         }}
                       >
                         To:
@@ -223,6 +233,7 @@ export const Invoice2Preview = forwardRef<HTMLDivElement, Invoice2PreviewProps>(
                       <p style={{ color: "#4b5563", margin: 0 }}>{to.email}</p>
                       <p style={{ color: "#4b5563", margin: 0 }}>{to.phone}</p>
                     </div>
+                    
                   </div>
                 </header>
               )}
@@ -340,13 +351,13 @@ export const Invoice2Preview = forwardRef<HTMLDivElement, Invoice2PreviewProps>(
                       <th style={{ textAlign: "left", paddingBottom: "6px" }}>
                         Services &amp; Items
                       </th>
-                      <th style={{ textAlign: "center", paddingBottom: "6px" }}>
+                      <th style={{ textAlign: "center", paddingBottom: "6px", width: "60px", whiteSpace: "nowrap" }}>
                         Qty
                       </th>
-                      <th style={{ textAlign: "center", paddingBottom: "6px" }}>
+                      <th style={{ textAlign: "center", paddingBottom: "6px", width: "60px", whiteSpace: "nowrap" }}>
                         Unit Price
                       </th>
-                      <th style={{ textAlign: "center", paddingBottom: "6px" }}>
+                      <th style={{ textAlign: "center", paddingBottom: "6px", width: "60px", whiteSpace: "nowrap" }}>
                         Amount
                       </th>
                     </tr>
@@ -398,7 +409,7 @@ export const Invoice2Preview = forwardRef<HTMLDivElement, Invoice2PreviewProps>(
                                     color: "#5A378F",
                                   }}
                                 >
-                                  {currency} {row.amount.toFixed(2)}
+                                  {row.amount.toFixed(2)}
                                 </td>
                               </tr>
                             );
@@ -414,6 +425,8 @@ export const Invoice2Preview = forwardRef<HTMLDivElement, Invoice2PreviewProps>(
                                   textAlign: "left",
                                   fontSize: "12px",
                                   padding: "7px 0 7px 14px",
+                                  wordBreak: "break-word",
+                                  minWidth: 0,
                                 }}
                               >
                                 <span style={{ fontWeight: 600 }}>
@@ -457,9 +470,11 @@ export const Invoice2Preview = forwardRef<HTMLDivElement, Invoice2PreviewProps>(
                               <td
                                 style={{
                                   textAlign: "center",
-                                  padding: "7px 0",
+                                  padding: "7px 4px",
                                   fontSize: "12px",
                                   verticalAlign: "top",
+                                  whiteSpace: "nowrap",
+                                  width: "60px",
                                 }}
                               >
                                 {row.item.quantity}
@@ -467,25 +482,26 @@ export const Invoice2Preview = forwardRef<HTMLDivElement, Invoice2PreviewProps>(
                               <td
                                 style={{
                                   textAlign: "center",
-                                  padding: "7px 0",
+                                  padding: "7px 4px",
                                   fontSize: "12px",
                                   verticalAlign: "top",
+                                  whiteSpace: "nowrap",
+                                  width: "90px",
                                 }}
                               >
-                                {currency} {row.item.unitPrice}
+                                {row.item.unitPrice}
                               </td>
                               <td
                                 style={{
                                   textAlign: "center",
-                                  padding: "7px 0",
+                                  padding: "7px 4px",
                                   fontSize: "12px",
                                   verticalAlign: "top",
+                                  whiteSpace: "nowrap",
+                                  width: "90px",
                                 }}
                               >
-                                {currency}{" "}
-                                {(
-                                  row.item.quantity * row.item.unitPrice
-                                ).toFixed(2)}
+                                {(row.item.quantity * row.item.unitPrice).toFixed(2)}
                               </td>
                             </tr>
                           );
@@ -596,43 +612,17 @@ export const Invoice2Preview = forwardRef<HTMLDivElement, Invoice2PreviewProps>(
                       )}
 
                       {(discount ?? 0) > 0 && (
-                        <>
-                          <div
-                            style={{
-                              display: "flex",
-                              justifyContent: "space-between",
-                              alignItems: "center",
-                              fontSize: "12px",
-                              fontWeight: "bold",
-                              height: "32px",
-                              lineHeight: 1.2,
-                              borderTop: "1px solid #B1B1B1",
-                            }}
-                          >
-                            <h2
-                              style={{
-                                color: "#EA2B7B",
-                                margin: 0,
-                                fontSize: "12px",
-                                fontWeight: "bold",
-                                lineHeight: 1.2,
-                              }}
-                            >
-                              Discount (-)
-                            </h2>
-                            <h2
-                              style={{
-                                margin: 0,
-                                fontSize: "12px",
-                                fontWeight: "bold",
-                                lineHeight: 1.2,
-                              }}
-                            >
-                              {Number(discount).toFixed(2)} (
-                              {paymentInfo.currency})
-                            </h2>
-                          </div>
-                        </>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "12px", fontWeight: "bold", height: "32px", lineHeight: 1.2, borderTop: "1px solid #B1B1B1" }}>
+                          <h2 style={{ color: "#EA2B7B", margin: 0, fontSize: "12px", fontWeight: "bold", lineHeight: 1.2 }}>Discount (-)</h2>
+                          <h2 style={{ margin: 0, fontSize: "12px", fontWeight: "bold", lineHeight: 1.2 }}>{Number(discount).toFixed(2)} ({paymentInfo.currency})</h2>
+                        </div>
+                      )}
+
+                      {(advancePaid ?? 0) > 0 && (
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "12px", fontWeight: "bold", height: "32px", lineHeight: 1.2, borderTop: "1px solid #B1B1B1" }}>
+                          <h2 style={{ color: "#EA2B7B", margin: 0, fontSize: "12px", fontWeight: "bold", lineHeight: 1.2 }}>Advance Paid (-)</h2>
+                          <h2 style={{ margin: 0, fontSize: "12px", fontWeight: "bold", lineHeight: 1.2 }}>{Number(advancePaid).toFixed(2)} ({paymentInfo.currency})</h2>
+                        </div>
                       )}
 
                       <div
@@ -666,8 +656,7 @@ export const Invoice2Preview = forwardRef<HTMLDivElement, Invoice2PreviewProps>(
                             lineHeight: 1.2,
                           }}
                         >
-                          {Number(grandTotal).toFixed(2)} (
-                          {paymentInfo.currency})
+                          {Number(grandTotal).toFixed(2)} ({paymentInfo.currency})
                         </h2>
                       </div>
                     </div>
@@ -801,38 +790,6 @@ export const Invoice2Preview = forwardRef<HTMLDivElement, Invoice2PreviewProps>(
               )}
             </div>
 
-            {/* Bottom footer */}
-            <div
-              style={{
-                borderTop: "1px solid #e5e7eb",
-                paddingTop: "12px",
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                gap: "16px",
-                flexShrink: 0,
-              }}
-            >
-              <div
-                style={{
-                  fontSize: "12px",
-                  color: "#4b5563",
-                }}
-              >
-                <p style={{ margin: 0 }}>+880 1784 398 934</p>
-                <p style={{ margin: 0 }}>info@jamroll.xyz</p>
-                <p style={{ margin: 0 }}>www.jamroll.xyz</p>
-              </div>
-              <div>
-                <img
-                  src="/assets/Jamroll Logo.png"
-                  alt="Jamroll Logo"
-                  width={160}
-                  height={50}
-                  style={{ objectFit: "contain" }}
-                />
-              </div>
-            </div>
           </div>
         ))}
       </div>

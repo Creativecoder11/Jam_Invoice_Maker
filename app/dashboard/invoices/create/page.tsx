@@ -198,6 +198,7 @@ export default function CreateInvoicePage() {
     items: [{ name: "", quantity: 1, unitPrice: 0, note: "", subItems: [] }],
     vat: 0,
     discount: 0,
+    advancePaid: 0,
     total: 0,
   });
 
@@ -297,7 +298,7 @@ export default function CreateInvoicePage() {
 
   // Recalculate total
   const subtotal = (formData.items || []).reduce((acc, item) => acc + (item.quantity * item.unitPrice), 0);
-  const totalAmount = (subtotal - (formData.discount || 0)) * (1 + (formData.vat || 0) / 100);
+  const totalAmount = (subtotal - (formData.discount || 0)) * (1 + (formData.vat || 0) / 100) - (formData.advancePaid || 0);
   
   if (formData.total !== totalAmount) {
     setFormData((prev) => ({ ...prev, total: totalAmount }));
@@ -479,7 +480,7 @@ export default function CreateInvoicePage() {
                   )}
                 </div>
 
-                {/* <div className="pt-4 border-t space-y-4">
+                <div className="pt-4 border-t space-y-4">
                   <h3 className="font-semibold text-sm">Your Company (From)</h3>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
@@ -499,7 +500,7 @@ export default function CreateInvoicePage() {
                       <Textarea value={formData.from?.address} onChange={(e) => updateFrom("address", e.target.value)} />
                     </div>
                   </div>
-                </div> */}
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -626,6 +627,10 @@ export default function CreateInvoicePage() {
                   <div className="space-y-2">
                     <Label>VAT (%)</Label>
                     <Input type="number" step="0.1" value={formData.vat} onChange={(e) => setFormData({...formData, vat: Number(e.target.value)})} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Advance Paid Amount</Label>
+                    <Input type="number" step="0.01" value={formData.advancePaid} onChange={(e) => setFormData({...formData, advancePaid: Number(e.target.value)})} />
                   </div>
                 </div>
               </CardContent>
