@@ -194,7 +194,7 @@ export default function CreateInvoicePage() {
     dueDate: new Date(),
     from: { name: "", email: "", phone: "", address: "" },
     to: { name: "sadsdasd", email: "", phone: "", address: "" },
-    paymentInfo: { accountName: "", accountNumber: "", bankName: "", branch: "", swift: "", currency: "USD" },
+    paymentInfo: { accountName: "", accountNumber: "", bankName: "", branch: "", swift: "", currency: "BDT" },
     items: [{ name: "", quantity: 1, unitPrice: 0, note: "", subItems: [] }],
     vat: 0,
     discount: 0,

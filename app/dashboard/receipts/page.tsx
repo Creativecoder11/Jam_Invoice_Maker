@@ -42,9 +42,9 @@ const TAB_BADGE: Record<string, string> = {
 };
 
 function fmtAmount(n: number) {
-  if (n >= 1_000_000) return "$" + (n / 1_000_000).toFixed(1) + "M";
-  if (n >= 1_000)     return "$" + (n / 1_000).toFixed(1) + "k";
-  return "$" + n.toFixed(0);
+  if (n >= 1_000_000) return "৳" + (n / 1_000_000).toFixed(1) + "M";
+  if (n >= 1_000)     return "৳" + (n / 1_000).toFixed(1) + "k";
+  return "৳" + n.toFixed(0);
 }
 
 function RowMenu({ onHold, onDelete, isDeleting }: { onHold: () => void; onDelete: () => void; isDeleting?: boolean }) {
@@ -413,7 +413,7 @@ export default function ReceiptsPage() {
                       <td className="px-3 py-4 font-semibold text-gray-900">{rec.invoiceNumber}</td>
                       <td className="px-3 py-4 text-gray-700">{rec.to.name}</td>
                       <td className="px-3 py-4 text-gray-500">{format(new Date(rec.date), "dd MMM, yyyy")}</td>
-                      <td className="px-3 py-4 font-semibold text-gray-900">${rec.total.toLocaleString()}</td>
+                      <td className="px-3 py-4 font-semibold text-gray-900">৳{rec.total.toLocaleString("en-BD")}</td>
                       <td className="px-3 py-4">
                         {isSuperAdmin ? (
                           <select

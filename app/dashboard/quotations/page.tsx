@@ -362,7 +362,7 @@ export default function QuotationsPage() {
                       <td className="px-3 py-4 text-gray-700">{q.to.name}</td>
                       <td className="px-3 py-4 text-gray-500">{q.to.email ? `@${q.to.email}` : "—"}</td>
                       <td className="px-3 py-4 text-gray-700">{format(new Date(q.date), "dd MMM, yyyy")}</td>
-                      <td className="px-3 py-4 font-semibold text-gray-900">${q.total.toLocaleString()}</td>
+                      <td className="px-3 py-4 font-semibold text-gray-900">৳{q.total.toLocaleString("en-BD")}</td>
 
                       <td className="px-3 py-4">
                         {isSuperAdmin ? (

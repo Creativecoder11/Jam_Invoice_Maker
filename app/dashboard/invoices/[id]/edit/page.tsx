@@ -35,7 +35,7 @@ export default function EditInvoicePage() {
     dueDate: new Date(),
     from: { name: "", email: "", phone: "", address: "" },
     to:   { name: "", email: "", phone: "", address: "" },
-    paymentInfo: { accountName: "", accountNumber: "", bankName: "", branch: "", swift: "", currency: "USD" },
+    paymentInfo: { accountName: "", accountNumber: "", bankName: "", branch: "", swift: "", currency: "BDT" },
     items: [{ name: "", quantity: 1, unitPrice: 0, note: "", subItems: [] }],
     vat: 0, discount: 0, advancePaid: 0, total: 0,
   });

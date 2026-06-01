@@ -362,7 +362,7 @@ export default function Invoices2Page() {
                       <td className="px-3 py-4 text-gray-700">{inv.to.name}</td>
                       <td className="px-3 py-4 text-gray-500">{inv.to.email ? `@${inv.to.email}` : "—"}</td>
                       <td className="px-3 py-4 text-gray-700">{format(new Date(inv.date), "dd MMM, yyyy")}</td>
-                      <td className="px-3 py-4 font-semibold text-gray-900">${inv.total.toLocaleString()}</td>
+                      <td className="px-3 py-4 font-semibold text-gray-900">৳{inv.total.toLocaleString("en-BD")}</td>
 
                       <td className="px-3 py-4">
                         {isSuperAdmin ? (

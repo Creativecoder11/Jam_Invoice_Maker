@@ -36,13 +36,13 @@ type ChartRange = "daily" | "weekly" | "monthly" | "yearly";
 type Invoice = InvoiceFormData & { _id: string; createdAt: string };
 
 function fmtAmount(n: number) {
-  if (n >= 1_000_000) return "$" + (n / 1_000_000).toFixed(1) + "M";
-  if (n >= 1_000)     return "$" + (n / 1_000).toFixed(1) + "k";
-  return "$" + n.toFixed(0);
+  if (n >= 1_000_000) return "৳" + (n / 1_000_000).toFixed(1) + "M";
+  if (n >= 1_000)     return "৳" + (n / 1_000).toFixed(1) + "k";
+  return "৳" + n.toFixed(0);
 }
 
 function fmtFull(n: number) {
-  return "$" + n.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+  return "৳" + n.toLocaleString("en-BD", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 }
 
 // ── Cash Flow Bar Chart ────────────────────────────────────────────────────────
@@ -290,9 +290,19 @@ export default function DashboardPage() {
   const [search, setSearch]     = useState("");
 
   useEffect(() => {
-    fetch("/api/invoices?type=invoice")
-      .then((r) => r.json())
-      .then((data) => { if (Array.isArray(data)) setInvoices(data); })
+    Promise.all([
+      fetch("/api/invoices?type=invoice").then((r) => r.json()),
+      fetch("/api/invoices?type=invoice2").then((r) => r.json()),
+    ])
+      .then(([inv, inv2]) => {
+        const combined = [
+          ...(Array.isArray(inv) ? inv : []),
+          ...(Array.isArray(inv2) ? inv2 : []),
+        ].sort(
+          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+        );
+        setInvoices(combined);
+      })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
@@ -490,7 +500,7 @@ export default function DashboardPage() {
                         <span className="text-sm font-bold text-gray-900">
                           {fmtFull(inv.total)}
                         </span>
-                        <Link href={`/dashboard/invoices/${inv._id}`}>
+                        <Link href={`/dashboard/${inv.type === "invoice2" ? "invoices2" : "invoices"}/${inv._id}`}>
                           <button className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
                             <Eye className="h-3.5 w-3.5 text-gray-400" />
                           </button>
@@ -581,7 +591,7 @@ export default function DashboardPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-gray-50/60 border-t border-gray-100">
-                  {["Invoice ID", "Client", "Date", "Due Date", "Amount", "Status"].map(
+                  {["Invoice ID", "Type", "Client", "Date", "Due Date", "Amount", "Status"].map(
                     (h) => (
                       <th
                         key={h}
@@ -608,6 +618,11 @@ export default function DashboardPage() {
                     >
                       <td className="pl-6 pr-4 py-3.5 font-semibold text-gray-900">
                         {inv.invoiceNumber}
+                      </td>
+                      <td className="px-4 py-3.5">
+                        <span className={`px-2 py-0.5 rounded text-xs font-semibold ${inv.type === "invoice2" ? "bg-violet-100 text-violet-700" : "bg-blue-100 text-blue-700"}`}>
+                          {inv.type === "invoice2" ? "Service" : "Invoice"}
+                        </span>
                       </td>
                       <td className="px-4 py-3.5 text-gray-700">{inv.to.name}</td>
                       <td className="px-4 py-3.5 text-gray-500">
@@ -640,7 +655,7 @@ export default function DashboardPage() {
                       </td>
                       <td className="pr-6 pl-4 py-3.5">
                         <div className="flex items-center gap-0.5 justify-end">
-                          <Link href={`/dashboard/invoices/${inv._id}`}>
+                          <Link href={`/dashboard/${inv.type === "invoice2" ? "invoices2" : "invoices"}/${inv._id}`}>
                             <button className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
                               <Eye className="h-4 w-4 text-gray-400" />
                             </button>

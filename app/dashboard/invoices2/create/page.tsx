@@ -253,7 +253,7 @@ export default function CreateInvoice2Page() {
     dueDate: new Date(),
     from: { name: "", email: "", phone: "", address: "" },
     to: { name: "", email: "", phone: "", address: "" },
-    paymentInfo: { accountName: "", accountNumber: "", bankName: "", branch: "", swift: "", currency: "USD" },
+    paymentInfo: { accountName: "", accountNumber: "", bankName: "", branch: "", swift: "", currency: "BDT" },
     services: [defaultService()],
     vat: 0,
     discount: 0,
