@@ -20,9 +20,11 @@ export async function POST(req: Request) {
 
     const hashedPassword = await bcrypt.hash(password, 10);
     
-    // Making the first user a Super Admin to test the app easily.
-    const userCount = await User.countDocuments();
-    const isFirstUser = userCount === 0;
+    // First user with credentials (password) becomes Super Admin + auto-approved.
+    // Checks only credential users so downloading locally still works even if
+    // the shared DB already has Google OAuth users.
+    const credentialUserCount = await User.countDocuments({ password: { $exists: true } });
+    const isFirstUser = credentialUserCount === 0;
 
     const user = await User.create({
       name,
