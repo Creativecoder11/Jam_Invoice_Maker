@@ -37,7 +37,7 @@ type Invoice = InvoiceFormData & { _id: string; createdAt: string };
 
 function fmtAmount(n: number) {
   if (n >= 1_000_000) return "৳" + (n / 1_000_000).toFixed(1) + "M";
-  if (n >= 1_000)     return "৳" + (n / 1_000).toFixed(1) + "k";
+  if (n >= 1_000) return "৳" + (n / 1_000).toFixed(1) + "k";
   return "৳" + n.toFixed(0);
 }
 
@@ -187,11 +187,10 @@ function CashFlowChart({ invoices }: { invoices: Invoice[] }) {
               key={item}
               onClick={() => setRange(item)}
               className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all duration-200 capitalize
-              ${
-                range === item
+              ${range === item
                   ? "bg-white shadow-sm text-gray-900"
                   : "text-gray-500 hover:text-gray-700"
-              }`}
+                }`}
             >
               {item}
             </button>
@@ -277,22 +276,22 @@ function CashFlowChart({ invoices }: { invoices: Invoice[] }) {
 
 // ── Status badge config ────────────────────────────────────────────────────────
 const STATUS_BADGE: Record<string, { label: string; cls: string }> = {
-  Paid:   { label: "Paid",    cls: "bg-gray-100 text-gray-600" },
-  Unpaid: { label: "Unpaid",  cls: "bg-purple-100 text-purple-700" },
-  Hold:   { label: "Pending", cls: "bg-yellow-100 text-yellow-700" },
+  Paid: { label: "Paid", cls: "bg-gray-100 text-gray-600" },
+  Unpaid: { label: "Unpaid", cls: "bg-purple-100 text-purple-700" },
+  Hold: { label: "Pending", cls: "bg-yellow-100 text-yellow-700" },
 };
 
 // ── Main Dashboard ─────────────────────────────────────────────────────────────
 export default function DashboardPage() {
   const { data: session } = useSession();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const [loading, setLoading]   = useState(true);
-  const [search, setSearch]     = useState("");
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
     Promise.all([
       fetch("/api/invoices?type=invoice").then((r) => r.json()),
-      fetch("/api/invoices?type=invoice2").then((r) => r.json()),
+      fetch("/api/invoices?type=serviceInvoice").then((r) => r.json()),
     ])
       .then(([inv, inv2]) => {
         const combined = [
@@ -303,24 +302,24 @@ export default function DashboardPage() {
         );
         setInvoices(combined);
       })
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => setLoading(false));
   }, []);
 
   // ── Stats ──────────────────────────────────────────────────────────────────
   const stats = useMemo(() => {
-    const now   = new Date();
-    const paid   = invoices.filter((i) => i.status === "Paid");
+    const now = new Date();
+    const paid = invoices.filter((i) => i.status === "Paid");
     const unpaid = invoices.filter((i) => i.status !== "Paid");
     const overdue = invoices.filter(
       (i) => i.status !== "Paid" && new Date(i.dueDate) < now,
     );
     const sum = (arr: Invoice[]) => arr.reduce((s, i) => s + i.total, 0);
     return {
-      total:   { count: invoices.length, amount: sum(invoices) },
-      paid:    { count: paid.length,     amount: sum(paid) },
-      unpaid:  { count: unpaid.length,   amount: sum(unpaid) },
-      overdue: { count: overdue.length,  amount: sum(overdue) },
+      total: { count: invoices.length, amount: sum(invoices) },
+      paid: { count: paid.length, amount: sum(paid) },
+      unpaid: { count: unpaid.length, amount: sum(unpaid) },
+      overdue: { count: overdue.length, amount: sum(overdue) },
     };
   }, [invoices]);
 
@@ -349,10 +348,10 @@ export default function DashboardPage() {
 
   // ── Stat card data ─────────────────────────────────────────────────────────
   const statCards = [
-    { label: "Total Invoices", amount: stats.total.amount,   count: stats.total.count,   trend: "+17%", up: true  },
-    { label: "Paid",           amount: stats.paid.amount,    count: stats.paid.count,    trend: "+32%", up: true  },
-    { label: "Unpaid",         amount: stats.unpaid.amount,  count: stats.unpaid.count,  trend: "-17%", up: false },
-    { label: "Overdue",        amount: stats.overdue.amount, count: stats.overdue.count, trend: "+5%",  up: false },
+    { label: "Total Invoices", amount: stats.total.amount, count: stats.total.count, trend: "+17%", up: true },
+    { label: "Paid", amount: stats.paid.amount, count: stats.paid.count, trend: "+32%", up: true },
+    { label: "Unpaid", amount: stats.unpaid.amount, count: stats.unpaid.count, trend: "-17%", up: false },
+    { label: "Overdue", amount: stats.overdue.amount, count: stats.overdue.count, trend: "+5%", up: false },
   ];
 
   return (
@@ -371,9 +370,8 @@ export default function DashboardPage() {
         {statCards.map(({ label, amount, count, trend, up }) => (
           <div key={label} className="p-6">
             <div
-              className={`flex items-center gap-1 text-xs font-semibold mb-3 ${
-                up ? "text-indigo-500" : "text-red-400"
-              }`}
+              className={`flex items-center gap-1 text-xs font-semibold mb-3 ${up ? "text-indigo-500" : "text-red-400"
+                }`}
             >
               {up ? (
                 <TrendingUp className="w-3.5 h-3.5" />
@@ -500,7 +498,7 @@ export default function DashboardPage() {
                         <span className="text-sm font-bold text-gray-900">
                           {fmtFull(inv.total)}
                         </span>
-                        <Link href={`/dashboard/${inv.type === "invoice2" ? "invoices2" : "invoices"}/${inv._id}`}>
+                        <Link href={`/dashboard/${inv.type === "serviceInvoice" ? "service-invoices" : "invoices"}/${inv._id}`}>
                           <button className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
                             <Eye className="h-3.5 w-3.5 text-gray-400" />
                           </button>
@@ -620,8 +618,8 @@ export default function DashboardPage() {
                         {inv.invoiceNumber}
                       </td>
                       <td className="px-4 py-3.5">
-                        <span className={`px-2 py-0.5 rounded text-xs font-semibold ${inv.type === "invoice2" ? "bg-violet-100 text-violet-700" : "bg-blue-100 text-blue-700"}`}>
-                          {inv.type === "invoice2" ? "Service" : "Invoice"}
+                        <span className={`px-2 py-0.5 rounded text-xs font-semibold ${inv.type === "serviceInvoice" ? "bg-violet-100 text-violet-700" : "bg-blue-100 text-blue-700"}`}>
+                          {inv.type === "serviceInvoice" ? "Service" : "Invoice"}
                         </span>
                       </td>
                       <td className="px-4 py-3.5 text-gray-700">{inv.to.name}</td>
@@ -630,9 +628,8 @@ export default function DashboardPage() {
                       </td>
                       <td className="px-4 py-3.5">
                         <span
-                          className={`text-sm ${
-                            isOverdue ? "text-red-500 font-semibold" : "text-gray-500"
-                          }`}
+                          className={`text-sm ${isOverdue ? "text-red-500 font-semibold" : "text-gray-500"
+                            }`}
                         >
                           {format(new Date(inv.dueDate), "dd MMM yyyy")}
                           {isOverdue && (
@@ -655,7 +652,7 @@ export default function DashboardPage() {
                       </td>
                       <td className="pr-6 pl-4 py-3.5">
                         <div className="flex items-center gap-0.5 justify-end">
-                          <Link href={`/dashboard/${inv.type === "invoice2" ? "invoices2" : "invoices"}/${inv._id}`}>
+                          <Link href={`/dashboard/${inv.type === "serviceInvoice" ? "service-invoices" : "invoices"}/${inv._id}`}>
                             <button className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
                               <Eye className="h-4 w-4 text-gray-400" />
                             </button>

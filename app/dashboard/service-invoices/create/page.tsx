@@ -10,8 +10,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Trash2, Plus, Search, X, UserPlus, ChevronDown, ChevronUp } from "lucide-react";
-import { Invoice2Preview } from "@/components/Invoice2Preview";
-import { Invoice2FormData, ServiceGroup, ServiceItem } from "@/types/invoice";
+import { ServiceInvoicePreview } from "@/components/ServiceInvoicePreview";
+import { ServiceInvoiceFormData, ServiceGroup, ServiceItem } from "@/types/invoice";
 import { Spinner } from "@/components/ui/spinner";
 
 // ── Quick-Add Client Dialog ───────────────────────────────────────────────────
@@ -235,7 +235,7 @@ const defaultService = (): ServiceGroup => ({
   items: [{ name: "", quantity: 1, unitPrice: 0, note: "", subItems: [] }],
 });
 
-export default function CreateInvoice2Page() {
+export default function CreateServiceInvoicePage() {
   const router = useRouter();
   const printRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(false);
@@ -244,8 +244,8 @@ export default function CreateInvoice2Page() {
   const [presetClients, setPresetClients] = useState<any[]>([]);
   const [showAddClient, setShowAddClient] = useState(false);
 
-  const [formData, setFormData] = useState<Partial<Invoice2FormData>>({
-    type: "invoice2",
+  const [formData, setFormData] = useState<Partial<ServiceInvoiceFormData>>({
+    type: "serviceInvoice",
     status: "Unpaid",
     invoiceNumber: "",
     name: "Invoice",
@@ -340,7 +340,7 @@ export default function CreateInvoice2Page() {
       });
       if (res.ok) {
         toast.success(`Invoice saved as ${status}`);
-        router.push("/dashboard/invoices2");
+        router.push("/dashboard/service-invoices");
       } else {
         const data = await res.json();
         toast.error(data.message || "Failed to save invoice");
@@ -516,7 +516,7 @@ export default function CreateInvoice2Page() {
         <div className="w-full xl:w-1/2 flex flex-col items-center pl-0 xl:pl-6">
           <div className="w-full overflow-x-auto bg-muted/30 p-4 rounded-xl border flex justify-center">
             <div className="origin-top scale-[0.6] sm:scale-75 xl:scale-90 transition-transform">
-              <Invoice2Preview data={formData} ref={printRef} />
+              <ServiceInvoicePreview data={formData} ref={printRef} />
             </div>
           </div>
         </div>

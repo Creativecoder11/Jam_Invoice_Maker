@@ -23,7 +23,7 @@ import { useState } from "react";
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "Invoices", href: "/dashboard/invoices", icon: FileText },
-  { name: "Invoice Services", href: "/dashboard/invoices2", icon: FileText },
+  { name: "Service Invoices", href: "/dashboard/service-invoices", icon: FileText },
   { name: "Quotations", href: "/dashboard/quotations", icon: FileText },
   { name: "Receipts", href: "/dashboard/receipts", icon: ReceiptText },
   { name: "Clients", href: "/dashboard/clients", icon: ContactRound },

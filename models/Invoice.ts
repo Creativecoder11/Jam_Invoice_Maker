@@ -31,7 +31,7 @@ const invoiceSchema = new Schema(
   {
     invoiceNumber: { type: String, required: true },
     name: { type: String, required: true }, // E.g., "Web Dev Services"
-    type: { type: String, enum: ["invoice", "invoice2", "quotation", "receipt"], default: "invoice" },
+    type: { type: String, enum: ["invoice", "serviceInvoice", "quotation", "receipt"], default: "invoice" },
     logoUrl: { type: String },
     
     from: {

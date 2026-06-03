@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import {
   Plus, Search, SlidersHorizontal, ArrowUpDown, ArrowUp, ArrowDown,
   MoreHorizontal, Eye, Edit, Trash2, ReceiptText, CheckCircle2, Clock, XCircle,
+  ChevronDown,
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -17,33 +18,33 @@ import { DeleteConfirmModal } from "@/components/DeleteConfirmModal";
 
 type Receipt = InvoiceFormData & { _id: string; createdAt: string };
 type SortField = "invoiceNumber" | "clientName" | "date" | "total";
-type SortDir   = "asc" | "desc";
+type SortDir = "asc" | "desc";
 type TabFilter = "all" | "Unpaid" | "Paid" | "Hold" | "Cancelled";
 
 const STATUS_BADGE: Record<string, { label: string; className: string }> = {
-  Paid:      { label: "Paid",      className: "bg-green-100 text-green-700" },
-  Unpaid:    { label: "Unpaid",    className: "bg-purple-100 text-purple-700" },
-  Hold:      { label: "Hold",      className: "bg-yellow-100 text-yellow-700" },
+  Paid: { label: "Paid", className: "bg-green-100 text-green-700" },
+  Unpaid: { label: "Unpaid", className: "bg-purple-100 text-purple-700" },
+  Hold: { label: "Hold", className: "bg-yellow-100 text-yellow-700" },
   Cancelled: { label: "Cancelled", className: "bg-red-100 text-red-600" },
 };
 
 const SELECT_CLASS: Record<string, string> = {
-  Paid:      "bg-green-100 text-green-700",
-  Unpaid:    "bg-purple-100 text-purple-700",
-  Hold:      "bg-yellow-100 text-yellow-700",
+  Paid: "bg-green-100 text-green-700",
+  Unpaid: "bg-purple-100 text-purple-700",
+  Hold: "bg-yellow-100 text-yellow-700",
   Cancelled: "bg-red-100 text-red-600",
 };
 
 const TAB_BADGE: Record<string, string> = {
-  Paid:      "bg-green-100 text-green-700",
-  Unpaid:    "bg-purple-100 text-purple-700",
-  Hold:      "bg-yellow-100 text-yellow-700",
+  Paid: "bg-green-100 text-green-700",
+  Unpaid: "bg-purple-100 text-purple-700",
+  Hold: "bg-yellow-100 text-yellow-700",
   Cancelled: "bg-red-100 text-red-500",
 };
 
 function fmtAmount(n: number) {
   if (n >= 1_000_000) return "৳" + (n / 1_000_000).toFixed(1) + "M";
-  if (n >= 1_000)     return "৳" + (n / 1_000).toFixed(1) + "k";
+  if (n >= 1_000) return "৳" + (n / 1_000).toFixed(1) + "k";
   return "৳" + n.toFixed(0);
 }
 
@@ -98,13 +99,13 @@ export default function ReceiptsPage() {
   const { data: session } = useSession();
   const isSuperAdmin = session?.user?.role === "Super Admin";
 
-  const [receipts, setReceipts]   = useState<Receipt[]>([]);
-  const [loading, setLoading]     = useState(true);
-  const [search, setSearch]       = useState("");
+  const [receipts, setReceipts] = useState<Receipt[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState<TabFilter>("all");
   const [sortField, setSortField] = useState<SortField>("date");
-  const [sortDir, setSortDir]     = useState<SortDir>("desc");
-  const [selected, setSelected]   = useState<Set<string>>(new Set());
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
+  const [selected, setSelected] = useState<Set<string>>(new Set());
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Receipt | null>(null);
 
@@ -112,7 +113,7 @@ export default function ReceiptsPage() {
     fetch("/api/invoices?type=receipt")
       .then((r) => r.json())
       .then((data) => { if (Array.isArray(data)) setReceipts(data); })
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => setLoading(false));
   }, []);
 
@@ -147,22 +148,22 @@ export default function ReceiptsPage() {
   // ── Stats ────────────────────────────────────────────────────────────────────
   const stats = useMemo(() => {
     const sum = (arr: Receipt[]) => arr.reduce((s, r) => s + r.total, 0);
-    const paid      = receipts.filter((r) => r.status === "Paid");
-    const unpaid    = receipts.filter((r) => r.status === "Unpaid");
+    const paid = receipts.filter((r) => r.status === "Paid");
+    const unpaid = receipts.filter((r) => r.status === "Unpaid");
     const cancelled = receipts.filter((r) => r.status === "Cancelled");
     return {
-      total:     { count: receipts.length, amount: sum(receipts) },
-      paid:      { count: paid.length,     amount: sum(paid) },
-      unpaid:    { count: unpaid.length,   amount: sum(unpaid) },
+      total: { count: receipts.length, amount: sum(receipts) },
+      paid: { count: paid.length, amount: sum(paid) },
+      unpaid: { count: unpaid.length, amount: sum(unpaid) },
       cancelled: { count: cancelled.length },
     };
   }, [receipts]);
 
   const tabCounts = useMemo(() => ({
-    all:       receipts.length,
-    Unpaid:    receipts.filter((r) => r.status === "Unpaid").length,
-    Paid:      receipts.filter((r) => r.status === "Paid").length,
-    Hold:      receipts.filter((r) => r.status === "Hold").length,
+    all: receipts.length,
+    Unpaid: receipts.filter((r) => r.status === "Unpaid").length,
+    Paid: receipts.filter((r) => r.status === "Paid").length,
+    Hold: receipts.filter((r) => r.status === "Hold").length,
     Cancelled: receipts.filter((r) => r.status === "Cancelled").length,
   }), [receipts]);
 
@@ -178,9 +179,9 @@ export default function ReceiptsPage() {
     list.sort((a, b) => {
       let va: string | number, vb: string | number;
       if (sortField === "clientName") { va = a.to.name; vb = b.to.name; }
-      else if (sortField === "date")  { va = new Date(a.date).getTime(); vb = new Date(b.date).getTime(); }
+      else if (sortField === "date") { va = new Date(a.date).getTime(); vb = new Date(b.date).getTime(); }
       else if (sortField === "total") { va = a.total; vb = b.total; }
-      else                            { va = a.invoiceNumber; vb = b.invoiceNumber; }
+      else { va = a.invoiceNumber; vb = b.invoiceNumber; }
       if (typeof va === "string")
         return sortDir === "asc" ? va.localeCompare(vb as string) : (vb as string).localeCompare(va);
       return sortDir === "asc" ? va - (vb as number) : (vb as number) - va;
@@ -193,16 +194,16 @@ export default function ReceiptsPage() {
     else { setSortField(field); setSortDir("asc"); }
   };
 
-  const toggleSelect  = (id: string) =>
+  const toggleSelect = (id: string) =>
     setSelected((prev) => { const next = new Set(prev); next.has(id) ? next.delete(id) : next.add(id); return next; });
-  const allChecked    = filtered.length > 0 && selected.size === filtered.length;
-  const toggleAll     = () => setSelected(allChecked ? new Set() : new Set(filtered.map((r) => r._id)));
+  const allChecked = filtered.length > 0 && selected.size === filtered.length;
+  const toggleAll = () => setSelected(allChecked ? new Set() : new Set(filtered.map((r) => r._id)));
 
   const tabs: { key: TabFilter; label: string }[] = [
-    { key: "all",       label: "All" },
-    { key: "Paid",      label: "Paid" },
-    { key: "Unpaid",    label: "Unpaid" },
-    { key: "Hold",      label: "Hold" },
+    { key: "all", label: "All" },
+    { key: "Paid", label: "Paid" },
+    { key: "Unpaid", label: "Unpaid" },
+    { key: "Hold", label: "Hold" },
     { key: "Cancelled", label: "Cancelled" },
   ];
 
@@ -301,21 +302,19 @@ export default function ReceiptsPage() {
         <div className="flex items-center justify-between px-6 pb-3 gap-4 flex-wrap border-b border-gray-100">
           <div className="flex items-center gap-1">
             {tabs.map((tab) => {
-              const count    = tabCounts[tab.key];
+              const count = tabCounts[tab.key];
               const isActive = activeTab === tab.key;
               return (
                 <button
                   key={tab.key}
                   onClick={() => setActiveTab(tab.key)}
-                  className={`relative flex items-center gap-1.5 px-3 py-2.5 text-sm font-medium transition-colors ${
-                    isActive ? "text-gray-900" : "text-gray-400 hover:text-gray-600"
-                  }`}
+                  className={`relative flex items-center gap-1.5 px-3 py-2.5 text-sm font-medium transition-colors ${isActive ? "text-gray-900" : "text-gray-400 hover:text-gray-600"
+                    }`}
                 >
                   {tab.label}
                   {tab.key !== "all" && count > 0 && (
-                    <span className={`text-xs px-1.5 py-0.5 rounded-full font-bold leading-none ${
-                      isActive ? "bg-gray-900 text-white" : TAB_BADGE[tab.key]
-                    }`}>{count}</span>
+                    <span className={`text-xs px-1.5 py-0.5 rounded-full font-bold leading-none ${isActive ? "bg-gray-900 text-white" : TAB_BADGE[tab.key]
+                      }`}>{count}</span>
                   )}
                   {isActive && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-900 rounded-full" />}
                 </button>
@@ -350,7 +349,7 @@ export default function ReceiptsPage() {
               <tbody className="divide-y divide-gray-50">
                 {[...Array(5)].map((_, ri) => (
                   <tr key={ri} className="border-t border-gray-50">
-                    {["w-4","w-24","w-32","w-24","w-20","w-16","w-16"].map((w, ci) => (
+                    {["w-4", "w-24", "w-32", "w-24", "w-20", "w-16", "w-16"].map((w, ci) => (
                       <td key={ci} className="px-3 py-4 first:pl-6 last:pr-6">
                         <Skeleton className={`h-4 ${w}`} />
                       </td>
@@ -416,16 +415,32 @@ export default function ReceiptsPage() {
                       <td className="px-3 py-4 font-semibold text-gray-900">৳{rec.total.toLocaleString("en-BD")}</td>
                       <td className="px-3 py-4">
                         {isSuperAdmin ? (
-                          <select
-                            value={rec.status}
-                            onChange={(e) => handleStatusChange(rec._id, e.target.value)}
-                            className={`text-xs font-semibold px-2.5 py-1 rounded-full border-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-300 ${SELECT_CLASS[rec.status] ?? "bg-gray-100 text-gray-600"}`}
-                          >
-                            <option value="Paid">Paid</option>
-                            <option value="Unpaid">Unpaid</option>
-                            <option value="Hold">Hold</option>
-                            <option value="Cancelled">Cancelled</option>
-                          </select>
+                          <div className="relative inline-block">
+                            {(() => {
+                              const style = SELECT_CLASS[rec.status] ?? "bg-gray-100 text-gray-600";
+                              const textColor = style.split(" ").find(c => c.startsWith("text-")) || "text-gray-600";
+
+                              return (
+                                <>
+                                  <select
+                                    value={rec.status}
+                                    onChange={(e) => handleStatusChange(rec._id, e.target.value)}
+                                    className={`appearance-none text-xs font-semibold px-2.5 py-1 pr-8 rounded-full border-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-300 ${style}`}
+                                  >
+                                    <option value="Paid">Paid</option>
+                                    <option value="Unpaid">Due</option>
+                                    <option value="Hold">Hold</option>
+                                    <option value="Cancelled">Cancel</option>
+                                  </select>
+
+                                  <ChevronDown
+                                    size={14}
+                                    className={`absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none ${textColor}`}
+                                  />
+                                </>
+                              );
+                            })()}
+                          </div>
                         ) : (
                           <span className={`px-3 py-1 rounded-full text-xs font-semibold ${badge.className}`}>
                             {badge.label}

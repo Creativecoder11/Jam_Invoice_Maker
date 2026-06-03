@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import {
   Plus, Search, SlidersHorizontal, ArrowUpDown, ArrowUp, ArrowDown,
   MoreHorizontal, Eye, Edit, Trash2,
+  ChevronDown,
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -21,23 +22,23 @@ type SortDir = "asc" | "desc";
 type TabFilter = "all" | "Unpaid" | "Paid" | "Hold" | "Cancelled";
 
 const STATUS_BADGE: Record<string, { label: string; className: string }> = {
-  Paid:      { label: "Accepted",   className: "bg-green-100 text-green-700" },
-  Unpaid:    { label: "Pending",    className: "bg-purple-100 text-purple-700" },
-  Hold:      { label: "Draft",      className: "bg-yellow-100 text-yellow-700" },
-  Cancelled: { label: "Cancelled",  className: "bg-red-100 text-red-600" },
+  Paid: { label: "Accepted", className: "bg-green-100 text-green-700" },
+  Unpaid: { label: "Pending", className: "bg-purple-100 text-purple-700" },
+  Hold: { label: "Draft", className: "bg-yellow-100 text-yellow-700" },
+  Cancelled: { label: "Cancelled", className: "bg-red-100 text-red-600" },
 };
 
 const SELECT_CLASS: Record<string, string> = {
-  Paid:      "bg-green-100 text-green-700",
-  Unpaid:    "bg-purple-100 text-purple-700",
-  Hold:      "bg-yellow-100 text-yellow-700",
+  Paid: "bg-green-100 text-green-700",
+  Unpaid: "bg-purple-100 text-purple-700",
+  Hold: "bg-yellow-100 text-yellow-700",
   Cancelled: "bg-red-100 text-red-600",
 };
 
 const TAB_BADGE: Record<string, string> = {
-  Unpaid:    "bg-orange-100 text-orange-600",
-  Paid:      "bg-green-100 text-green-700",
-  Hold:      "bg-yellow-100 text-yellow-700",
+  Unpaid: "bg-orange-100 text-orange-600",
+  Paid: "bg-green-100 text-green-700",
+  Hold: "bg-yellow-100 text-yellow-700",
   Cancelled: "bg-red-100 text-red-500",
 };
 
@@ -104,12 +105,12 @@ export default function QuotationsPage() {
   const isSuperAdmin = session?.user?.role === "Super Admin";
 
   const [quotations, setQuotations] = useState<Quotation[]>([]);
-  const [loading, setLoading]       = useState(true);
-  const [search, setSearch]         = useState("");
-  const [activeTab, setActiveTab]   = useState<TabFilter>("all");
-  const [sortField, setSortField]   = useState<SortField>("date");
-  const [sortDir, setSortDir]       = useState<SortDir>("desc");
-  const [selected, setSelected]     = useState<Set<string>>(new Set());
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [activeTab, setActiveTab] = useState<TabFilter>("all");
+  const [sortField, setSortField] = useState<SortField>("date");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
+  const [selected, setSelected] = useState<Set<string>>(new Set());
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Quotation | null>(null);
 
@@ -117,7 +118,7 @@ export default function QuotationsPage() {
     fetch("/api/invoices?type=quotation")
       .then((r) => r.json())
       .then((data) => { if (Array.isArray(data)) setQuotations(data); })
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => setLoading(false));
   }, []);
 
@@ -157,10 +158,10 @@ export default function QuotationsPage() {
   };
 
   const tabCounts = useMemo(() => ({
-    all:       quotations.length,
-    Unpaid:    quotations.filter((q) => q.status === "Unpaid").length,
-    Paid:      quotations.filter((q) => q.status === "Paid").length,
-    Hold:      quotations.filter((q) => q.status === "Hold").length,
+    all: quotations.length,
+    Unpaid: quotations.filter((q) => q.status === "Unpaid").length,
+    Paid: quotations.filter((q) => q.status === "Paid").length,
+    Hold: quotations.filter((q) => q.status === "Hold").length,
     Cancelled: quotations.filter((q) => q.status === "Cancelled").length,
   }), [quotations]);
 
@@ -179,9 +180,9 @@ export default function QuotationsPage() {
     list.sort((a, b) => {
       let va: string | number, vb: string | number;
       if (sortField === "clientName") { va = a.to.name; vb = b.to.name; }
-      else if (sortField === "date")  { va = new Date(a.date).getTime(); vb = new Date(b.date).getTime(); }
+      else if (sortField === "date") { va = new Date(a.date).getTime(); vb = new Date(b.date).getTime(); }
       else if (sortField === "total") { va = a.total; vb = b.total; }
-      else                            { va = a.invoiceNumber; vb = b.invoiceNumber; }
+      else { va = a.invoiceNumber; vb = b.invoiceNumber; }
       if (typeof va === "string")
         return sortDir === "asc" ? va.localeCompare(vb as string) : (vb as string).localeCompare(va);
       return sortDir === "asc" ? va - (vb as number) : (vb as number) - va;
@@ -202,10 +203,10 @@ export default function QuotationsPage() {
     setSelected(allChecked ? new Set() : new Set(filtered.map((q) => q._id)));
 
   const tabs: { key: TabFilter; label: string }[] = [
-    { key: "all",       label: "All" },
-    { key: "Unpaid",    label: "Pending" },
-    { key: "Paid",      label: "Accepted" },
-    { key: "Hold",      label: "Draft" },
+    { key: "all", label: "All" },
+    { key: "Unpaid", label: "Pending" },
+    { key: "Paid", label: "Accepted" },
+    { key: "Hold", label: "Draft" },
     { key: "Cancelled", label: "Cancelled" },
   ];
 
@@ -252,15 +253,13 @@ export default function QuotationsPage() {
                 <button
                   key={tab.key}
                   onClick={() => setActiveTab(tab.key)}
-                  className={`relative flex items-center gap-1.5 px-3 py-2.5 text-sm font-medium transition-colors ${
-                    isActive ? "text-gray-900" : "text-gray-400 hover:text-gray-600"
-                  }`}
+                  className={`relative flex items-center gap-1.5 px-3 py-2.5 text-sm font-medium transition-colors ${isActive ? "text-gray-900" : "text-gray-400 hover:text-gray-600"
+                    }`}
                 >
                   {tab.label}
                   {tab.key !== "all" && count > 0 && (
-                    <span className={`text-xs px-1.5 py-0.5 rounded-full font-bold leading-none ${
-                      isActive ? "bg-gray-900 text-white" : TAB_BADGE[tab.key]
-                    }`}>{count}</span>
+                    <span className={`text-xs px-1.5 py-0.5 rounded-full font-bold leading-none ${isActive ? "bg-gray-900 text-white" : TAB_BADGE[tab.key]
+                      }`}>{count}</span>
                   )}
                   {isActive && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-900 rounded-full" />}
                 </button>
@@ -298,11 +297,11 @@ export default function QuotationsPage() {
               </thead>
               <tbody className="divide-y divide-gray-50">
                 {[
-                  ["w-4","w-20","w-28","w-32","w-20","w-16","w-14","w-16"],
-                  ["w-4","w-24","w-24","w-36","w-20","w-16","w-16","w-16"],
-                  ["w-4","w-20","w-32","w-28","w-20","w-12","w-14","w-16"],
-                  ["w-4","w-24","w-20","w-32","w-20","w-16","w-16","w-16"],
-                  ["w-4","w-20","w-28","w-24","w-20","w-14","w-14","w-16"],
+                  ["w-4", "w-20", "w-28", "w-32", "w-20", "w-16", "w-14", "w-16"],
+                  ["w-4", "w-24", "w-24", "w-36", "w-20", "w-16", "w-16", "w-16"],
+                  ["w-4", "w-20", "w-32", "w-28", "w-20", "w-12", "w-14", "w-16"],
+                  ["w-4", "w-24", "w-20", "w-32", "w-20", "w-16", "w-16", "w-16"],
+                  ["w-4", "w-20", "w-28", "w-24", "w-20", "w-14", "w-14", "w-16"],
                 ].map((widths, ri) => (
                   <tr key={ri} className="border-t border-gray-50">
                     {widths.map((w, ci) => (
@@ -366,16 +365,32 @@ export default function QuotationsPage() {
 
                       <td className="px-3 py-4">
                         {isSuperAdmin ? (
-                          <select
-                            value={q.status}
-                            onChange={(e) => handleStatusChange(q._id, e.target.value)}
-                            className={`text-xs font-semibold px-2.5 py-1 rounded-full border-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-300 ${SELECT_CLASS[q.status] ?? "bg-gray-100 text-gray-600"}`}
-                          >
-                            <option value="Paid">Accepted</option>
-                            <option value="Unpaid">Pending</option>
-                            <option value="Hold">Draft</option>
-                            <option value="Cancelled">Cancelled</option>
-                          </select>
+                          <div className="relative inline-block">
+                            {(() => {
+                              const style = SELECT_CLASS[q.status] ?? "bg-gray-100 text-gray-600";
+                              const textColor = style.split(" ").find(c => c.startsWith("text-")) || "text-gray-600";
+
+                              return (
+                                <>
+                                  <select
+                                    value={q.status}
+                                    onChange={(e) => handleStatusChange(q._id, e.target.value)}
+                                    className={`appearance-none text-xs font-semibold px-2.5 py-1 pr-8 rounded-full border-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-300 ${style}`}
+                                  >
+                                    <option value="Paid">Paid</option>
+                                    <option value="Unpaid">Due</option>
+                                    <option value="Hold">Hold</option>
+                                    <option value="Cancelled">Cancel</option>
+                                  </select>
+
+                                  <ChevronDown
+                                    size={14}
+                                    className={`absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none ${textColor}`}
+                                  />
+                                </>
+                              );
+                            })()}
+                          </div>
                         ) : (
                           <span className={`px-3 py-1 rounded-full text-xs font-semibold ${badge.className}`}>
                             {badge.label}

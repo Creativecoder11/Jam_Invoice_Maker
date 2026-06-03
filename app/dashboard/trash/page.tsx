@@ -21,7 +21,7 @@ type TrashInvoice = {
   _id: string;
   invoiceNumber: string;
   name: string;
-  type: "invoice" | "invoice2" | "quotation" | "receipt";
+  type: "invoice" | "serviceInvoice" | "quotation" | "receipt";
   to: { name: string };
   total: number;
   deletedAt: string;
@@ -35,11 +35,11 @@ type TrashClient = {
   deletedAt: string;
 };
 
-type TabKey = "all" | "invoice" | "invoice2" | "receipt" | "quotation" | "client";
+type TabKey = "all" | "invoice" | "serviceInvoice" | "receipt" | "quotation" | "client";
 
 const TYPE_LABEL: Record<string, string> = {
   invoice:   "Invoice",
-  invoice2:  "Invoice Services",
+  serviceInvoice: "Service Invoice",
   quotation: "Quotation",
   receipt:   "Receipt",
   client:    "Client",
@@ -47,7 +47,7 @@ const TYPE_LABEL: Record<string, string> = {
 
 const TYPE_COLOR: Record<string, string> = {
   invoice:   "bg-indigo-100 text-indigo-700",
-  invoice2:  "bg-blue-100 text-blue-700",
+  serviceInvoice: "bg-blue-100 text-blue-700",
   quotation: "bg-yellow-100 text-yellow-700",
   receipt:   "bg-green-100 text-green-700",
   client:    "bg-purple-100 text-purple-700",
@@ -218,7 +218,7 @@ export default function TrashPage() {
   const tabs: { key: TabKey; label: string }[] = [
     { key: "all",       label: "All" },
     { key: "invoice",   label: "Invoices" },
-    { key: "invoice2",  label: "Invoice Services" },
+    { key: "serviceInvoice",  label: "Service Invoices" },
     { key: "receipt",   label: "Receipts" },
     { key: "quotation", label: "Quotations" },
     { key: "client",    label: "Clients" },

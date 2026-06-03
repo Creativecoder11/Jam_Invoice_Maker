@@ -45,7 +45,7 @@ export type ServiceGroup = {
 export type InvoiceFormData = {
   invoiceNumber: string;
   name: string;
-  type: "invoice" | "invoice2" | "quotation" | "receipt";
+  type: "invoice" | "serviceInvoice" | "quotation" | "receipt";
   logoUrl?: string;
   
   from: {
@@ -91,10 +91,10 @@ export type InvoiceFormData = {
   status: "Paid" | "Unpaid" | "Hold" | "Cancelled";
 };
 
-export type Invoice2FormData = {
+export type ServiceInvoiceFormData  = {
   invoiceNumber: string;
   name: string;
-  type: "invoice2";
+  type: "serviceInvoice";
   logoUrl?: string;
 
   from: {

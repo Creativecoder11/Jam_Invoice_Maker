@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import {
   Plus, Search, SlidersHorizontal, ArrowUpDown, ArrowUp, ArrowDown,
   MoreHorizontal, Eye, Edit, Trash2,
+  ChevronDown,
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -17,27 +18,27 @@ import { DeleteConfirmModal } from "@/components/DeleteConfirmModal";
 
 type Invoice = InvoiceFormData & { _id: string; createdAt: string };
 type SortField = "invoiceNumber" | "clientName" | "date" | "total";
-type SortDir   = "asc" | "desc";
+type SortDir = "asc" | "desc";
 type TabFilter = "all" | "Unpaid" | "Paid" | "Hold" | "Cancelled";
 
 const STATUS_BADGE: Record<string, { label: string; className: string }> = {
-  Paid:      { label: "Paid",      className: "bg-gray-100 text-gray-600" },
-  Unpaid:    { label: "Due",       className: "bg-purple-100 text-purple-700" },
-  Hold:      { label: "Hold",      className: "bg-yellow-100 text-yellow-700" },
+  Paid: { label: "Paid", className: "bg-gray-100 text-gray-600" },
+  Unpaid: { label: "Due", className: "bg-purple-100 text-purple-700" },
+  Hold: { label: "Hold", className: "bg-yellow-100 text-yellow-700" },
   Cancelled: { label: "Cancelled", className: "bg-red-100 text-red-600" },
 };
 
 const SELECT_CLASS: Record<string, string> = {
-  Paid:      "bg-gray-100 text-gray-600",
-  Unpaid:    "bg-purple-100 text-purple-700",
-  Hold:      "bg-yellow-100 text-yellow-700",
+  Paid: "bg-gray-100 text-gray-600",
+  Unpaid: "bg-purple-100 text-purple-700",
+  Hold: "bg-yellow-100 text-yellow-700",
   Cancelled: "bg-red-100 text-red-600",
 };
 
 const TAB_BADGE: Record<string, string> = {
-  Unpaid:    "bg-orange-100 text-orange-600",
-  Paid:      "bg-green-100 text-green-700",
-  Hold:      "bg-yellow-100 text-yellow-700",
+  Unpaid: "bg-orange-100 text-orange-600",
+  Paid: "bg-green-100 text-green-700",
+  Hold: "bg-yellow-100 text-yellow-700",
   Cancelled: "bg-red-100 text-red-500",
 };
 
@@ -103,13 +104,13 @@ export default function InvoicesPage() {
   const { data: session } = useSession();
   const isSuperAdmin = session?.user?.role === "Super Admin";
 
-  const [invoices, setInvoices]   = useState<Invoice[]>([]);
-  const [loading, setLoading]     = useState(true);
-  const [search, setSearch]       = useState("");
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState<TabFilter>("all");
   const [sortField, setSortField] = useState<SortField>("date");
-  const [sortDir, setSortDir]     = useState<SortDir>("desc");
-  const [selected, setSelected]   = useState<Set<string>>(new Set());
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
+  const [selected, setSelected] = useState<Set<string>>(new Set());
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Invoice | null>(null);
 
@@ -117,7 +118,7 @@ export default function InvoicesPage() {
     fetch("/api/invoices?type=invoice")
       .then((r) => r.json())
       .then((data) => { if (Array.isArray(data)) setInvoices(data); })
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => setLoading(false));
   }, []);
 
@@ -159,10 +160,10 @@ export default function InvoicesPage() {
 
   // ── Tab counts ─────────────────────────────────────────────────────────────
   const tabCounts = useMemo(() => ({
-    all:       invoices.length,
-    Unpaid:    invoices.filter((i) => i.status === "Unpaid").length,
-    Paid:      invoices.filter((i) => i.status === "Paid").length,
-    Hold:      invoices.filter((i) => i.status === "Hold").length,
+    all: invoices.length,
+    Unpaid: invoices.filter((i) => i.status === "Unpaid").length,
+    Paid: invoices.filter((i) => i.status === "Paid").length,
+    Hold: invoices.filter((i) => i.status === "Hold").length,
     Cancelled: invoices.filter((i) => i.status === "Cancelled").length,
   }), [invoices]);
 
@@ -182,9 +183,9 @@ export default function InvoicesPage() {
     list.sort((a, b) => {
       let va: string | number, vb: string | number;
       if (sortField === "clientName") { va = a.to.name; vb = b.to.name; }
-      else if (sortField === "date")  { va = new Date(a.date).getTime(); vb = new Date(b.date).getTime(); }
+      else if (sortField === "date") { va = new Date(a.date).getTime(); vb = new Date(b.date).getTime(); }
       else if (sortField === "total") { va = a.total; vb = b.total; }
-      else                            { va = a.invoiceNumber; vb = b.invoiceNumber; }
+      else { va = a.invoiceNumber; vb = b.invoiceNumber; }
       if (typeof va === "string")
         return sortDir === "asc" ? va.localeCompare(vb as string) : (vb as string).localeCompare(va);
       return sortDir === "asc" ? va - (vb as number) : (vb as number) - va;
@@ -201,14 +202,14 @@ export default function InvoicesPage() {
     setSelected((prev) => { const next = new Set(prev); next.has(id) ? next.delete(id) : next.add(id); return next; });
 
   const allChecked = filtered.length > 0 && selected.size === filtered.length;
-  const toggleAll  = () =>
+  const toggleAll = () =>
     setSelected(allChecked ? new Set() : new Set(filtered.map((i) => i._id)));
 
   const tabs: { key: TabFilter; label: string }[] = [
-    { key: "all",       label: "All" },
-    { key: "Unpaid",    label: "Due" },
-    { key: "Paid",      label: "Paid" },
-    { key: "Hold",      label: "Hold" },
+    { key: "all", label: "All" },
+    { key: "Unpaid", label: "Due" },
+    { key: "Paid", label: "Paid" },
+    { key: "Hold", label: "Hold" },
     { key: "Cancelled", label: "Cancelled" },
   ];
 
@@ -257,21 +258,19 @@ export default function InvoicesPage() {
         <div className="flex items-center justify-between px-6 pb-3 gap-4 flex-wrap border-b border-gray-100">
           <div className="flex items-center gap-1">
             {tabs.map((tab) => {
-              const count    = tabCounts[tab.key];
+              const count = tabCounts[tab.key];
               const isActive = activeTab === tab.key;
               return (
                 <button
                   key={tab.key}
                   onClick={() => setActiveTab(tab.key)}
-                  className={`relative flex items-center gap-1.5 px-3 py-2.5 text-sm font-medium transition-colors ${
-                    isActive ? "text-gray-900" : "text-gray-400 hover:text-gray-600"
-                  }`}
+                  className={`relative flex items-center gap-1.5 px-3 py-2.5 text-sm font-medium transition-colors ${isActive ? "text-gray-900" : "text-gray-400 hover:text-gray-600"
+                    }`}
                 >
                   {tab.label}
                   {tab.key !== "all" && count > 0 && (
-                    <span className={`text-xs px-1.5 py-0.5 rounded-full font-bold leading-none ${
-                      isActive ? "bg-gray-900 text-white" : TAB_BADGE[tab.key]
-                    }`}>{count}</span>
+                    <span className={`text-xs px-1.5 py-0.5 rounded-full font-bold leading-none ${isActive ? "bg-gray-900 text-white" : TAB_BADGE[tab.key]
+                      }`}>{count}</span>
                   )}
                   {isActive && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-900 rounded-full" />}
                 </button>
@@ -309,12 +308,12 @@ export default function InvoicesPage() {
               </thead>
               <tbody className="divide-y divide-gray-50">
                 {[
-                  ["w-4","w-20","w-28","w-32","w-20","w-16","w-14","w-16"],
-                  ["w-4","w-24","w-24","w-36","w-20","w-16","w-16","w-16"],
-                  ["w-4","w-20","w-32","w-28","w-20","w-12","w-14","w-16"],
-                  ["w-4","w-24","w-20","w-32","w-20","w-16","w-16","w-16"],
-                  ["w-4","w-20","w-28","w-24","w-20","w-14","w-14","w-16"],
-                  ["w-4","w-24","w-24","w-36","w-20","w-16","w-16","w-16"],
+                  ["w-4", "w-20", "w-28", "w-32", "w-20", "w-16", "w-14", "w-16"],
+                  ["w-4", "w-24", "w-24", "w-36", "w-20", "w-16", "w-16", "w-16"],
+                  ["w-4", "w-20", "w-32", "w-28", "w-20", "w-12", "w-14", "w-16"],
+                  ["w-4", "w-24", "w-20", "w-32", "w-20", "w-16", "w-16", "w-16"],
+                  ["w-4", "w-20", "w-28", "w-24", "w-20", "w-14", "w-14", "w-16"],
+                  ["w-4", "w-24", "w-24", "w-36", "w-20", "w-16", "w-16", "w-16"],
                 ].map((widths, ri) => (
                   <tr key={ri} className="border-t border-gray-50">
                     {widths.map((w, ci) => (
@@ -379,16 +378,32 @@ export default function InvoicesPage() {
                       {/* Status — dropdown for admins, badge for others */}
                       <td className="px-3 py-4">
                         {isSuperAdmin ? (
-                          <select
-                            value={inv.status}
-                            onChange={(e) => handleStatusChange(inv._id, e.target.value)}
-                            className={`text-xs font-semibold px-2.5 py-1 rounded-full border-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-300 ${SELECT_CLASS[inv.status] ?? "bg-gray-100 text-gray-600"}`}
-                          >
-                            <option value="Paid">Paid</option>
-                            <option value="Unpaid">Due</option>
-                            <option value="Hold">Hold</option>
-                            <option value="Cancelled">Cancel</option>
-                          </select>
+                          <div className="relative inline-block">
+                            {(() => {
+                              const style = SELECT_CLASS[inv.status] ?? "bg-gray-100 text-gray-600";
+                              const textColor = style.split(" ").find(c => c.startsWith("text-")) || "text-gray-600";
+
+                              return (
+                                <>
+                                  <select
+                                    value={inv.status}
+                                    onChange={(e) => handleStatusChange(inv._id, e.target.value)}
+                                    className={`appearance-none text-xs font-semibold px-2.5 py-1 pr-8 rounded-full border-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-300 ${style}`}
+                                  >
+                                    <option value="Paid">Paid</option>
+                                    <option value="Unpaid">Due</option>
+                                    <option value="Hold">Hold</option>
+                                    <option value="Cancelled">Cancel</option>
+                                  </select>
+
+                                  <ChevronDown
+                                    size={14}
+                                    className={`absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none ${textColor}`}
+                                  />
+                                </>
+                              );
+                            })()}
+                          </div>
                         ) : (
                           <span className={`px-3 py-1 rounded-full text-xs font-semibold ${badge.className}`}>
                             {badge.label}

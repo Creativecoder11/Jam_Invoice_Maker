@@ -1,9 +1,9 @@
 import React, { forwardRef } from "react";
 import { format } from "date-fns";
-import { Invoice2FormData, ServiceGroup, ServiceItem } from "@/types/invoice";
+import { ServiceInvoiceFormData, ServiceGroup, ServiceItem } from "@/types/invoice";
 
-type Invoice2PreviewProps = {
-  data: Partial<Invoice2FormData>;
+type ServiceInvoicePreviewProps = {
+  data: Partial<ServiceInvoiceFormData>;
 };
 
 export const PAGE_WIDTH_2 = 612;
@@ -100,7 +100,7 @@ function buildPages2(rows: FlatRow[]): PageSlice2[] {
   return pages;
 }
 
-export const Invoice2Preview = forwardRef<HTMLDivElement, Invoice2PreviewProps>(
+export const ServiceInvoicePreview = forwardRef<HTMLDivElement, ServiceInvoicePreviewProps>(
   ({ data }, ref) => {
     const {
       invoiceNumber = "INV2-001",
@@ -797,4 +797,4 @@ export const Invoice2Preview = forwardRef<HTMLDivElement, Invoice2PreviewProps>(
   },
 );
 
-Invoice2Preview.displayName = "Invoice2Preview";
+ServiceInvoicePreview.displayName = "ServiceInvoicePreview";

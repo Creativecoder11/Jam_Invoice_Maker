@@ -4,12 +4,12 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Download, Printer, ArrowLeft } from "lucide-react";
-import { Invoice2Preview } from "@/components/Invoice2Preview";
 import { toast } from "sonner";
 import { Spinner } from "@/components/ui/spinner";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ServiceInvoicePreview } from "@/components/ServiceInvoicePreview";
 
-export default function ViewInvoice2Page() {
+export default function ViewServiceInvoicePage() {
   const { id } = useParams();
   const router = useRouter();
   const [data, setData] = useState<any>(null);
@@ -97,7 +97,7 @@ export default function ViewInvoice2Page() {
 
       <div className="overflow-x-auto bg-muted/20 p-8 rounded-xl border flex justify-center print:p-0 print:border-none print:bg-white print:overflow-visible">
         <div className="scale-75 md:scale-100 origin-top print:scale-100">
-          <Invoice2Preview data={data} />
+          <ServiceInvoicePreview data={data} />
         </div>
       </div>
     </div>

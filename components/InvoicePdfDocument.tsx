@@ -10,7 +10,7 @@ import {
 import { format } from "date-fns";
 import path from "node:path";
 import {
-  Invoice2FormData,
+  ServiceInvoiceFormData,
   InvoiceFormData,
   InvoiceItem,
   ServiceGroup,
@@ -78,7 +78,7 @@ Font.register({
 });
 
 type InvoicePdfDocumentProps = {
-  invoice: Partial<InvoiceFormData & Invoice2FormData>;
+  invoice: Partial<InvoiceFormData & ServiceInvoiceFormData>;
 };
 
 type TotalRow = {
@@ -306,10 +306,10 @@ export function InvoicePdfDocument({ invoice }: InvoicePdfDocumentProps) {
 }
 
 export function createInvoicePdfDocument(
-  invoice: Partial<InvoiceFormData & Invoice2FormData>,
+  invoice: Partial<InvoiceFormData & ServiceInvoiceFormData>,
 ) {
   const docType = invoice.type as string | undefined;
-  const isInvoice2 = docType === "invoice2";
+  const isServiceInvoice = docType === "serviceInvoice";
   const isQuotation = docType === "quotation";
   const paymentInfo = withPaymentDefaults(invoice.paymentInfo);
   const currency = paymentInfo.currency || "USD";
@@ -326,11 +326,11 @@ export function createInvoicePdfDocument(
         pdfElement(InvoiceHeader, { invoice }),
         pdfElement(InvoiceTitle, { invoice }),
         pdfElement(InvoiceDates, { invoice }),
-        isInvoice2
+        isServiceInvoice
           ? pdfElement(ServiceTable, { services: invoice.services ?? [] })
           : pdfElement(ItemTable, { items: invoice.items ?? [] }),
         pdfElement(TotalsBlock, {
-          rows: isInvoice2
+          rows: isServiceInvoice
             ? buildServiceTotalRows(invoice, currency)
             : buildItemTotalRows(invoice, currency),
           paymentInfo,
@@ -353,10 +353,10 @@ function InvoiceHeader({ invoice }: InvoicePdfDocumentProps) {
     logoUrl
       ? pdfElement(Image, { src: logoUrl, style: styles.logo })
       : pdfElement(
-          View,
-          { style: styles.logoPlaceholder },
-          pdfElement(Text, { style: styles.placeholderText }, "Logo"),
-        ),
+        View,
+        { style: styles.logoPlaceholder },
+        pdfElement(Text, { style: styles.placeholderText }, "Logo"),
+      ),
     pdfElement(
       View,
       { style: styles.clientBlock },
@@ -412,8 +412,8 @@ function ItemTable({ items }: { items: InvoiceItem[] }) {
     ),
     items.length > 0
       ? items.map((item, index) =>
-          pdfElement(ItemRow, { key: `${item.name}-${index}`, item, indexLabel: `${index + 1}.` }),
-        )
+        pdfElement(ItemRow, { key: `${item.name}-${index}`, item, indexLabel: `${index + 1}.` }),
+      )
       : pdfElement(Text, { style: styles.emptyText }, "No items added"),
   );
 }
@@ -432,34 +432,34 @@ function ServiceTable({ services }: { services: ServiceGroup[] }) {
     ),
     services.length > 0
       ? services.map((service, serviceIndex) =>
+        pdfElement(
+          View,
+          { key: `${service.serviceName}-${serviceIndex}` },
+          pdfElement(
+            Text,
+            { style: styles.serviceHeader },
+            `${serviceIndex + 1}. ${service.serviceName || `Service ${serviceIndex + 1}`}`,
+          ),
+          service.items.map((item, itemIndex) =>
+            pdfElement(ItemRow, {
+              key: `${item.name}-${itemIndex}`,
+              item,
+              indexLabel: `${itemIndex + 1}.`,
+              indented: true,
+            }),
+          ),
           pdfElement(
             View,
-            { key: `${service.serviceName}-${serviceIndex}` },
+            { style: styles.serviceSubtotalRow },
+            pdfElement(Text, { style: styles.serviceSubtotalLabel }, "Service Subtotal:"),
             pdfElement(
               Text,
-              { style: styles.serviceHeader },
-              `${serviceIndex + 1}. ${service.serviceName || `Service ${serviceIndex + 1}`}`,
-            ),
-            service.items.map((item, itemIndex) =>
-              pdfElement(ItemRow, {
-                key: `${item.name}-${itemIndex}`,
-                item,
-                indexLabel: `${itemIndex + 1}.`,
-                indented: true,
-              }),
-            ),
-            pdfElement(
-              View,
-              { style: styles.serviceSubtotalRow },
-              pdfElement(Text, { style: styles.serviceSubtotalLabel }, "Service Subtotal:"),
-              pdfElement(
-                Text,
-                { style: styles.serviceSubtotalValue },
-                formatMoney(sumItems(service.items)),
-              ),
+              { style: styles.serviceSubtotalValue },
+              formatMoney(sumItems(service.items)),
             ),
           ),
-        )
+        ),
+      )
       : pdfElement(Text, { style: styles.emptyText }, "No services added"),
   );
 }
@@ -518,34 +518,34 @@ function TotalsBlock({
     isQuotation
       ? hasNotes
         ? pdfElement(
-            View,
-            { style: styles.paymentBox },
-            pdfElement(Text, { style: [styles.paymentTitle, { marginBottom: 6 }] }, "Notes:"),
-            notes?.text
-              ? pdfElement(Text, { style: { fontSize: 10, color: "white", marginBottom: notes?.points?.length ? 6 : 0 } }, notes.text)
-              : null,
-            ...(notes?.points ?? []).map((pt, i) =>
-              pdfElement(Text, { key: String(i), style: { fontSize: 10, color: "white", marginBottom: 2 } }, `• ${pt}`),
-            ),
-          )
-        : null
-      : pdfElement(
           View,
           { style: styles.paymentBox },
+          pdfElement(Text, { style: [styles.paymentTitle, { marginBottom: 6 }] }, "Notes:"),
+          notes?.text
+            ? pdfElement(Text, { style: { fontSize: 10, color: "white", marginBottom: notes?.points?.length ? 6 : 0 } }, notes.text)
+            : null,
+          ...(notes?.points ?? []).map((pt, i) =>
+            pdfElement(Text, { key: String(i), style: { fontSize: 10, color: "white", marginBottom: 2 } }, `• ${pt}`),
+          ),
+        )
+        : null
+      : pdfElement(
+        View,
+        { style: styles.paymentBox },
+        pdfElement(
+          View,
+          { style: styles.paymentRow },
+          pdfElement(Text, { style: styles.paymentTitle }, "Payment Information:"),
           pdfElement(
             View,
-            { style: styles.paymentRow },
-            pdfElement(Text, { style: styles.paymentTitle }, "Payment Information:"),
-            pdfElement(
-              View,
-              { style: styles.paymentDetails },
-              pdfElement(PaymentLine, { label: "Account Number:", value: paymentInfo.accountNumber }),
-              pdfElement(PaymentLine, { label: "SWIFT Code:", value: paymentInfo.swift }),
-              pdfElement(PaymentLine, { label: "Bank Name:", value: paymentInfo.bankName }),
-              pdfElement(PaymentLine, { label: "Branch:", value: paymentInfo.branch }),
-            ),
+            { style: styles.paymentDetails },
+            pdfElement(PaymentLine, { label: "Account Number:", value: paymentInfo.accountNumber }),
+            pdfElement(PaymentLine, { label: "SWIFT Code:", value: paymentInfo.swift }),
+            pdfElement(PaymentLine, { label: "Bank Name:", value: paymentInfo.bankName }),
+            pdfElement(PaymentLine, { label: "Branch:", value: paymentInfo.branch }),
           ),
         ),
+      ),
   );
 }
 
@@ -574,29 +574,29 @@ function InvoiceFooter() {
 }
 
 function buildItemTotalRows(
-  invoice: Partial<InvoiceFormData & Invoice2FormData>,
+  invoice: Partial<InvoiceFormData & ServiceInvoiceFormData>,
   currency: string,
 ): TotalRow[] {
-  const subtotal    = sumItems(invoice.items ?? []);
-  const discount    = invoice.discount    ?? 0;
+  const subtotal = sumItems(invoice.items ?? []);
+  const discount = invoice.discount ?? 0;
   const advancePaid = invoice.advancePaid ?? 0;
-  const vat         = invoice.vat         ?? 0;
-  const vatAmount   = ((subtotal - discount) * vat) / 100;
-  const total       = subtotal + vatAmount - discount - advancePaid;
+  const vat = invoice.vat ?? 0;
+  const vatAmount = ((subtotal - discount) * vat) / 100;
+  const total = subtotal + vatAmount - discount - advancePaid;
 
   return buildTotalRows(subtotal, vat, vatAmount, discount, advancePaid, total, currency);
 }
 
 function buildServiceTotalRows(
-  invoice: Partial<InvoiceFormData & Invoice2FormData>,
+  invoice: Partial<InvoiceFormData & ServiceInvoiceFormData>,
   currency: string,
 ): TotalRow[] {
-  const subtotal    = (invoice.services ?? []).reduce((t, s) => t + sumItems(s.items), 0);
-  const discount    = invoice.discount    ?? 0;
+  const subtotal = (invoice.services ?? []).reduce((t, s) => t + sumItems(s.items), 0);
+  const discount = invoice.discount ?? 0;
   const advancePaid = invoice.advancePaid ?? 0;
-  const vat         = invoice.vat         ?? 0;
-  const vatAmount   = ((subtotal - discount) * vat) / 100;
-  const total       = subtotal + vatAmount - discount - advancePaid;
+  const vat = invoice.vat ?? 0;
+  const vatAmount = ((subtotal - discount) * vat) / 100;
+  const total = subtotal + vatAmount - discount - advancePaid;
 
   return buildTotalRows(subtotal, vat, vatAmount, discount, advancePaid, total, currency);
 }

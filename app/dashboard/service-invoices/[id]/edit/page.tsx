@@ -10,8 +10,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Trash2, Plus, Download, ArrowLeft, ChevronDown, ChevronUp, X } from "lucide-react";
-import { Invoice2Preview } from "@/components/Invoice2Preview";
-import { Invoice2FormData, ServiceGroup, ServiceItem } from "@/types/invoice";
+import { ServiceInvoicePreview } from "@/components/ServiceInvoicePreview";
+import { ServiceInvoiceFormData, ServiceGroup, ServiceItem } from "@/types/invoice";
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
 import { Spinner } from "@/components/ui/spinner";
@@ -142,7 +142,7 @@ const defaultService = (): ServiceGroup => ({
 });
 
 // ── Page ──────────────────────────────────────────────────────────────────────
-export default function EditInvoice2Page() {
+export default function EditServiceInvoicePage() {
   const { id } = useParams();
   const router = useRouter();
   const printRef = useRef<HTMLDivElement>(null);
@@ -152,8 +152,8 @@ export default function EditInvoice2Page() {
   const [downloading, setDownloading] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
 
-  const [formData, setFormData] = useState<Partial<Invoice2FormData>>({
-    type: "invoice2",
+  const [formData, setFormData] = useState<Partial<ServiceInvoiceFormData>>({
+    type: "serviceInvoice",
     status: "Unpaid",
     invoiceNumber: "",
     name: "Invoice",
@@ -181,7 +181,7 @@ export default function EditInvoice2Page() {
         });
         setPageLoading(false);
       })
-      .catch(() => { toast.error("Failed to load invoice"); router.push("/dashboard/invoices2"); });
+      .catch(() => { toast.error("Failed to load invoice"); router.push("/dashboard/service-invoices"); });
   }, [id]);
 
   // ── Computed totals ─────────────────────────────────────────────────────────
@@ -246,7 +246,7 @@ export default function EditInvoice2Page() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...formData, total: liveTotal }),
       });
-      if (res.ok) { toast.success("Invoice saved"); router.push("/dashboard/invoices2"); }
+      if (res.ok) { toast.success("Invoice saved"); router.push("/dashboard/service-invoices"); }
       else { const data = await res.json(); toast.error(data.message || "Failed to save"); }
     } catch { toast.error("An error occurred"); }
     finally { setSaving(false); }
@@ -282,7 +282,7 @@ export default function EditInvoice2Page() {
 
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-3">
-            <button onClick={() => router.push("/dashboard/invoices2")} className="p-2 rounded-xl hover:bg-gray-100 transition-colors">
+            <button onClick={() => router.push("/dashboard/service-invoices")} className="p-2 rounded-xl hover:bg-gray-100 transition-colors">
               <ArrowLeft className="h-5 w-5 text-gray-600" />
             </button>
             <div>
@@ -291,7 +291,7 @@ export default function EditInvoice2Page() {
             </div>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => router.push("/dashboard/invoices2")} disabled={saving}>Cancel</Button>
+            <Button variant="outline" onClick={() => router.push("/dashboard/service-invoices")} disabled={saving}>Cancel</Button>
             <Button onClick={handleSave} disabled={saving} className="bg-gray-900 hover:bg-gray-800">
               {saving && <Spinner className="mr-2 h-3.5 w-3.5" />}
               {saving ? "Saving…" : "Save Changes"}
@@ -449,7 +449,7 @@ export default function EditInvoice2Page() {
         </div>
         <div className="w-full overflow-x-auto bg-muted/30 p-4 rounded-xl border flex justify-center">
           <div className="origin-top scale-[0.6] sm:scale-75 xl:scale-90 transition-transform">
-            <Invoice2Preview data={{ ...formData, total: liveTotal }} ref={printRef} />
+            <ServiceInvoicePreview data={{ ...formData, total: liveTotal }} ref={printRef} />
           </div>
         </div>
       </div>
