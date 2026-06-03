@@ -35,18 +35,23 @@ function LoginForm() {
 
     try {
       const res = await signIn("credentials", {
-        redirect: false,
         email,
         password,
+        redirect: false,
+        callbackUrl,
       });
 
       if (res?.error) {
         toast.error("Invalid email or password");
-      } else {
-        toast.success("Logged in successfully!");
-        router.push(callbackUrl);
+        return;
       }
-    } catch (error) {
+
+      toast.success("Logged in successfully!");
+
+      router.refresh();
+      router.replace(callbackUrl);
+    } catch (err) {
+      console.error(err);
       toast.error("An error occurred");
     } finally {
       setLoading(false);
@@ -95,7 +100,7 @@ function LoginForm() {
             {loading ? "Signing in..." : "Sign in"}
           </Button>
         </form>
-        
+
         <div className="relative">
           <div className="absolute inset-0 flex items-center">
             <span className="w-full border-t" />
@@ -104,7 +109,7 @@ function LoginForm() {
             <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
           </div>
         </div>
-        
+
         <Button variant="outline" type="button" className="w-full" onClick={handleGoogleLogin}>
           <svg viewBox="0 0 24 24" className="mr-2 h-4 w-4" aria-hidden="true" focusable="false" fill="currentColor">
             <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
