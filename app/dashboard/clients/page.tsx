@@ -33,7 +33,7 @@ function ClientForm({
     <div className="space-y-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-1.5">
-          <Label>Name <span className="text-red-500">*</span></Label>
+          <Label>Name <span className="text-[#EA2B7B]">*</span></Label>
           <Input value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="John Doe" />
         </div>
         <div className="space-y-1.5">
@@ -57,7 +57,7 @@ function ClientForm({
         <Button variant="outline" size="sm" onClick={onCancel} disabled={saving}>
           <X className="h-3.5 w-3.5 mr-1.5" /> Cancel
         </Button>
-        <Button size="sm" onClick={() => onSave(form)} disabled={saving || !form.name.trim()}>
+        <Button size="sm" onClick={() => onSave(form)} disabled={saving || !form.name.trim()} className="bg-[#5A378F] hover:bg-[#4a2d7a] text-white">
           {saving ? <Spinner className="h-3.5 w-3.5 mr-1.5" /> : <Check className="h-3.5 w-3.5 mr-1.5" />}
           Save Client
         </Button>
@@ -83,7 +83,7 @@ export default function ClientsPage() {
     fetch("/api/clients")
       .then((r) => r.json())
       .then((data) => { if (Array.isArray(data)) setClients(data); })
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => setLoading(false));
   }, []);
 
@@ -174,31 +174,31 @@ export default function ClientsPage() {
       />
 
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Clients</h1>
-        <p className="text-sm text-gray-400 mt-0.5">Manage preset client info to auto-fill invoices.</p>
+        <h1 className="text-2xl md:text-3xl font-semibold text-[#1A1A1A]">Clients</h1>
+        <p className="text-sm md:text-base text-[#1A1A1A]/60 mt-0.5">Manage preset client info to auto-fill invoices.</p>
       </div>
 
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
+      <div className="bg-white rounded-xl border border-[#E8E8E8]">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 pt-6 pb-4">
-          <h2 className="text-base font-bold text-gray-900">
+        <div className="flex items-center justify-between px-5 pt-5 pb-4">
+          <h2 className="text-base md:text-lg font-semibold text-[#1A1A1A]">
             All Clients
-            {!loading && <span className="ml-2 text-sm font-normal text-gray-400">({clients.length})</span>}
+            {!loading && <span className="ml-2 text-sm font-normal text-[#1A1A1A]/40">({clients.length})</span>}
           </h2>
           <div className="flex items-center gap-3">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#1A1A1A]/30 pointer-events-none" />
               <input
                 type="text"
                 placeholder="Search clients..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-200 w-48 bg-gray-50"
+                className="pl-8 pr-4 py-2 text-sm border border-[#E8E8E8] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5A378F]/20 focus:border-[#5A378F]/40 w-48 bg-[#F0F0F0]/50 text-[#1A1A1A] placeholder:text-[#1A1A1A]/30"
               />
             </div>
             {isSuperAdmin && !showAdd && (
-              <Button onClick={() => setShowAdd(true)} className="rounded-xl bg-gray-900 hover:bg-gray-800 text-white">
-                <Plus className="mr-2 h-4 w-4" /> Add Client
+              <Button onClick={() => setShowAdd(true)} className="rounded-lg bg-[#5A378F] hover:bg-[#4a2d7a] text-white gap-2">
+                <Plus className="h-4 w-4" />Add Client
               </Button>
             )}
           </div>
@@ -206,9 +206,9 @@ export default function ClientsPage() {
 
         {/* Add form */}
         {showAdd && isSuperAdmin && (
-          <div className="px-6 pb-5 border-b border-gray-100">
-            <div className="bg-indigo-50/60 rounded-xl p-5 border border-indigo-100">
-              <h3 className="text-sm font-semibold text-gray-800 mb-4">New Client</h3>
+          <div className="px-5 pb-5 border-b border-[#F0F0F0]">
+            <div className="bg-[#EEEDFE]/40 rounded-xl p-5 border border-[#AFA9EC]/30">
+              <h3 className="text-sm font-semibold text-[#1A1A1A] mb-4">New Client</h3>
               <ClientForm
                 initial={EMPTY_FORM}
                 onSave={handleAdd}
@@ -220,7 +220,7 @@ export default function ClientsPage() {
         )}
 
         {/* Client list */}
-        <div className="divide-y divide-gray-50">
+        <div className="divide-y divide-[#F0F0F0]">
           {loading ? (
             Array.from({ length: 4 }).map((_, i) => (
               <div key={i} className="px-6 py-5 flex items-start justify-between gap-4">
@@ -233,7 +233,7 @@ export default function ClientsPage() {
               </div>
             ))
           ) : filtered.length === 0 ? (
-            <div className="py-16 text-center text-gray-400 text-sm">
+            <div className="py-16 text-center text-[#1A1A1A]/30 text-sm md:text-base">
               {search ? "No clients match your search." : "No clients yet. Add your first client above."}
             </div>
           ) : (
@@ -259,27 +259,27 @@ export default function ClientsPage() {
                   <div className="flex items-start justify-between gap-4">
                     <div className="space-y-1.5 min-w-0">
                       <div className="flex items-center gap-2">
-                        <p className="font-semibold text-gray-900 truncate">{client.name}</p>
+                        <p className="font-semibold text-[#1A1A1A] truncate">{client.name}</p>
                         {client.companyName && (
-                          <span className="flex items-center gap-1 text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full shrink-0">
+                          <span className="flex items-center gap-1 text-xs text-[#1A1A1A]/50 bg-[#F0F0F0] px-2 py-0.5 rounded-full shrink-0">
                             <Building2 className="h-3 w-3" />{client.companyName}
                           </span>
                         )}
                       </div>
-                      <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-500">
+                      <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm md:text-base text-[#1A1A1A]/50">
                         {client.email && (
                           <span className="flex items-center gap-1.5">
-                            <Mail className="h-3.5 w-3.5 text-gray-400" />{client.email}
+                            <Mail className="h-3.5 w-3.5 text-[#1A1A1A]/30" />{client.email}
                           </span>
                         )}
                         {client.phone && (
                           <span className="flex items-center gap-1.5">
-                            <Phone className="h-3.5 w-3.5 text-gray-400" />{client.phone}
+                            <Phone className="h-3.5 w-3.5 text-[#1A1A1A]/30" />{client.phone}
                           </span>
                         )}
                         {client.address && (
                           <span className="flex items-center gap-1.5">
-                            <MapPin className="h-3.5 w-3.5 text-gray-400" />{client.address}
+                            <MapPin className="h-3.5 w-3.5 text-[#1A1A1A]/30" />{client.address}
                           </span>
                         )}
                       </div>
@@ -288,20 +288,20 @@ export default function ClientsPage() {
                       <div className="flex items-center gap-1 shrink-0">
                         <button
                           onClick={() => setEditingId(client._id)}
-                          className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+                          className="p-1.5 rounded-lg hover:bg-[#F0F0F0] transition-colors"
                           title="Edit"
                         >
-                          <Edit className="h-4 w-4 text-gray-400" />
+                          <Edit className="h-4 w-4 text-[#1A1A1A]/50" />
                         </button>
                         <button
                           onClick={() => setDeleteTarget(client)}
                           disabled={deletingId === client._id}
-                          className="p-1.5 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50"
+                          className="p-1.5 rounded-lg hover:bg-[#FBEAF0] transition-colors disabled:opacity-50"
                           title="Delete"
                         >
                           {deletingId === client._id
                             ? <Spinner className="h-4 w-4 text-red-400" />
-                            : <Trash2 className="h-4 w-4 text-red-400" />}
+                            : <Trash2 className="h-4 w-4 text-[#EA2B7B]" />}
                         </button>
                       </div>
                     )}

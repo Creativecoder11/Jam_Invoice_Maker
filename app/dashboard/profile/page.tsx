@@ -11,8 +11,8 @@ export default function ProfilePage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Profile</h1>
-        <p className="text-muted-foreground">Your personal account information.</p>
+        <h1 className="text-2xl md:text-3xl font-semibold text-[#1A1A1A]">Profile</h1>
+        <p className="text-sm md:text-base text-[#1A1A1A]/60 mt-0.5">Your personal account information.</p>
       </div>
 
       <Card className="max-w-2xl">
@@ -24,23 +24,27 @@ export default function ProfilePage() {
           <div className="flex items-center space-x-4">
             <Avatar className="h-20 w-20">
               <AvatarImage src={session?.user?.image || ""} />
-              <AvatarFallback className="text-2xl">{session?.user?.name?.charAt(0).toUpperCase() || "U"}</AvatarFallback>
+              <AvatarFallback className="text-2xl bg-[#5A378F] text-white">{session?.user?.name?.charAt(0).toUpperCase() || "U"}</AvatarFallback>
             </Avatar>
             <div>
-              <h2 className="text-2xl font-bold">{session?.user?.name}</h2>
-              <p className="text-muted-foreground">{session?.user?.email}</p>
+              <h2 className="text-xl font-semibold text-[#1A1A1A]">{session?.user?.name}</h2>
+              <p className="text-sm text-[#1A1A1A]/40">{session?.user?.email}</p>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 border-t pt-6">
+          <div className="grid grid-cols-2 gap-4 border-t border-[#E8E8E8] pt-6">
             <div>
-              <h3 className="font-semibold text-sm text-muted-foreground">Role</h3>
-              <p className="font-medium mt-1">{session?.user?.role}</p>
+              <h3 className="font-medium text-xs uppercase tracking-wider text-[#1A1A1A]/40">Role</h3>
+              <p className="font-semibold text-[#1A1A1A] mt-1">{session?.user?.role}</p>
             </div>
             <div>
-              <h3 className="font-semibold text-sm text-muted-foreground">Account Status</h3>
+              <h3 className="font-medium text-xs uppercase tracking-wider text-[#1A1A1A]/40">Account Status</h3>
               <div className="mt-1">
-                <Badge variant={session?.user?.status === "approved" ? "default" : "secondary"}>
+                <Badge className={
+                  session?.user?.status === "approved"
+                    ? "bg-[#E1F5EE] text-[#085041]"
+                    : "bg-[#EEEDFE] text-[#3C3489]"
+                }>
                   {session?.user?.status}
                 </Badge>
               </div>

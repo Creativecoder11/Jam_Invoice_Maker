@@ -27,7 +27,7 @@ function AddClientDialog({ onSave, onClose }: { onSave: (c: ClientData) => void;
     if (!form.name.trim()) return;
     setSaving(true);
     try {
-      const res  = await fetch("/api/clients", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
+      const res = await fetch("/api/clients", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
       const json = await res.json();
       if (res.ok) { toast.success("Client saved"); onSave(json); }
       else toast.error(json.message || "Failed to save");
@@ -37,14 +37,14 @@ function AddClientDialog({ onSave, onClose }: { onSave: (c: ClientData) => void;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 w-full max-w-md mx-4">
-        <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-gray-100">
-          <h3 className="font-semibold text-gray-900">Add New Client</h3>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"><X className="h-4 w-4 text-gray-500" /></button>
+      <div className="bg-white rounded-xl shadow-2xl border border-[#E8E8E8] w-full max-w-md mx-4">
+        <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-[#F0F0F0]">
+          <h3 className="font-semibold text-[#1A1A1A]">Add New Client</h3>
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-[#F0F0F0] transition-colors"><X className="h-4 w-4 text-[#1A1A1A]/40" /></button>
         </div>
         <div className="p-6 space-y-4">
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1.5"><Label>Name <span className="text-red-500">*</span></Label><Input value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="John Doe" /></div>
+            <div className="space-y-1.5"><Label>Name <span className="text-[#EA2B7B]">*</span></Label><Input value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="John Doe" /></div>
             <div className="space-y-1.5"><Label>Company Name</Label><Input value={form.companyName} onChange={(e) => set("companyName", e.target.value)} placeholder="Acme Corp" /></div>
             <div className="space-y-1.5"><Label>Email</Label><Input type="email" value={form.email} onChange={(e) => set("email", e.target.value)} placeholder="john@example.com" /></div>
             <div className="space-y-1.5"><Label>Phone</Label><Input value={form.phone} onChange={(e) => set("phone", e.target.value)} placeholder="+1 234 567 890" /></div>
@@ -52,8 +52,8 @@ function AddClientDialog({ onSave, onClose }: { onSave: (c: ClientData) => void;
           </div>
         </div>
         <div className="flex justify-end gap-2 px-6 pb-5">
-          <Button variant="outline" size="sm" onClick={onClose} disabled={saving}>Cancel</Button>
-          <Button size="sm" onClick={handleSave} disabled={saving || !form.name.trim()}>
+          <Button variant="outline" size="sm" onClick={onClose} disabled={saving} className="rounded-lg border-[#E8E8E8] hover:bg-[#F0F0F0]">Cancel</Button>
+          <Button size="sm" onClick={handleSave} disabled={saving || !form.name.trim()} className="rounded-lg bg-[#5A378F] hover:bg-[#4a2d7a] text-white">
             {saving ? <Spinner className="h-3.5 w-3.5 mr-1.5" /> : <UserPlus className="h-3.5 w-3.5 mr-1.5" />}
             Save & Use
           </Button>
@@ -66,15 +66,15 @@ function AddClientDialog({ onSave, onClose }: { onSave: (c: ClientData) => void;
 // ── Client Search Dropdown ────────────────────────────────────────────────────
 function ClientSearch({ clients, onSelect, onAddNew }: { clients: ClientData[]; onSelect: (c: ClientData) => void; onAddNew: () => void }) {
   const [query, setQuery] = useState("");
-  const [open, setOpen]   = useState(false);
+  const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   const filtered = query.trim()
     ? clients.filter((c) =>
-        c.name.toLowerCase().includes(query.toLowerCase()) ||
-        c.companyName.toLowerCase().includes(query.toLowerCase()) ||
-        c.email.toLowerCase().includes(query.toLowerCase())
-      )
+      c.name.toLowerCase().includes(query.toLowerCase()) ||
+      c.companyName.toLowerCase().includes(query.toLowerCase()) ||
+      c.email.toLowerCase().includes(query.toLowerCase())
+    )
     : clients;
 
   useEffect(() => {
@@ -93,19 +93,19 @@ function ClientSearch({ clients, onSelect, onAddNew }: { clients: ClientData[]; 
         />
       </div>
       {open && (
-        <div className="absolute z-40 mt-1 w-full bg-white border border-gray-100 rounded-xl shadow-xl overflow-hidden max-h-60 overflow-y-auto">
-          {filtered.length === 0 && query.trim() && <p className="px-4 py-3 text-sm text-gray-400">No clients found.</p>}
+        <div className="absolute z-40 mt-1 w-full bg-white border border-[#E8E8E8] rounded-xl shadow-xl overflow-hidden max-h-60 overflow-y-auto">
+          {filtered.length === 0 && query.trim() && <p className="px-4 py-3 text-sm text-[#1A1A1A]/40">No clients found.</p>}
           {filtered.map((c) => (
             <button key={c._id} type="button"
               onClick={() => { onSelect(c); setQuery(""); setOpen(false); }}
-              className="w-full text-left px-4 py-3 hover:bg-indigo-50 transition-colors border-b border-gray-50 last:border-0"
+              className="w-full text-left px-4 py-3 hover:bg-[#EEEDFE]/50 transition-colors border-b border-[#F0F0F0] last:border-0"
             >
-              <p className="text-sm font-semibold text-gray-900">{c.name}</p>
-              {(c.companyName || c.email) && <p className="text-xs text-gray-400 mt-0.5">{[c.companyName, c.email].filter(Boolean).join(" · ")}</p>}
+              <p className="text-sm font-semibold text-[#1A1A1A]">{c.name}</p>
+              {(c.companyName || c.email) && <p className="text-xs text-[#1A1A1A]/40 mt-0.5">{[c.companyName, c.email].filter(Boolean).join(" · ")}</p>}
             </button>
           ))}
           <button type="button" onClick={() => { setOpen(false); onAddNew(); }}
-            className="w-full flex items-center gap-2 px-4 py-3 text-sm text-indigo-600 hover:bg-indigo-50 transition-colors font-medium border-t border-gray-100"
+            className="w-full flex items-center gap-2 px-4 py-3 text-sm text-[#5A378F] hover:bg-[#EEEDFE]/50 transition-colors font-medium border-t border-[#F0F0F0]"
           >
             <UserPlus className="h-4 w-4" /> Add new client
           </button>
@@ -128,8 +128,8 @@ const defaultReceiptInfo = (): ReceiptInfo => ({
 
 export default function CreateReceiptPage() {
   const router = useRouter();
-  const [saving, setSaving]               = useState(false);
-  const [downloading, setDownloading]     = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [presetClients, setPresetClients] = useState<ClientData[]>([]);
   const [showAddClient, setShowAddClient] = useState(false);
@@ -142,7 +142,7 @@ export default function CreateReceiptPage() {
     date: new Date(),
     dueDate: new Date(),
     from: { name: "", email: "", phone: "", address: "" },
-    to:   { name: "", email: "", phone: "", address: "" },
+    to: { name: "", email: "", phone: "", address: "" },
     paymentInfo: { accountName: "", accountNumber: "", bankName: "", branch: "", swift: "", currency: "BDT" },
     items: [],
     vat: 0, discount: 0, total: 0,
@@ -153,7 +153,7 @@ export default function CreateReceiptPage() {
     fetch("/api/clients")
       .then((r) => r.json())
       .then((data) => { if (Array.isArray(data)) setPresetClients(data); })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   const applyPresetClient = (client: ClientData) => {
@@ -176,7 +176,7 @@ export default function CreateReceiptPage() {
 
   // helpers
   const updateFrom = (f: string, v: string) => setFormData((p) => ({ ...p, from: { ...p.from!, [f]: v } }));
-  const updateTo   = (f: string, v: string) => setFormData((p) => ({ ...p, to:   { ...p.to!,   [f]: v } }));
+  const updateTo = (f: string, v: string) => setFormData((p) => ({ ...p, to: { ...p.to!, [f]: v } }));
 
   const updateRI = (patch: Partial<ReceiptInfo>) =>
     setFormData((p) => ({ ...p, receiptInfo: { ...p.receiptInfo!, ...patch } }));
@@ -184,7 +184,7 @@ export default function CreateReceiptPage() {
   const updateReceivedBy = (f: string, v: string) =>
     setFormData((p) => ({ ...p, receiptInfo: { ...p.receiptInfo!, receivedBy: { ...p.receiptInfo!.receivedBy, [f]: v } } }));
 
-  const addLineItem    = () => updateRI({ lineItems: [...ri.lineItems, defaultLineItem()] });
+  const addLineItem = () => updateRI({ lineItems: [...ri.lineItems, defaultLineItem()] });
   const removeLineItem = (i: number) => {
     const items = [...ri.lineItems]; items.splice(i, 1); updateRI({ lineItems: items });
   };
@@ -199,7 +199,7 @@ export default function CreateReceiptPage() {
     const form = new FormData();
     form.append("file", file);
     try {
-      const res  = await fetch("/api/upload", { method: "POST", body: form });
+      const res = await fetch("/api/upload", { method: "POST", body: form });
       const data = await res.json();
       if (res.ok) { setFormData((p) => ({ ...p, logoUrl: data.url })); toast.success("Logo uploaded"); }
       else toast.error(data.message || "Upload failed");
@@ -209,7 +209,7 @@ export default function CreateReceiptPage() {
 
   const handleSave = async () => {
     if (!formData.invoiceNumber?.trim()) { toast.error("Receipt number is required"); return; }
-    if (!formData.to?.name?.trim())      { toast.error("Client name is required"); return; }
+    if (!formData.to?.name?.trim()) { toast.error("Client name is required"); return; }
     setSaving(true);
     try {
       const res = await fetch("/api/invoices", {
@@ -234,9 +234,9 @@ export default function CreateReceiptPage() {
       });
       if (!res.ok) throw new Error("PDF generation failed");
       const blob = await res.blob();
-      const url  = URL.createObjectURL(blob);
-      const a    = document.createElement("a");
-      a.href     = url;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
       a.download = `${formData.invoiceNumber || "receipt"}.pdf`;
       document.body.appendChild(a);
       a.click();
@@ -252,20 +252,20 @@ export default function CreateReceiptPage() {
       {showAddClient && <AddClientDialog onSave={handleNewClientSaved} onClose={() => setShowAddClient(false)} />}
 
       {/* ── Form ──────────────────────────────────────────────────────────────── */}
-      <div className="w-full xl:w-1/2 space-y-6">
+      <div className="w-full xl:w-1/2 space-y-6 items-center rounded-xl border border-[#E8E8E8] p-6 xl:pl-6 bg-white">
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-3">
-            <button onClick={() => router.push("/dashboard/receipts")} className="p-2 rounded-xl hover:bg-gray-100 transition-colors">
-              <ArrowLeft className="h-5 w-5 text-gray-600" />
+            <button onClick={() => router.push("/dashboard/receipts")} className="p-2 rounded-xl hover:bg-[#F0F0F0] transition-colors">
+              <ArrowLeft className="h-6 w-6 text-[#1A1A1A]/60" />
             </button>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">New Receipt</h1>
-              <p className="text-sm text-gray-400">Fill in the details below</p>
+              <h1 className="text-2xl font-semibold text-[#1A1A1A]">New Receipt</h1>
+              <p className="text-sm md:text-base text-[#1A1A1A]/60 mt-0.5">Fill in the details below</p>
             </div>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => router.push("/dashboard/receipts")}>Cancel</Button>
-            <Button onClick={handleSave} disabled={saving} className="bg-gray-900 hover:bg-gray-800">
+            <Button variant="outline" onClick={() => router.push("/dashboard/receipts")} className="rounded-lg border-[#E8E8E8] hover:bg-[#F0F0F0]">Cancel</Button>
+            <Button onClick={handleSave} disabled={saving} className="bg-[#5A378F] hover:bg-[#4a2d7a] text-white rounded-lg">
               {saving && <Spinner className="mr-2 h-3.5 w-3.5" />}
               {saving ? "Creating…" : "Create Receipt"}
             </Button>
@@ -273,18 +273,23 @@ export default function CreateReceiptPage() {
         </div>
 
         <Tabs defaultValue="details" className="w-full">
-          <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="details">Details</TabsTrigger>
-            <TabsTrigger value="billto">Bill To</TabsTrigger>
-            <TabsTrigger value="items">Items</TabsTrigger>
-            <TabsTrigger value="payment">Payment</TabsTrigger>
-            <TabsTrigger value="received">Received By</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-5 bg-[#F0F0F0] rounded-lg p-b1">
+            <TabsTrigger value="details" className="rounded-md data-[state=active]:bg-white data-[state=active]:text-[#5A378F] data-[state=active]:shadow-sm text-[#1A1A1A]/50 text-sm font-medium"
+            >Details</TabsTrigger>
+            <TabsTrigger value="billto" className="rounded-md data-[state=active]:bg-white data-[state=active]:text-[#5A378F] data-[state=active]:shadow-sm text-[#1A1A1A]/50 text-sm font-medium"
+            >Bill To</TabsTrigger>
+            <TabsTrigger value="items" className="rounded-md data-[state=active]:bg-white data-[state=active]:text-[#5A378F] data-[state=active]:shadow-sm text-[#1A1A1A]/50 text-sm font-medium"
+            >Items</TabsTrigger>
+            <TabsTrigger value="payment" className="rounded-md data-[state=active]:bg-white data-[state=active]:text-[#5A378F] data-[state=active]:shadow-sm text-[#1A1A1A]/50 text-sm font-medium"
+            >Payment</TabsTrigger>
+            <TabsTrigger value="received" className="rounded-md data-[state=active]:bg-white data-[state=active]:text-[#5A378F] data-[state=active]:shadow-sm text-[#1A1A1A]/50 text-sm font-medium"
+            >Received By</TabsTrigger>
           </TabsList>
 
           {/* ── Details ──────────────────────────────────────────────────── */}
           <TabsContent value="details" className="space-y-4 pt-4">
-            <Card>
-              <CardHeader><CardTitle>Receipt Details</CardTitle></CardHeader>
+            <Card className="rounded-xl border border-[#E8E8E8] shadow-none">
+              <CardHeader><CardTitle className="text-base font-semibold text-[#1A1A1A]">Receipt Details</CardTitle></CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -315,7 +320,7 @@ export default function CreateReceiptPage() {
                     <select
                       value={formData.status}
                       onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
-                      className="w-full border border-input rounded-md px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+                      className="w-full border border-[#E8E8E8] rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#5A378F]/20 focus:border-[#5A378F]/40 text-[#1A1A1A]"
                     >
                       <option value="Paid">Paid</option>
                       <option value="Unpaid">Unpaid</option>
@@ -329,11 +334,11 @@ export default function CreateReceiptPage() {
                   <Label>Logo</Label>
                   <Input type="file" accept="image/*" onChange={handleLogoUpload} disabled={uploadingLogo} />
                   {formData.logoUrl && <img src={formData.logoUrl} alt="logo" className="h-12 mt-2 object-contain" />}
-                  {uploadingLogo && <p className="text-xs text-muted-foreground flex items-center gap-1.5"><Spinner className="h-3 w-3" /> Uploading…</p>}
+                  {uploadingLogo && <p className="text-xs text-[#1A1A1A]/40 flex items-center gap-1.5"><Spinner className="h-3 w-3" /> Uploading…</p>}
                 </div>
 
                 <div className="pt-4 border-t space-y-4">
-                  <h3 className="font-semibold text-sm">Your Company (From)</h3>
+                  <h3 className="font-semibold text-sm text-[#1A1A1A]/60">Your Company (From)</h3>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2"><Label>Company Name</Label><Input value={formData.from?.name} onChange={(e) => updateFrom("name", e.target.value)} /></div>
                     <div className="space-y-2"><Label>Email</Label><Input value={formData.from?.email} onChange={(e) => updateFrom("email", e.target.value)} /></div>
@@ -347,8 +352,8 @@ export default function CreateReceiptPage() {
 
           {/* ── Bill To ──────────────────────────────────────────────────── */}
           <TabsContent value="billto" className="space-y-4 pt-4">
-            <Card>
-              <CardHeader><CardTitle>Bill To (Client)</CardTitle></CardHeader>
+            <Card className="rounded-xl border border-[#E8E8E8] shadow-none">
+              <CardHeader><CardTitle className="text-base font-semibold text-[#1A1A1A]">Bill To (Client)</CardTitle></CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-1.5">
                   <Label>Load from preset</Label>
@@ -366,17 +371,17 @@ export default function CreateReceiptPage() {
 
           {/* ── Items ────────────────────────────────────────────────────── */}
           <TabsContent value="items" className="space-y-4 pt-4">
-            <Card>
+            <Card className="rounded-xl border border-[#E8E8E8] shadow-none">
               <CardHeader>
                 <div className="flex items-center justify-between">
-                  <CardTitle>Line Items</CardTitle>
+                  <CardTitle className="text-base font-semibold text-[#1A1A1A]">Line Items</CardTitle>
                   <div className="flex items-center gap-3">
                     <div className="flex items-center gap-2">
                       <Label className="text-sm font-medium">Currency</Label>
                       <select
                         value={ri.currency}
                         onChange={(e) => updateRI({ currency: e.target.value })}
-                        className="border border-input rounded-md px-2 py-1 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+                        className="border border-[#E8E8E8] rounded-lg px-2 py-1 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#5A378F]/20"
                       >
                         <option value="BDT">BDT</option>
                         <option value="USD">USD</option>
@@ -390,7 +395,7 @@ export default function CreateReceiptPage() {
                         type="checkbox"
                         checked={ri.showInvoiceNo}
                         onChange={(e) => updateRI({ showInvoiceNo: e.target.checked })}
-                        className="rounded border-gray-300 accent-indigo-600"
+                        className="rounded border-[#E8E8E8] accent-[#5A378F]"
                       />
                       Show Invoice No
                     </label>
@@ -399,10 +404,10 @@ export default function CreateReceiptPage() {
               </CardHeader>
               <CardContent className="space-y-3">
                 {ri.lineItems.map((item, i) => (
-                  <div key={i} className="flex gap-3 items-end border-b pb-3">
+                  <div key={i} className="flex gap-3 items-end border-b border-[#F0F0F0] pb-3">
                     {ri.showInvoiceNo && (
                       <div className="w-28 space-y-1.5">
-                        <Label className="text-xs">Invoice No</Label>
+                        <Label className="text-xs text-[#1A1A1A]/40">Invoice No</Label>
                         <Input
                           placeholder="INV-001"
                           value={item.invoiceNo}
@@ -411,7 +416,7 @@ export default function CreateReceiptPage() {
                       </div>
                     )}
                     <div className="flex-1 space-y-1.5">
-                      <Label className="text-xs">Account Name / Description *</Label>
+                      <Label className="text-xs text-[#1A1A1A]/40">Account Name / Description *</Label>
                       <Input
                         placeholder="Description"
                         value={item.description}
@@ -419,7 +424,7 @@ export default function CreateReceiptPage() {
                       />
                     </div>
                     <div className="w-32 space-y-1.5">
-                      <Label className="text-xs">Amount ({ri.currency})</Label>
+                      <Label className="text-xs text-[#1A1A1A]/40">Amount ({ri.currency})</Label>
                       <Input
                         type="number"
                         min={0}
@@ -428,18 +433,18 @@ export default function CreateReceiptPage() {
                         onChange={(e) => updateLineItem(i, "amount", Number(e.target.value))}
                       />
                     </div>
-                    <Button variant="destructive" size="icon" onClick={() => removeLineItem(i)} disabled={ri.lineItems.length === 1}>
+                    <Button variant="destructive" size="icon" onClick={() => removeLineItem(i)} disabled={ri.lineItems.length === 1} className="bg-[#FBEAF0] hover:bg-[#EA2B7B]/20 text-[#EA2B7B] border-0 rounded-lg">
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
                 ))}
 
-                <Button variant="outline" size="sm" onClick={addLineItem} className="mt-1">
+                <Button variant="outline" size="sm" onClick={addLineItem} className="mt-1 rounded-lg border-dashed border-[#AFA9EC]/50 text-[#5A378F] hover:bg-[#EEEDFE]/50">
                   <Plus className="h-4 w-4 mr-2" /> Add Row
                 </Button>
 
-                <div className="pt-4 border-t space-y-3">
-                  <div className="flex justify-between text-sm font-semibold text-gray-700">
+                <div className="pt-4 border-t border-[#F0F0F0] space-y-3">
+                  <div className="flex justify-between text-sm font-semibold text-[#1A1A1A]">
                     <span>Total Due Amount</span>
                     <span>{totalDue.toLocaleString()} {ri.currency}</span>
                   </div>
@@ -465,7 +470,7 @@ export default function CreateReceiptPage() {
                       onChange={(e) => updateRI({ receivedAmount: Number(e.target.value) })}
                     />
                   </div>
-                  <div className="flex justify-between text-sm font-bold text-gray-900 pt-2 border-t">
+                  <div className="flex justify-between text-sm font-semibold text-[#51B9A9] pt-2 border-t border-[#F0F0F0]">
                     <span>Current Due</span>
                     <span>{(totalDue - (ri.paidAmount || 0) - (ri.receivedAmount || 0)).toLocaleString()} {ri.currency}</span>
                   </div>
@@ -476,21 +481,21 @@ export default function CreateReceiptPage() {
 
           {/* ── Payment ──────────────────────────────────────────────────── */}
           <TabsContent value="payment" className="space-y-4 pt-4">
-            <Card>
-              <CardHeader><CardTitle>Payment Received In</CardTitle></CardHeader>
+            <Card className="rounded-xl border border-[#E8E8E8] shadow-none">
+              <CardHeader><CardTitle className="text-base font-semibold text-[#1A1A1A]">Payment Received In</CardTitle></CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-3">
                   {(["cash", "cheque", "accountTransfer"] as const).map((method) => (
-                    <label key={method} className="flex items-center gap-3 cursor-pointer p-3 rounded-lg border hover:bg-gray-50 transition-colors">
+                    <label key={method} className="flex items-center gap-3 cursor-pointer p-3 rounded-lg border border-[#E8E8E8] hover:bg-[#EEEDFE]/30 transition-colors">
                       <input
                         type="radio"
                         name="paymentMethod"
                         value={method}
                         checked={ri.paymentMethod === method}
                         onChange={() => updateRI({ paymentMethod: method })}
-                        className="accent-indigo-600"
+                        className="accent-[#5A378F]"
                       />
-                      <span className="font-medium capitalize text-sm">
+                      <span className="font-medium capitalize text-sm text-[#1A1A1A]">
                         {method === "accountTransfer" ? "Account Transfer" : method.charAt(0).toUpperCase() + method.slice(1)}
                       </span>
                     </label>
@@ -511,7 +516,7 @@ export default function CreateReceiptPage() {
                 {ri.paymentMethod && (
                   <div className="pt-2">
                     <button
-                      className="text-xs text-gray-400 hover:text-gray-600 underline"
+                      className="text-xs text-[#1A1A1A]/60 hover:text-[#EA2B7B] underline"
                       onClick={() => updateRI({ paymentMethod: "", accountTransferName: "" })}
                     >
                       Clear selection
@@ -524,8 +529,8 @@ export default function CreateReceiptPage() {
 
           {/* ── Received By ──────────────────────────────────────────────── */}
           <TabsContent value="received" className="space-y-4 pt-4">
-            <Card>
-              <CardHeader><CardTitle>Received By</CardTitle></CardHeader>
+            <Card className="rounded-xl border border-[#E8E8E8] shadow-none">
+              <CardHeader><CardTitle className="text-base font-semibold text-[#1A1A1A]">Received By</CardTitle></CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2"><Label>Name</Label><Input value={ri.receivedBy.name} onChange={(e) => updateReceivedBy("name", e.target.value)} /></div>
@@ -541,10 +546,10 @@ export default function CreateReceiptPage() {
       </div>
 
       {/* ── Live Preview ──────────────────────────────────────────────────────── */}
-      <div className="w-full xl:w-1/2 flex flex-col items-center border-l pl-0 xl:pl-6">
+      <div className="w-full md:w-1/2 flex flex-col items-center border-l border-[#E8E8E8] pl-0 md:pl-6">
         <div className="w-full flex justify-between items-center mb-4 py-2">
-          <h2 className="text-xl font-bold">Preview</h2>
-          <Button variant="outline" onClick={handleDownloadPDF} disabled={downloading}>
+          <h2 className="text-base md:text-lg font-semibold text-[#1A1A1A]">Preview</h2>
+          <Button variant="outline" onClick={handleDownloadPDF} disabled={downloading} className="rounded-lg border-[#E8E8E8] hover:bg-[#F0F0F0] gap-2">
             {downloading ? <Spinner className="h-4 w-4 mr-2" /> : <Download className="h-4 w-4 mr-2" />}
             {downloading ? "Generating…" : "Download PDF"}
           </Button>

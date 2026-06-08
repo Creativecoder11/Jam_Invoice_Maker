@@ -54,17 +54,17 @@ function AddClientDialog({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 w-full max-w-md mx-4">
-        <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-gray-100">
-          <h3 className="font-semibold text-gray-900">Add New Client</h3>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
+      <div className="bg-white rounded-xl shadow-2xl border border-[#E8E8E8] w-full max-w-md mx-4">
+        <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-[#F0F0F0]">
+          <h3 className="font-semibold text-[#1A1A1A]">Add New Client</h3>
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-[#F0F0F0] transition-colors">
             <X className="h-4 w-4 text-gray-500" />
           </button>
         </div>
         <div className="p-6 space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <Label>Name <span className="text-red-500">*</span></Label>
+              <Label>Name <span className="h-4 w-4 text-[#EA2B7B]">*</span></Label>
               <Input value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="John Doe" />
             </div>
             <div className="space-y-1.5">
@@ -86,8 +86,9 @@ function AddClientDialog({
           </div>
         </div>
         <div className="flex justify-end gap-2 px-6 pb-5">
-          <Button variant="outline" size="sm" onClick={onClose} disabled={saving}>Cancel</Button>
-          <Button size="sm" onClick={handleSave} disabled={saving || !form.name.trim()}>
+          <Button variant="outline" size="sm" onClick={onClose} disabled={saving} className="rounded-lg border-[#E8E8E8] hover:bg-[#F0F0F0]">Cancel</Button>
+
+          <Button size="sm" onClick={handleSave} disabled={saving || !form.name.trim()} className="rounded-lg bg-[#5A378F] hover:bg-[#4a2d7a] text-white">
             {saving ? <Spinner className="h-3.5 w-3.5 mr-1.5" /> : <UserPlus className="h-3.5 w-3.5 mr-1.5" />}
             Save & Use
           </Button>
@@ -113,11 +114,11 @@ function ClientSearch({
 
   const filtered = query.trim()
     ? clients.filter(
-        (c) =>
-          c.name.toLowerCase().includes(query.toLowerCase()) ||
-          c.companyName.toLowerCase().includes(query.toLowerCase()) ||
-          c.email.toLowerCase().includes(query.toLowerCase())
-      )
+      (c) =>
+        c.name.toLowerCase().includes(query.toLowerCase()) ||
+        c.companyName.toLowerCase().includes(query.toLowerCase()) ||
+        c.email.toLowerCase().includes(query.toLowerCase())
+    )
     : clients;
 
   useEffect(() => {
@@ -141,20 +142,20 @@ function ClientSearch({
         />
       </div>
       {open && (
-        <div className="absolute z-40 mt-1 w-full bg-white border border-gray-100 rounded-xl shadow-xl overflow-hidden max-h-60 overflow-y-auto">
+        <div className="absolute z-40 mt-1 w-full bg-white border border-[#E8E8E8] rounded-xl shadow-xl overflow-hidden max-h-60 overflow-y-auto">
           {filtered.length === 0 && query.trim() && (
-            <p className="px-4 py-3 text-sm text-gray-400">No clients found.</p>
+            <p className="px-4 py-3 text-sm text-[#1A1A1A]/40">No clients found.</p>
           )}
           {filtered.map((c) => (
             <button
               key={c._id}
               type="button"
               onClick={() => { onSelect(c); setQuery(""); setOpen(false); }}
-              className="w-full text-left px-4 py-3 hover:bg-indigo-50 transition-colors border-b border-gray-50 last:border-0"
+              className="w-full text-left px-4 py-3 hover:bg-[#EEEDFE]/50 transition-colors border-b border-[#F0F0F0] last:border-0"
             >
-              <p className="text-sm font-semibold text-gray-900">{c.name}</p>
+              <p className="text-sm font-semibold text-[#1A1A1A]">{c.name}</p>
               {(c.companyName || c.email) && (
-                <p className="text-xs text-gray-400 mt-0.5">
+                <p className="text-xs text-[#1A1A1A]/40 mt-0.5">
                   {[c.companyName, c.email].filter(Boolean).join(" · ")}
                 </p>
               )}
@@ -163,7 +164,7 @@ function ClientSearch({
           <button
             type="button"
             onClick={() => { setOpen(false); onAddNew(); }}
-            className="w-full flex items-center gap-2 px-4 py-3 text-sm text-indigo-600 hover:bg-indigo-50 transition-colors font-medium border-t border-gray-100"
+            className="w-full flex items-center gap-2 px-4 py-3 text-sm text-[#5A378F] hover:bg-[#EEEDFE]/50 transition-colors font-medium border-t border-[#F0F0F0]"
           >
             <UserPlus className="h-4 w-4" /> Add new client
           </button>
@@ -210,7 +211,7 @@ export default function CreateQuotationPage() {
     fetch("/api/clients")
       .then((r) => r.json())
       .then((data) => { if (Array.isArray(data)) setPresetClients(data); })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   const applyPresetClient = (client: ClientData) => {
@@ -381,19 +382,19 @@ export default function CreateQuotationPage() {
       )}
       <div className="flex flex-col xl:flex-row gap-4">
         {/* Editor / Form */}
-        <div className="w-full xl:w-1/2 space-y-6 items-center rounded-xl border p-6 xl:pl-6">
+        <div className="w-full xl:w-1/2 space-y-6 items-center rounded-xl border border-[#E8E8E8] p-6 xl:pl-6 bg-white">
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold">Create Quotation</h1>
+            <h1 className="text-2xl md:text-3xl font-semibold text-[#1A1A1A]">Create Quotation</h1>
             <div className="flex gap-2">
-              <Button className="bg-red-200 hover:bg-red-300 text-black" onClick={() => handleSave("Hold")} disabled={loading}>
+              <Button className="bg-[#FFF8E1] hover:bg-[#F9C551]/30 text-[#7A5C00] border border-[#F9C551]/40 rounded-lg" onClick={() => handleSave("Hold")} disabled={loading}>
                 {savingAs === "Hold" && <Spinner className="mr-2 h-3.5 w-3.5" />}
                 Save Draft
               </Button>
-              <Button className="bg-yellow-200 text-black hover:bg-yellow-300" onClick={() => handleSave("Unpaid")} disabled={loading}>
+              <Button className="bg-[#EEEDFE] hover:bg-[#AFA9EC]/30 text-[#3C3489] border border-[#AFA9EC]/40 rounded-lg" onClick={() => handleSave("Unpaid")} disabled={loading}>
                 {savingAs === "Unpaid" && <Spinner className="mr-2 h-3.5 w-3.5" />}
                 Save Pending
               </Button>
-              <Button className="bg-green-200 text-black hover:bg-green-300" onClick={() => handleSave("Paid")} disabled={loading}>
+              <Button className="bg-[#E1F5EE] hover:bg-[#51B9A9]/30 text-[#085041] border border-[#51B9A9]/40 rounded-lg" onClick={() => handleSave("Paid")} disabled={loading}>
                 {savingAs === "Paid" && <Spinner className="mr-2 h-3.5 w-3.5" />}
                 Save Accepted
               </Button>
@@ -401,17 +402,21 @@ export default function CreateQuotationPage() {
           </div>
 
           <Tabs defaultValue="details" className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="details">Details</TabsTrigger>
-              <TabsTrigger value="client">Client</TabsTrigger>
-              <TabsTrigger value="items">Items</TabsTrigger>
-              <TabsTrigger value="notes">Notes</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-4 bg-[#F0F0F0] rounded-lg pb-1">
+              <TabsTrigger value="details" className="rounded-md data-[state=active]:bg-white data-[state=active]:text-[#5A378F] data-[state=active]:shadow-sm text-[#1A1A1A]/50 text-sm font-medium"
+              >Details</TabsTrigger>
+              <TabsTrigger value="client" className="rounded-md data-[state=active]:bg-white data-[state=active]:text-[#5A378F] data-[state=active]:shadow-sm text-[#1A1A1A]/50 text-sm font-medium"
+              >Client</TabsTrigger>
+              <TabsTrigger value="items" className="rounded-md data-[state=active]:bg-white data-[state=active]:text-[#5A378F] data-[state=active]:shadow-sm text-[#1A1A1A]/50 text-sm font-medium"
+              >Items</TabsTrigger>
+              <TabsTrigger value="notes" className="rounded-md data-[state=active]:bg-white data-[state=active]:text-[#5A378F] data-[state=active]:shadow-sm text-[#1A1A1A]/50 text-sm font-medium"
+              >Notes</TabsTrigger>
             </TabsList>
 
             {/* ── Details ─────────────────────────────────────────────────── */}
             <TabsContent value="details" className="space-y-4 pt-4">
-              <Card>
-                <CardHeader><CardTitle>Quotation Details</CardTitle></CardHeader>
+              <Card className="rounded-xl border border-[#E8E8E8] shadow-none">
+                <CardHeader><CardTitle className="text-base font-semibold text-[#1A1A1A]">Quotation Details</CardTitle></CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
@@ -449,7 +454,7 @@ export default function CreateQuotationPage() {
                     <Label>Logo</Label>
                     <Input type="file" accept="image/*" onChange={handleLogoUpload} disabled={uploadingLogo} />
                     {uploadingLogo && (
-                      <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                      <p className="text-xs text-[#1A1A1A]/40 flex items-center gap-1.5">
                         <Spinner className="h-3 w-3" /> Uploading…
                       </p>
                     )}
@@ -460,23 +465,23 @@ export default function CreateQuotationPage() {
 
             {/* ── Client ──────────────────────────────────────────────────── */}
             <TabsContent value="client" className="space-y-4 pt-4">
-              <Card>
-                <CardHeader><CardTitle>Client Details (To)</CardTitle></CardHeader>
+              <Card className="rounded-xl border border-[#E8E8E8] shadow-none">
+                <CardHeader><CardTitle className="text-base font-semibold text-[#1A1A1A]">Client Details (To)</CardTitle></CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
                     <Label>Search Preset Clients</Label>
                     <ClientSearch clients={presetClients} onSelect={applyPresetClient} onAddNew={() => setShowAddClient(true)} />
                     {presetClients.length === 0 && (
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs text-[#1A1A1A]/40">
                         No preset clients yet.{" "}
-                        <button type="button" onClick={() => setShowAddClient(true)} className="text-indigo-600 hover:underline">
+                        <button type="button" onClick={() => setShowAddClient(true)} className="text-[#5A378F] hover:underline">
                           Add one now
                         </button>
                       </p>
                     )}
                   </div>
                   <div className="border-t pt-4 space-y-2">
-                    <p className="text-xs text-muted-foreground">Or fill in manually:</p>
+                    <p className="text-xs text-[#1A1A1A]/40">Or fill in manually:</p>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label>Client Name</Label>
@@ -502,14 +507,14 @@ export default function CreateQuotationPage() {
 
             {/* ── Items ───────────────────────────────────────────────────── */}
             <TabsContent value="items" className="space-y-4 pt-4">
-              <Card>
+              <Card className="rounded-xl border border-[#E8E8E8] shadow-none">
                 <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle>Line Items</CardTitle>
-                  <Button size="sm" onClick={addItem}><Plus className="h-4 w-4 mr-2" /> Add Item</Button>
+                  <CardTitle className="text-base font-semibold text-[#1A1A1A]">Line Items</CardTitle>
+                  <Button size="sm" onClick={addItem} className="bg-[#5A378F] hover:bg-[#4a2d7a] text-white rounded-lg gap-1.5"><Plus className="h-4 w-4 mr-2" /> Add Item</Button>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {formData.items?.map((item, index) => (
-                    <div key={index} className="border-b pb-4 space-y-3">
+                    <div key={index} className="border-b border-[#F0F0F0] pb-4 space-y-3">
                       <div className="flex gap-4 items-end">
                         <div className="flex-1 space-y-2">
                           <Label>Description</Label>
@@ -523,13 +528,13 @@ export default function CreateQuotationPage() {
                           <Label>Price</Label>
                           <Input type="number" step="0.01" value={item.unitPrice} onChange={(e) => updateItem(index, "unitPrice", Number(e.target.value))} />
                         </div>
-                        <Button variant="destructive" size="icon" onClick={() => removeItem(index)}>
+                        <Button variant="destructive" size="icon" onClick={() => removeItem(index)} className="bg-[#FBEAF0] hover:bg-[#EA2B7B]/20 text-[#EA2B7B] border-0 rounded-lg">
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
 
                       <div className="space-y-2 pl-2">
-                        <Label className="text-muted-foreground text-xs">Note (optional)</Label>
+                        <Label className="text-[#1A1A1A]/60 text-xs">Note (optional)</Label>
                         <Input
                           placeholder="Add a note for this item..."
                           value={item.note || ""}
@@ -539,21 +544,21 @@ export default function CreateQuotationPage() {
 
                       <div className="space-y-2 pl-2">
                         <div className="flex items-center justify-between">
-                          <Label className="text-muted-foreground text-xs">Sub-items</Label>
-                          <Button variant="ghost" size="sm" className="h-6 text-xs px-2" onClick={() => addSubItem(index)}>
+                          <Label className="text-[#1A1A1A]/60 text-xs">Sub-items</Label>
+                          <Button variant="ghost" size="sm" className="h-6 text-xs px-2 text-[#5A378F] hover:bg-[#EEEDFE]/50" onClick={() => addSubItem(index)}>
                             <Plus className="h-3 w-3 mr-1" /> Add sub-item
                           </Button>
                         </div>
                         {(item.subItems || []).map((sub, si) => (
                           <div key={si} className="flex gap-2 items-center">
-                            <span className="text-muted-foreground text-sm">-</span>
+                            <span className="text-[#1A1A1A]/60 text-sm">-</span>
                             <Input
                               className="flex-1 h-7 text-sm"
                               placeholder="Sub-item description..."
                               value={sub}
                               onChange={(e) => updateSubItem(index, si, e.target.value)}
                             />
-                            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => removeSubItem(index, si)}>
+                            <Button variant="ghost" size="icon" className="h-7 w-7 text-[#EA2B7B] hover:bg-[#FBEAF0]" onClick={() => removeSubItem(index, si)}>
                               <Trash2 className="h-3 w-3" />
                             </Button>
                           </div>
@@ -578,8 +583,8 @@ export default function CreateQuotationPage() {
 
             {/* ── Notes ───────────────────────────────────────────────────── */}
             <TabsContent value="notes" className="space-y-4 pt-4">
-              <Card>
-                <CardHeader><CardTitle>Notes</CardTitle></CardHeader>
+              <Card className="rounded-xl border border-[#E8E8E8] shadow-none">
+                <CardHeader><CardTitle className="text-base font-semibold text-[#1A1A1A]">Notes</CardTitle></CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
                     <Label>Notes Text</Label>
@@ -599,23 +604,23 @@ export default function CreateQuotationPage() {
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <Label>Note Points</Label>
-                      <Button variant="ghost" size="sm" className="h-7 text-xs px-2" onClick={addNotePoint}>
+                      <Button variant="ghost" size="sm" className="h-7 text-xs px-2 text-[#5A378F] hover:bg-[#EEEDFE]/50" onClick={addNotePoint}>
                         <Plus className="h-3 w-3 mr-1" /> Add Point
                       </Button>
                     </div>
                     {(formData.notes?.points || []).length === 0 && (
-                      <p className="text-xs text-muted-foreground">No points yet. Click &quot;Add Point&quot; to add bullet points.</p>
+                      <p className="text-xs text-[#1A1A1A]/60">No points yet. Click &quot;Add Point&quot; to add bullet points.</p>
                     )}
                     {(formData.notes?.points || []).map((point, i) => (
                       <div key={i} className="flex gap-2 items-center">
-                        <span className="text-muted-foreground text-sm">•</span>
+                        <span className="text-[#1A1A1A]/60 text-sm">•</span>
                         <Input
                           className="flex-1"
                           placeholder="Enter a note point..."
                           value={point}
                           onChange={(e) => updateNotePoint(i, e.target.value)}
                         />
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => removeNotePoint(i)}>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-[#EA2B7B] hover:bg-[#FBEAF0]" onClick={() => removeNotePoint(i)}>
                           <Trash2 className="h-3.5 w-3.5" />
                         </Button>
                       </div>
@@ -629,7 +634,7 @@ export default function CreateQuotationPage() {
 
         {/* Live Preview */}
         <div className="w-full xl:w-1/2 flex flex-col items-center pl-0 xl:pl-6">
-          <div className="w-full overflow-x-auto bg-muted/30 p-4 rounded-xl border flex justify-center">
+          <div className="w-full overflow-x-auto bg-[#F0F0F0]/60 p-4 rounded-xl border border-[#E8E8E8] flex justify-center">
             <div className="origin-top scale-[0.6] sm:scale-75 xl:scale-90 transition-transform">
               <InvoicePreview data={formData} ref={printRef} />
             </div>

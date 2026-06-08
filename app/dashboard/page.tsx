@@ -4,35 +4,20 @@ import { useState, useEffect, useMemo } from "react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import {
-  TrendingUp, TrendingDown, AlertCircle, Eye, MoreHorizontal, Search,
+  TrendingUp, TrendingDown, AlertCircle, Eye, Search,
 } from "lucide-react";
-// import { format, differenceInDays } from "date-fns";
 import { InvoiceFormData } from "@/types/invoice";
 import {
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  XAxis,
-  CartesianGrid,
-  Tooltip,
+  ResponsiveContainer, BarChart, Bar, XAxis, CartesianGrid, Tooltip,
 } from "recharts";
 import { motion, AnimatePresence } from "framer-motion";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  format,
-  differenceInDays,
-  startOfWeek,
-  startOfMonth,
-  startOfYear,
-  eachDayOfInterval,
-  subDays,
-  subWeeks,
-  subMonths,
-  subYears,
+  format, differenceInDays, startOfWeek, startOfMonth,
+  eachDayOfInterval, subDays, subWeeks, subMonths, subYears,
 } from "date-fns";
 
 type ChartRange = "daily" | "weekly" | "monthly" | "yearly";
-
 type Invoice = InvoiceFormData & { _id: string; createdAt: string };
 
 function fmtAmount(n: number) {
@@ -45,151 +30,84 @@ function fmtFull(n: number) {
   return "৳" + n.toLocaleString("en-BD", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 }
 
-// ── Cash Flow Bar Chart ────────────────────────────────────────────────────────
+// ── Cash Flow Chart ────────────────────────────────────────────────────────────
 function CashFlowChart({ invoices }: { invoices: Invoice[] }) {
   const [range, setRange] = useState<ChartRange>("monthly");
 
   const data = useMemo(() => {
     const now = new Date();
 
-    // ── DAILY ─────────────────────────────────────
     if (range === "daily") {
-      return eachDayOfInterval({
-        start: subDays(now, 6),
-        end: now,
-      }).map((day) => {
+      return eachDayOfInterval({ start: subDays(now, 6), end: now }).map((day) => {
         const slice = invoices.filter((inv) => {
           const d = new Date(inv.date);
-
-          return (
-            d.getDate() === day.getDate() &&
-            d.getMonth() === day.getMonth() &&
-            d.getFullYear() === day.getFullYear()
-          );
+          return d.getDate() === day.getDate() && d.getMonth() === day.getMonth() && d.getFullYear() === day.getFullYear();
         });
-
         return {
           label: format(day, "EEE"),
-          paid: slice
-            .filter((i) => i.status === "Paid")
-            .reduce((s, i) => s + i.total, 0),
-
-          outstanding: slice
-            .filter((i) => i.status !== "Paid")
-            .reduce((s, i) => s + i.total, 0),
+          paid: slice.filter((i) => i.status === "Paid").reduce((s, i) => s + i.total, 0),
+          outstanding: slice.filter((i) => i.status !== "Paid").reduce((s, i) => s + i.total, 0),
         };
       });
     }
 
-    // ── WEEKLY ────────────────────────────────────
     if (range === "weekly") {
       return Array.from({ length: 8 }, (_, i) => {
         const week = subWeeks(now, 7 - i);
         const start = startOfWeek(week);
-
-        const slice = invoices.filter((inv) => {
-          const d = new Date(inv.date);
-
-          return (
-            format(startOfWeek(d), "yyyy-MM-dd") ===
-            format(start, "yyyy-MM-dd")
-          );
-        });
-
+        const slice = invoices.filter((inv) => format(startOfWeek(new Date(inv.date)), "yyyy-MM-dd") === format(start, "yyyy-MM-dd"));
         return {
           label: format(start, "dd MMM"),
-          paid: slice
-            .filter((i) => i.status === "Paid")
-            .reduce((s, i) => s + i.total, 0),
-
-          outstanding: slice
-            .filter((i) => i.status !== "Paid")
-            .reduce((s, i) => s + i.total, 0),
+          paid: slice.filter((i) => i.status === "Paid").reduce((s, i) => s + i.total, 0),
+          outstanding: slice.filter((i) => i.status !== "Paid").reduce((s, i) => s + i.total, 0),
         };
       });
     }
 
-    // ── YEARLY ────────────────────────────────────
     if (range === "yearly") {
       return Array.from({ length: 5 }, (_, i) => {
         const year = subYears(now, 4 - i);
-
-        const slice = invoices.filter((inv) => {
-          const d = new Date(inv.date);
-
-          return d.getFullYear() === year.getFullYear();
-        });
-
+        const slice = invoices.filter((inv) => new Date(inv.date).getFullYear() === year.getFullYear());
         return {
           label: format(year, "yyyy"),
-          paid: slice
-            .filter((i) => i.status === "Paid")
-            .reduce((s, i) => s + i.total, 0),
-
-          outstanding: slice
-            .filter((i) => i.status !== "Paid")
-            .reduce((s, i) => s + i.total, 0),
+          paid: slice.filter((i) => i.status === "Paid").reduce((s, i) => s + i.total, 0),
+          outstanding: slice.filter((i) => i.status !== "Paid").reduce((s, i) => s + i.total, 0),
         };
       });
     }
 
-    // ── MONTHLY DEFAULT ───────────────────────────
     return Array.from({ length: 6 }, (_, i) => {
       const month = subMonths(now, 5 - i);
       const start = startOfMonth(month);
-
       const slice = invoices.filter((inv) => {
         const d = new Date(inv.date);
-
-        return (
-          d.getMonth() === start.getMonth() &&
-          d.getFullYear() === start.getFullYear()
-        );
+        return d.getMonth() === start.getMonth() && d.getFullYear() === start.getFullYear();
       });
-
       return {
         label: format(start, "MMM"),
-        paid: slice
-          .filter((i) => i.status === "Paid")
-          .reduce((s, i) => s + i.total, 0),
-
-        outstanding: slice
-          .filter((i) => i.status !== "Paid")
-          .reduce((s, i) => s + i.total, 0),
+        paid: slice.filter((i) => i.status === "Paid").reduce((s, i) => s + i.total, 0),
+        outstanding: slice.filter((i) => i.status !== "Paid").reduce((s, i) => s + i.total, 0),
       };
     });
   }, [invoices, range]);
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4 }}
-    >
-      {/* Header */}
+    <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h3 className="font-bold text-gray-900 text-lg">
-            Cash Flow
-          </h3>
-
-          <p className="text-sm text-gray-400 mt-1">
-            Income vs Outstanding invoices
-          </p>
+          <h3 className="font-semibold text-[#1A1A1A] text-base md:text-lg">Cash Flow</h3>
+          <p className="text-xs md:text-sm text-[#1A1A1A]/40 mt-0.5">Income vs Outstanding invoices</p>
         </div>
-
-        {/* Filters */}
-        <div className="flex items-center bg-gray-100 rounded-2xl p-1 gap-1">
-          {(
-            ["daily", "weekly", "monthly", "yearly"] as ChartRange[]
-          ).map((item) => (
+        {/* Range toggle */}
+        <div className="flex items-center bg-[#F0F0F0] rounded-xl p-1 gap-0.5">
+          {(["daily", "weekly", "monthly", "yearly"] as ChartRange[]).map((item) => (
             <button
               key={item}
               onClick={() => setRange(item)}
-              className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all duration-200 capitalize
-              ${range === item
-                  ? "bg-white shadow-sm text-gray-900"
-                  : "text-gray-500 hover:text-gray-700"
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 capitalize
+                ${range === item
+                  ? "bg-white shadow-sm text-[#1A1A1A]"
+                  : "text-[#1A1A1A]/40 hover:text-[#1A1A1A]/70"
                 }`}
             >
               {item}
@@ -200,19 +118,18 @@ function CashFlowChart({ invoices }: { invoices: Invoice[] }) {
 
       {/* Legend */}
       <div className="flex items-center gap-5 mb-4">
-        <div className="flex items-center gap-2 text-sm text-gray-500">
-          <span className="w-3 h-3 rounded-full bg-indigo-500" />
+        <div className="flex items-center gap-2 text-xs text-[#1A1A1A]/50">
+          <span className="w-2.5 h-2.5 rounded-full bg-[#51B9A9]" />
           Paid
         </div>
-
-        <div className="flex items-center gap-2 text-sm text-gray-500">
-          <span className="w-3 h-3 rounded-full bg-orange-400" />
+        <div className="flex items-center gap-2 text-xs text-[#1A1A1A]/50">
+          <span className="w-2.5 h-2.5 rounded-full bg-[#5A378F]" />
           Outstanding
         </div>
       </div>
 
       {/* Chart */}
-      <div className="h-[320px] w-full">
+      <div className="h-[280px] w-full">
         <AnimatePresence mode="wait">
           <motion.div
             key={range}
@@ -223,48 +140,21 @@ function CashFlowChart({ invoices }: { invoices: Invoice[] }) {
             className="h-full"
           >
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={data}
-                barGap={8}
-              >
-                <CartesianGrid
-                  vertical={false}
-                  stroke="#f1f5f9"
-                  strokeDasharray="3 3"
-                />
-
-                <XAxis
-                  dataKey="label"
-                  tick={{ fill: "#94a3b8", fontSize: 12 }}
-                  axisLine={false}
-                  tickLine={false}
-                />
-
+              <BarChart data={data} barGap={6}>
+                <CartesianGrid vertical={false} stroke="#F0F0F0" strokeDasharray="3 3" />
+                <XAxis dataKey="label" tick={{ fill: "#1A1A1A", opacity: 0.35, fontSize: 11 }} axisLine={false} tickLine={false} />
                 <Tooltip
-                  cursor={{ fill: "rgba(99,102,241,0.05)" }}
+                  cursor={{ fill: "rgba(90,55,143,0.04)" }}
                   contentStyle={{
-                    borderRadius: "16px",
-                    border: "none",
-                    boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
-                    padding: "10px 14px",
+                    borderRadius: "12px",
+                    border: "0.5px solid #E0E0E0",
+                    boxShadow: "0 8px 24px rgba(0,0,0,0.06)",
+                    padding: "8px 12px",
+                    fontSize: "13px",
                   }}
                 />
-
-                {/* Paid */}
-                <Bar
-                  dataKey="paid"
-                  fill="#6366f1"
-                  radius={[10, 10, 0, 0]}
-                  animationDuration={1000}
-                />
-
-                {/* Outstanding */}
-                <Bar
-                  dataKey="outstanding"
-                  fill="#fb923c"
-                  radius={[10, 10, 0, 0]}
-                  animationDuration={1400}
-                />
+                <Bar dataKey="paid" name="Paid" fill="#51B9A9" radius={[6, 6, 0, 0]} animationDuration={1000} />
+                <Bar dataKey="outstanding" name="Outstanding" fill="#5A378F" radius={[6, 6, 0, 0]} animationDuration={1400} />
               </BarChart>
             </ResponsiveContainer>
           </motion.div>
@@ -276,9 +166,9 @@ function CashFlowChart({ invoices }: { invoices: Invoice[] }) {
 
 // ── Status badge config ────────────────────────────────────────────────────────
 const STATUS_BADGE: Record<string, { label: string; cls: string }> = {
-  Paid: { label: "Paid", cls: "bg-gray-100 text-gray-600" },
-  Unpaid: { label: "Unpaid", cls: "bg-purple-100 text-purple-700" },
-  Hold: { label: "Pending", cls: "bg-yellow-100 text-yellow-700" },
+  Paid: { label: "Paid", cls: "bg-[#E1F5EE] text-[#085041]" },
+  Unpaid: { label: "Unpaid", cls: "bg-[#EEEDFE] text-[#3C3489]" },
+  Hold: { label: "Pending", cls: "bg-[#EEEDFE] text-[#3C3489]" },
 };
 
 // ── Main Dashboard ─────────────────────────────────────────────────────────────
@@ -297,23 +187,18 @@ export default function DashboardPage() {
         const combined = [
           ...(Array.isArray(inv) ? inv : []),
           ...(Array.isArray(inv2) ? inv2 : []),
-        ].sort(
-          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-        );
+        ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
         setInvoices(combined);
       })
       .catch(() => { })
       .finally(() => setLoading(false));
   }, []);
 
-  // ── Stats ──────────────────────────────────────────────────────────────────
   const stats = useMemo(() => {
     const now = new Date();
     const paid = invoices.filter((i) => i.status === "Paid");
     const unpaid = invoices.filter((i) => i.status !== "Paid");
-    const overdue = invoices.filter(
-      (i) => i.status !== "Paid" && new Date(i.dueDate) < now,
-    );
+    const overdue = invoices.filter((i) => i.status !== "Paid" && new Date(i.dueDate) < now);
     const sum = (arr: Invoice[]) => arr.reduce((s, i) => s + i.total, 0);
     return {
       total: { count: invoices.length, amount: sum(invoices) },
@@ -323,18 +208,14 @@ export default function DashboardPage() {
     };
   }, [invoices]);
 
-  // ── Overdue invoices (most overdue first) ──────────────────────────────────
   const overdueList = useMemo(() => {
     const now = new Date();
     return invoices
       .filter((i) => i.status !== "Paid" && new Date(i.dueDate) < now)
-      .sort(
-        (a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime(),
-      )
+      .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())
       .slice(0, 8);
   }, [invoices]);
 
-  // ── Filtered all-invoices list ─────────────────────────────────────────────
   const filtered = useMemo(() => {
     if (!search.trim()) return invoices;
     const q = search.toLowerCase();
@@ -346,7 +227,6 @@ export default function DashboardPage() {
     );
   }, [invoices, search]);
 
-  // ── Stat card data ─────────────────────────────────────────────────────────
   const statCards = [
     { label: "Total Invoices", amount: stats.total.amount, count: stats.total.count, trend: "+17%", up: true },
     { label: "Paid", amount: stats.paid.amount, count: stats.paid.count, trend: "+32%", up: true },
@@ -357,74 +237,51 @@ export default function DashboardPage() {
   return (
     <div className="space-y-5">
 
-      {/* ── Welcome ──────────────────────────────────────────────────────────── */}
+      {/* Welcome */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-sm text-gray-400 mt-0.5">
+        <h1 className="text-2xl md:text-3xl font-semibold text-[#1A1A1A]">Dashboard</h1>
+        <p className="text-sm md:text-base text-[#1A1A1A]/60 mt-0.5">
           Welcome back, {session?.user?.name ?? "there"}!
         </p>
       </div>
 
-      {/* ── Stats cards ──────────────────────────────────────────────────────── */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm grid grid-cols-2 lg:grid-cols-4 divide-x divide-y lg:divide-y-0 divide-gray-100">
+      {/* Stat cards */}
+      <div className="bg-white rounded-xl border border-[#E8E8E8] grid grid-cols-2 lg:grid-cols-4 divide-x divide-y lg:divide-y-0 divide-[#F0F0F0]">
         {statCards.map(({ label, amount, count, trend, up }) => (
-          <div key={label} className="p-6">
-            <div
-              className={`flex items-center gap-1 text-xs font-semibold mb-3 ${up ? "text-indigo-500" : "text-red-400"
-                }`}
-            >
-              {up ? (
-                <TrendingUp className="w-3.5 h-3.5" />
-              ) : (
-                <TrendingDown className="w-3.5 h-3.5" />
-              )}
+          <div key={label} className="p-5">
+            <div className={`flex items-center gap-1 text-xs font-semibold mb-3 ${up ? "text-[#0F6E56]" : "text-[#993556]"}`}>
+              {up ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
               <span>{trend} /month</span>
             </div>
-            <div className="text-3xl font-bold text-gray-900 mb-1 truncate">
-              {loading ? (
-                <Skeleton className="h-8 w-28 mt-1" />
-              ) : (
-                fmtFull(amount)
-              )}
+            <div className="text-2xl md:text-3xl font-semibold text-[#1A1A1A] mb-1 truncate">
+              {loading ? <Skeleton className="h-7 w-28 mt-1" /> : fmtFull(amount)}
             </div>
-            <div className="text-sm text-gray-400 flex items-center gap-1">
+            <div className="text-xs md:text-sm text-[#1A1A1A]/60 flex items-center gap-1">
               {label}&nbsp;
-              {loading ? (
-                <Skeleton className="inline-block h-4 w-8" />
-              ) : (
-                <span className="text-gray-600 font-semibold">({count})</span>
-              )}
+              {loading
+                ? <Skeleton className="inline-block h-4 w-8" />
+                : <span className="text-[#1A1A1A]/60 font-semibold">({count})</span>
+              }
             </div>
           </div>
         ))}
       </div>
 
-      {/* ── Cash Flow + Overdue (50 / 50) ─────────────────────────────────────── */}
+      {/* Cash Flow + Overdue */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
 
         {/* Cash Flow */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+        <div className="bg-white rounded-xl border border-[#E8E8E8] p-5">
           {loading ? (
             <div>
               <div className="flex items-center justify-between mb-6">
-                <div className="space-y-2">
-                  <Skeleton className="h-5 w-24" />
-                  <Skeleton className="h-3 w-40" />
-                </div>
-                <Skeleton className="h-9 w-56 rounded-2xl" />
+                <div className="space-y-2"><Skeleton className="h-4 w-24" /><Skeleton className="h-3 w-40" /></div>
+                <Skeleton className="h-8 w-56 rounded-xl" />
               </div>
-              <div className="flex items-center gap-5 mb-4">
-                <Skeleton className="h-4 w-16" />
-                <Skeleton className="h-4 w-20" />
-              </div>
-              <div className="flex items-end gap-3 h-[200px] pt-4">
+              <div className="flex items-center gap-5 mb-4"><Skeleton className="h-3 w-16" /><Skeleton className="h-3 w-20" /></div>
+              <div className="flex items-end gap-3 h-50 pt-4">
                 {[65, 40, 80, 55, 90, 45].map((h, i) => (
                   <Skeleton key={i} className="flex-1 rounded-t-lg" style={{ height: `${h}%` }} />
-                ))}
-              </div>
-              <div className="flex gap-3 mt-3">
-                {[...Array(6)].map((_, i) => (
-                  <Skeleton key={i} className="flex-1 h-3" />
                 ))}
               </div>
             </div>
@@ -433,15 +290,15 @@ export default function DashboardPage() {
           )}
         </div>
 
-        {/* Overdue Invoices */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm flex flex-col">
-          <div className="flex items-center justify-between px-6 pt-6 pb-4 shrink-0">
+        {/* Overdue */}
+        <div className="bg-white rounded-xl border border-[#E8E8E8] flex flex-col">
+          <div className="flex items-center justify-between px-5 pt-5 pb-4 shrink-0">
             <div>
-              <h3 className="font-bold text-gray-900 text-base">Overdue Invoices</h3>
-              <p className="text-xs text-gray-400 mt-0.5">Past their due date</p>
+              <h3 className="font-semibold text-[#1A1A1A] text-base md:text-lg">Overdue Invoices</h3>
+              <p className="text-xs md:text-sm text-[#1A1A1A]/40 mt-0.5">Past their due date</p>
             </div>
             {stats.overdue.count > 0 && (
-              <span className="flex items-center gap-1.5 text-xs font-bold text-red-500 bg-red-50 px-2.5 py-1 rounded-full">
+              <span className="flex items-center gap-1.5 text-xs font-bold text-[#72243E] bg-[#FBEAF0] px-2.5 py-1 rounded-full">
                 <AlertCircle className="w-3.5 h-3.5" />
                 {stats.overdue.count} overdue
               </span>
@@ -450,14 +307,11 @@ export default function DashboardPage() {
 
           <div className="flex-1 overflow-hidden">
             {loading ? (
-              <div className="divide-y divide-gray-50">
+              <div className="divide-y divide-[#F0F0F0]">
                 {[...Array(4)].map((_, i) => (
-                  <div key={i} className="flex items-center justify-between px-6 py-3.5">
+                  <div key={i} className="flex items-center justify-between px-5 py-3.5">
                     <div className="space-y-1.5 flex-1">
-                      <div className="flex items-center gap-2">
-                        <Skeleton className="h-4 w-28" />
-                        <Skeleton className="h-4 w-16" />
-                      </div>
+                      <div className="flex items-center gap-2"><Skeleton className="h-4 w-28" /><Skeleton className="h-4 w-16" /></div>
                       <Skeleton className="h-3 w-48" />
                     </div>
                     <Skeleton className="h-4 w-16 ml-4" />
@@ -465,42 +319,33 @@ export default function DashboardPage() {
                 ))}
               </div>
             ) : overdueList.length === 0 ? (
-              <div className="py-10 text-center text-sm text-gray-400">
-                No overdue invoices 🎉
-              </div>
+              <div className="py-10 text-center text-sm text-[#1A1A1A]/30">No overdue invoices 🎉</div>
             ) : (
-              <div className="divide-y divide-gray-50">
+              <div className="divide-y divide-[#F0F0F0]">
                 {overdueList.map((inv) => {
                   const days = differenceInDays(new Date(), new Date(inv.dueDate));
                   const badge = STATUS_BADGE[inv.status] ?? STATUS_BADGE.Unpaid;
                   return (
-                    <div
-                      key={inv._id}
-                      className="flex items-center justify-between px-6 py-3.5 hover:bg-gray-50/60 transition-colors"
-                    >
+                    <div key={inv._id} className="flex items-center justify-between px-5 py-3 hover:bg-[#F0F0F0]/50 transition-colors">
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-sm font-semibold text-gray-900">
-                            {inv.invoiceNumber}
-                          </span>
-                          <span className="text-xs font-bold text-red-500 bg-red-50 px-1.5 py-0.5 rounded-md">
+                          <span className="text-sm font-semibold text-[#1A1A1A]">{inv.invoiceNumber}</span>
+                          <span className="text-xs font-semibold text-[#72243E] bg-[#FBEAF0] px-1.5 py-0.5 rounded-md">
                             {days}d overdue
                           </span>
                           <span className={`text-xs font-semibold px-1.5 py-0.5 rounded-md ${badge.cls}`}>
                             {badge.label}
                           </span>
                         </div>
-                        <p className="text-xs text-gray-400 mt-0.5 truncate">
+                        <p className="text-xs text-[#1A1A1A]/40 mt-0.5 truncate">
                           {inv.to.name} · due {format(new Date(inv.dueDate), "dd MMM yyyy")}
                         </p>
                       </div>
                       <div className="flex items-center gap-3 ml-4 shrink-0">
-                        <span className="text-sm font-bold text-gray-900">
-                          {fmtFull(inv.total)}
-                        </span>
+                        <span className="text-sm font-semibold text-[#51B9A9]">{fmtFull(inv.total)}</span>
                         <Link href={`/dashboard/${inv.type === "serviceInvoice" ? "service-invoices" : "invoices"}/${inv._id}`}>
-                          <button className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
-                            <Eye className="h-3.5 w-3.5 text-gray-400" />
+                          <button className="p-1.5 rounded-lg hover:bg-[#F0F0F0] transition-colors">
+                            <Eye className="h-3.5 w-3.5 text-[#1A1A1A]/60" />
                           </button>
                         </Link>
                       </div>
@@ -512,11 +357,8 @@ export default function DashboardPage() {
           </div>
 
           {overdueList.length > 0 && (
-            <div className="px-6 py-3 border-t border-gray-50 shrink-0">
-              <Link
-                href="/dashboard/invoices"
-                className="text-xs text-indigo-600 font-semibold hover:underline"
-              >
+            <div className="px-5 py-3 border-t border-[#F0F0F0] shrink-0">
+              <Link href="/dashboard/invoices" className="text-xs md:text-sm text-[#51B9A9] font-semibold hover:underline">
                 View all invoices →
               </Link>
             </div>
@@ -524,143 +366,102 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* ── All Invoices Table ────────────────────────────────────────────────── */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
-
-        {/* Table header */}
-        <div className="flex items-center justify-between px-6 pt-6 pb-4 flex-wrap gap-3">
+      {/* All Invoices Table */}
+      <div className="bg-white rounded-xl border border-[#E8E8E8]">
+        <div className="flex items-center justify-between px-5 pt-5 pb-4 flex-wrap gap-3">
           <div>
-            <h3 className="font-bold text-gray-900 text-base">All Invoices</h3>
-            <p className="text-xs text-gray-400 mt-0.5">Complete invoice history</p>
+            <h3 className="font-semibold text-[#1A1A1A] text-base md:text-lg">All Invoices</h3>
+            <p className="text-xs md:text-sm text-[#1A1A1A]/40 mt-0.5">Complete invoice history</p>
           </div>
           <div className="flex items-center gap-3">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#1A1A1A]/30 pointer-events-none" />
               <input
                 type="text"
                 placeholder="Search invoices…"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-300 w-52 bg-gray-50"
+                className="pl-8 pr-4 py-2 text-sm border border-[#E8E8E8] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5A378F]/20 focus:border-[#5A378F]/40 w-48 bg-[#F0F0F0]/50 text-[#1A1A1A] placeholder:text-[#1A1A1A]/30"
               />
             </div>
-            <Link
-              href="/dashboard/invoices"
-              className="text-xs text-indigo-600 font-semibold hover:underline whitespace-nowrap"
-            >
+            <Link href="/dashboard/invoices" className="text-xs md:text-sm text-[#51B9A9] font-semibold hover:underline whitespace-nowrap">
               All Invoices →
             </Link>
           </div>
         </div>
 
-        {/* Table */}
         <div className="overflow-x-auto">
           {loading ? (
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-gray-50/60 border-t border-gray-100">
+                <tr className="bg-[#F0F0F0]/60 border-t border-[#E8E8E8]">
                   {["Invoice ID", "Client", "Date", "Due Date", "Amount", "Status"].map((h) => (
-                    <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider first:pl-6">
+                    <th key={h} className="px-4 py-3 text-left text-xs md:text-sm font-semibold text-[#1A1A1A]/40 uppercase tracking-wider first:pl-5">
                       {h}
                     </th>
                   ))}
-                  <th className="pr-6 py-3 w-16" />
+                  <th className="pr-5 py-3 w-16" />
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
+              <tbody className="divide-y divide-[#F0F0F0]">
                 {[...Array(6)].map((_, i) => (
                   <tr key={i}>
-                    <td className="pl-6 pr-4 py-3.5"><Skeleton className="h-4 w-24" /></td>
+                    <td className="pl-5 pr-4 py-3.5"><Skeleton className="h-4 w-24" /></td>
                     <td className="px-4 py-3.5"><Skeleton className="h-4 w-32" /></td>
                     <td className="px-4 py-3.5"><Skeleton className="h-4 w-24" /></td>
                     <td className="px-4 py-3.5"><Skeleton className="h-4 w-24" /></td>
                     <td className="px-4 py-3.5"><Skeleton className="h-4 w-20" /></td>
                     <td className="px-4 py-3.5"><Skeleton className="h-5 w-16 rounded-full" /></td>
-                    <td className="pr-6 pl-4 py-3.5"><Skeleton className="h-7 w-7 rounded-lg ml-auto" /></td>
+                    <td className="pr-5 pl-4 py-3.5"><Skeleton className="h-7 w-7 rounded-lg ml-auto" /></td>
                   </tr>
                 ))}
               </tbody>
             </table>
           ) : filtered.length === 0 ? (
-            <div className="py-16 text-center text-gray-400 text-sm">
-              No invoices found.
-            </div>
+            <div className="py-16 text-center text-[#1A1A1A]/30 text-sm">No invoices found.</div>
           ) : (
-            <table className="w-full text-sm">
+            <table className="w-full text-sm md:text-base">
               <thead>
-                <tr className="bg-gray-50/60 border-t border-gray-100">
-                  {["Invoice ID", "Type", "Client", "Date", "Due Date", "Amount", "Status"].map(
-                    (h) => (
-                      <th
-                        key={h}
-                        className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider first:pl-6"
-                      >
-                        {h}
-                      </th>
-                    ),
-                  )}
-                  <th className="pr-6 py-3 w-16" />
+                <tr className="bg-[#F0F0F0]/60 border-t border-[#E8E8E8]">
+                  {["Invoice ID", "Type", "Client", "Date", "Due Date", "Amount", "Status"].map((h) => (
+                    <th key={h} className="px-4 py-3 text-left text-xs md:text-sm font-semibold text-[#1A1A1A]/40 uppercase tracking-wider first:pl-5">
+                      {h}
+                    </th>
+                  ))}
+                  <th className="pr-5 py-3 w-16" />
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
+              <tbody className="divide-y divide-[#F0F0F0]">
                 {filtered.map((inv) => {
-                  const badge =
-                    STATUS_BADGE[inv.status] ?? { label: inv.status, cls: "bg-gray-100 text-gray-600" };
+                  const badge = STATUS_BADGE[inv.status] ?? { label: inv.status, cls: "bg-[#F0F0F0] text-[#1A1A1A]/60" };
                   const now = new Date();
-                  const isOverdue =
-                    inv.status !== "Paid" && new Date(inv.dueDate) < now;
+                  const isOverdue = inv.status !== "Paid" && new Date(inv.dueDate) < now;
                   return (
-                    <tr
-                      key={inv._id}
-                      className="hover:bg-gray-50/60 transition-colors"
-                    >
-                      <td className="pl-6 pr-4 py-3.5 font-semibold text-gray-900">
-                        {inv.invoiceNumber}
-                      </td>
+                    <tr key={inv._id} className="hover:bg-[#F0F0F0]/40 transition-colors">
+                      <td className="pl-5 pr-4 py-3.5 font-semibold text-[#1A1A1A]">{inv.invoiceNumber}</td>
                       <td className="px-4 py-3.5">
-                        <span className={`px-2 py-0.5 rounded text-xs font-semibold ${inv.type === "serviceInvoice" ? "bg-violet-100 text-violet-700" : "bg-blue-100 text-blue-700"}`}>
+                        <span className={`px-2 py-0.5 rounded text-xs font-semibold ${inv.type === "serviceInvoice" ? "bg-[#EEEDFE] text-[#3C3489]" : "bg-[#E1F5EE] text-[#085041]"}`}>
                           {inv.type === "serviceInvoice" ? "Service" : "Invoice"}
                         </span>
                       </td>
-                      <td className="px-4 py-3.5 text-gray-700">{inv.to.name}</td>
-                      <td className="px-4 py-3.5 text-gray-500">
-                        {format(new Date(inv.date), "dd MMM yyyy")}
-                      </td>
+                      <td className="px-4 py-3.5 text-[#1A1A1A]/70">{inv.to.name}</td>
+                      <td className="px-4 py-3.5 text-[#1A1A1A]/50">{format(new Date(inv.date), "dd MMM yyyy")}</td>
                       <td className="px-4 py-3.5">
-                        <span
-                          className={`text-sm ${isOverdue ? "text-red-500 font-semibold" : "text-gray-500"
-                            }`}
-                        >
+                        <span className={`text-sm ${isOverdue ? "text-[#993556] font-semibold" : "text-[#1A1A1A]/50"}`}>
                           {format(new Date(inv.dueDate), "dd MMM yyyy")}
-                          {isOverdue && (
-                            <span className="ml-1 text-xs">
-                              ·{" "}
-                              {differenceInDays(now, new Date(inv.dueDate))}d
-                            </span>
-                          )}
+                          {isOverdue && <span className="ml-1 text-xs">· {differenceInDays(now, new Date(inv.dueDate))}d</span>}
                         </span>
                       </td>
-                      <td className="px-4 py-3.5 font-bold text-gray-900">
-                        {fmtFull(inv.total)}
-                      </td>
+                      <td className="px-4 py-3.5 font-semibold text-[#51B9A9]">{fmtFull(inv.total)}</td>
                       <td className="px-4 py-3.5">
-                        <span
-                          className={`px-2.5 py-1 rounded-full text-xs font-semibold ${badge.cls}`}
-                        >
-                          {badge.label}
-                        </span>
+                        <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${badge.cls}`}>{badge.label}</span>
                       </td>
-                      <td className="pr-6 pl-4 py-3.5">
-                        <div className="flex items-center gap-0.5 justify-end">
-                          <Link href={`/dashboard/${inv.type === "serviceInvoice" ? "service-invoices" : "invoices"}/${inv._id}`}>
-                            <button className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
-                              <Eye className="h-4 w-4 text-gray-400" />
-                            </button>
-                          </Link>
-                          {/* <button className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
-                            <MoreHorizontal className="h-4 w-4 text-gray-400" />
-                          </button> */}
-                        </div>
+                      <td className="pr-5 pl-4 py-3.5">
+                        <Link href={`/dashboard/${inv.type === "serviceInvoice" ? "service-invoices" : "invoices"}/${inv._id}`}>
+                          <button className="p-1.5 rounded-lg hover:bg-[#F0F0F0] transition-colors">
+                            <Eye className="h-4 w-4 text-[#1A1A1A]/60" />
+                          </button>
+                        </Link>
                       </td>
                     </tr>
                   );
@@ -670,9 +471,8 @@ export default function DashboardPage() {
           )}
         </div>
 
-        {/* Footer */}
         {!loading && filtered.length > 0 && (
-          <div className="px-6 py-3 border-t border-gray-50 text-xs text-gray-400">
+          <div className="px-5 py-3 border-t border-[#F0F0F0] text-xs text-[#1A1A1A]/30">
             {filtered.length} invoice{filtered.length !== 1 ? "s" : ""}
             {search && invoices.length !== filtered.length && (
               <span className="ml-1">of {invoices.length} total</span>

@@ -56,20 +56,20 @@ function LoginForm() {
   const handleGoogleLogin = () => signIn("google", { callbackUrl });
 
   return (
-    <div className="flex w-full max-w-2xl overflow-hidden rounded-xl border border-border">
+    <div className="flex w-full max-w-3xl overflow-hidden rounded-xl border border-border">
       {/* Left panel */}
       <div className="hidden md:flex md:flex-col md:justify-between w-80 shrink-0 bg-[#1a1a2e] p-8">
-        <div className="w-9 h-9 rounded-lg bg-violet-700 flex items-center justify-center">
-          <Bolt className="h-4 w-4 text-violet-50" />
+        <div className="w-9 h-9 rounded-lg bg-[#5A378F] flex items-center justify-center">
+          <Bolt className="h-4 w-4 text-white" />
         </div>
         <div>
-          <p className="text-xs uppercase tracking-widest text-violet-400 mb-2">
+          <p className="text-[11px] uppercase tracking-widest text-[#7F77DD] mb-2">
             Welcome back
           </p>
-          <h2 className="text-2xl font-medium text-violet-50 leading-snug mb-3">
+          <h2 className="text-2xl font-medium text-[#EEEDFE] leading-snug mb-3">
             Sign in to manage your invoices and quotations
           </h2>
-          <p className="text-sm text-violet-400 leading-relaxed">
+          <p className="text-sm text-[#7F77DD] leading-relaxed">
             Manage invoices, quotations, clients, and payment records from your dashboard.
           </p>
         </div>
@@ -78,14 +78,14 @@ function LoginForm() {
 
       {/* Right form */}
       <div className="flex-1 bg-background px-8 py-10 flex flex-col justify-center">
-        <h1 className="text-xl font-medium text-foreground mb-1">Sign in</h1>
-        <p className="text-sm text-muted-foreground mb-7">
+        <h1 className="text-xl font-medium text-[#1A1A1A] mb-1">Sign in</h1>
+        <p className="text-sm text-[#1A1A1A]/40 mb-7">
           Enter your credentials below
         </p>
 
         <form onSubmit={handleCredentialsLogin} className="space-y-4">
           <div className="space-y-1.5">
-            <Label htmlFor="email" className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+            <Label htmlFor="email" className="flex items-center gap-1.5 text-xs font-medium text-[#1A1A1A]/50">
               <Mail className="h-3.5 w-3.5" /> Email
             </Label>
             <Input
@@ -99,7 +99,7 @@ function LoginForm() {
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="password" className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+            <Label htmlFor="password" className="flex items-center gap-1.5 text-xs font-medium text-[#1A1A1A]/50">
               <Lock className="h-3.5 w-3.5" /> Password
             </Label>
             <Input
@@ -111,7 +111,7 @@ function LoginForm() {
               required
             />
             <div className="flex justify-end">
-              <Link href="/forgot-password" className="text-xs text-violet-500 hover:underline">
+              <Link href="/forgot-password" className="text-xs text-[#51B9A9] hover:underline">
                 Forgot password?
               </Link>
             </div>
@@ -120,7 +120,7 @@ function LoginForm() {
           <Button
             type="submit"
             disabled={loading}
-            className="w-full bg-violet-700 hover:bg-violet-800 text-violet-50 gap-2"
+            className="w-full bg-[#5A378F] hover:bg-[#4a2d7a] text-white gap-2"
           >
             {loading ? "Signing in..." : "Sign in"}
             {!loading && <ArrowRight className="h-4 w-4" />}
@@ -132,11 +132,11 @@ function LoginForm() {
             <span className="w-full border-t border-border" />
           </div>
           <div className="relative flex justify-center">
-            <span className="bg-background px-2 text-xs text-muted-foreground">or</span>
+            <span className="bg-background px-2 text-xs text-[#1A1A1A]/30">or</span>
           </div>
         </div>
 
-        <Button variant="outline" type="button" className="w-full gap-2" onClick={handleGoogleLogin}>
+        <Button variant="outline" type="button" className="w-full gap-2 border-[#E8E8E8] hover:bg-[#F0F0F0] text-[#1A1A1A]" onClick={handleGoogleLogin}>
           <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true" fill="currentColor">
             <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
             <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
@@ -146,9 +146,9 @@ function LoginForm() {
           Continue with Google
         </Button>
 
-        <p className="text-center text-sm text-muted-foreground mt-5">
+        <p className="text-center text-sm text-[#1A1A1A]/40 mt-5">
           Don&apos;t have an account?{" "}
-          <Link href="/register" className="text-violet-500 hover:underline">
+          <Link href="/register" className="text-[#51B9A9] hover:underline">
             Create one
           </Link>
         </p>

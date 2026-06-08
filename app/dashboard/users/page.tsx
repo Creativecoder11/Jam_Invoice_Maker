@@ -74,40 +74,40 @@ export default function UsersPage() {
   };
 
   if (session?.user?.role !== "Super Admin") {
-    return <div>Access Denied</div>;
+    return <div className="text-sm text-[#1A1A1A]/40">Access Denied</div>;
   }
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">User Management</h1>
-        <p className="text-muted-foreground">Approve or reject employee accounts</p>
+        <h1 className="text-2xl md:text-3xl font-semibold text-[#1A1A1A]">User Management</h1>
+        <p className="text-sm md:text-base text-[#1A1A1A]/60 mt-0.5">Approve or reject employee accounts</p>
       </div>
 
-      <Card>
+      <Card className="rounded-xl border border-[#E8E8E8] shadow-none">
         <CardHeader>
-          <CardTitle>System Users</CardTitle>
-          <CardDescription>Manage access to Jamroll Invoicemaker.</CardDescription>
+          <CardTitle className="text-base md:text-lg font-semibold text-[#1A1A1A]">System Users</CardTitle>
+          <CardDescription className="text-sm text-[#1A1A1A]/40">Manage access to Jamroll Invoicemaker.</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="rounded-md border overflow-hidden">
+          <div className="rounded-lg border border-[#E8E8E8] overflow-hidden">
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                <TableRow className="bg-[#F0F0F0]/60 hover:bg-[#F0F0F0]/60 border-b border-[#E8E8E8]">
+                  <TableHead className="text-xs md:text-sm font-semibold text-[#1A1A1A]/40 uppercase tracking-wider">Name</TableHead>
+                  <TableHead className="text-xs md:text-sm font-semibold text-[#1A1A1A]/40 uppercase tracking-wider">Email</TableHead>
+                  <TableHead className="text-xs md:text-sm font-semibold text-[#1A1A1A]/40 uppercase tracking-wider">Role</TableHead>
+                  <TableHead className="text-xs md:text-sm font-semibold text-[#1A1A1A]/40 uppercase tracking-wider">Status</TableHead>
+                  <TableHead className="text-xs md:text-sm font-semibold text-[#1A1A1A]/40 uppercase tracking-wider text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {loading ? (
                   [
-                    ["w-28","w-40","w-20","w-16","w-24"],
-                    ["w-24","w-36","w-24","w-16","w-24"],
-                    ["w-32","w-44","w-20","w-16","w-24"],
-                    ["w-24","w-40","w-24","w-16","w-24"],
+                    ["w-28", "w-40", "w-20", "w-16", "w-24"],
+                    ["w-24", "w-36", "w-24", "w-16", "w-24"],
+                    ["w-32", "w-44", "w-20", "w-16", "w-24"],
+                    ["w-24", "w-40", "w-24", "w-16", "w-24"],
                   ].map((widths, ri) => (
                     <TableRow key={ri}>
                       {widths.map((w, ci) => (
@@ -117,14 +117,16 @@ export default function UsersPage() {
                   ))
                 ) : (
                   users.map((u) => (
-                    <TableRow key={u._id} className={updatingId === u._id ? "opacity-60" : ""}>
-                      <TableCell className="font-medium">{u.name}</TableCell>
-                      <TableCell>{u.email}</TableCell>
-                      <TableCell>{u.role}</TableCell>
+                    <TableRow key={u._id} className={`border-b border-[#F0F0F0] transition-colors hover:bg-[#F0F0F0]/40 ${updatingId === u._id ? "opacity-60" : ""}`}>
+                      <TableCell className="font-semibold text-[#1A1A1A] text-sm md:text-base">{u.name}</TableCell>
+                      <TableCell className="text-[#1A1A1A]/60 text-sm md:text-base">{u.email}</TableCell>
+                      <TableCell className="text-[#1A1A1A]/70 text-sm md:text-base">{u.role}</TableCell>
                       <TableCell>
-                        <Badge
-                          variant={u.status === "approved" ? "default" : u.status === "rejected" ? "destructive" : "secondary"}
-                        >
+                        <Badge className={
+                          u.status === "approved" ? "bg-[#E1F5EE] text-[#085041] border-0 font-semibold" :
+                            u.status === "rejected" ? "bg-[#FBEAF0] text-[#72243E] border-0 font-semibold" :
+                              "bg-[#EEEDFE] text-[#3C3489] border-0 font-semibold"
+                        }>
                           {u.status}
                         </Badge>
                       </TableCell>
@@ -135,44 +137,41 @@ export default function UsersPage() {
                               <>
                                 {(u.status === "pending" || u.status === "rejected") && (
                                   <Button
-                                    variant="outline"
-                                    size="sm"
+                                    className="h-8 px-3 text-xs rounded-lg border border-[#E8E8E8] bg-white hover:bg-[#E1F5EE] text-[#1A1A1A]/70 hover:text-[#085041] transition-colors"
                                     disabled={updatingId === u._id}
                                     onClick={() => handleUpdateStatus(u._id, "approved")}
                                   >
                                     {updatingId === u._id ? (
                                       <Spinner className="h-3.5 w-3.5 mr-1" />
                                     ) : (
-                                      <Check className="h-4 w-4 mr-1 text-green-500" />
+                                      <Check className="h-3.5 w-3.5 mr-1 text-[#51B9A9]" />
                                     )}
                                     Approve
                                   </Button>
                                 )}
                                 {(u.status === "pending" || u.status === "approved") && (
                                   <Button
-                                    variant="outline"
-                                    size="sm"
+                                    className="h-8 px-3 text-xs rounded-lg border border-[#E8E8E8] bg-white hover:bg-[#FBEAF0] text-[#1A1A1A]/70 hover:text-[#72243E] transition-colors"
                                     disabled={updatingId === u._id}
                                     onClick={() => handleUpdateStatus(u._id, "rejected")}
                                   >
                                     {updatingId === u._id ? (
                                       <Spinner className="h-3.5 w-3.5 mr-1" />
                                     ) : (
-                                      <X className="h-4 w-4 mr-1 text-red-500" />
+                                      <X className="h-3.5 w-3.5 mr-1 text-[#EA2B7B]" />
                                     )}
                                     Reject
                                   </Button>
                                 )}
                                 <Button
-                                  variant="outline"
-                                  size="sm"
+                                  className="h-8 px-3 text-xs rounded-lg border border-[#E8E8E8] bg-white hover:bg-[#EEEDFE] text-[#1A1A1A]/70 hover:text-[#3C3489] transition-colors"
                                   disabled={updatingId === u._id}
                                   onClick={() => handleUpdateRole(u._id, "Super Admin")}
                                 >
                                   {updatingId === u._id ? (
                                     <Spinner className="h-3.5 w-3.5 mr-1" />
                                   ) : (
-                                    <ShieldCheck className="h-4 w-4 mr-1 text-blue-500" />
+                                    <ShieldCheck className="h-3.5 w-3.5 mr-1 text-[#5A378F]" />
                                   )}
                                   Make Admin
                                 </Button>
@@ -180,22 +179,21 @@ export default function UsersPage() {
                             )}
                             {u.role === "Super Admin" && (
                               <Button
-                                variant="outline"
-                                size="sm"
+                                className="h-8 px-3 text-xs rounded-lg border border-[#E8E8E8] bg-white hover:bg-[#FFF8E1] text-[#1A1A1A]/70 hover:text-[#7A5C00] transition-colors"
                                 disabled={updatingId === u._id}
                                 onClick={() => handleUpdateRole(u._id, "Employee")}
                               >
                                 {updatingId === u._id ? (
                                   <Spinner className="h-3.5 w-3.5 mr-1" />
                                 ) : (
-                                  <ShieldOff className="h-4 w-4 mr-1 text-orange-500" />
+                                  <ShieldOff className="h-3.5 w-3.5 mr-1 text-[#7A5C00]" />
                                 )}
                                 Remove Admin
                               </Button>
                             )}
                           </>
                         ) : (
-                          <span className="text-xs text-muted-foreground">You</span>
+                          <span className="text-xs text-[#1A1A1A]/50">You</span>
                         )}
                       </TableCell>
                     </TableRow>

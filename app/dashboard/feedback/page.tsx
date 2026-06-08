@@ -53,12 +53,12 @@ export default function FeedbackPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Feedback</h1>
-        <p className="text-muted-foreground">Send your thoughts to the admin.</p>
+        <h1 className="text-2xl md:text-3xl font-semibold text-[#1A1A1A]">Feedback</h1>
+        <p className="text-sm md:text-base text-[#1A1A1A]/60 mt-0.5">Send your thoughts to the admin.</p>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
-        <Card>
+        <Card className="rounded-xl border border-[#E8E8E8] shadow-none">
           <CardHeader>
             <CardTitle>Submit Feedback</CardTitle>
             <CardDescription>We&apos;d love to hear your thoughts and suggestions.</CardDescription>
@@ -71,9 +71,8 @@ export default function FeedbackPage() {
                   {[1, 2, 3, 4, 5].map((star) => (
                     <Star
                       key={star}
-                      className={`h-8 w-8 cursor-pointer transition-colors ${
-                        star <= rating ? "fill-yellow-400 text-yellow-400" : "text-muted border-muted"
-                      }`}
+                      className={`h-8 w-8 cursor-pointer transition-colors ${star <= rating ? "fill-[#F9C551] text-[#F9C551]" : "text-[#1A1A1A]/20"
+                        }`}
                       onClick={() => setRating(star)}
                     />
                   ))}
@@ -89,7 +88,7 @@ export default function FeedbackPage() {
                   rows={5}
                 />
               </div>
-              <Button type="submit" disabled={submitting}>
+              <Button type="submit" disabled={submitting} className="bg-[#5A378F] hover:bg-[#4a2d7a] text-white rounded-lg">
                 {submitting && <Spinner className="mr-2 h-3.5 w-3.5" />}
                 {submitting ? "Submitting…" : "Send Feedback"}
               </Button>
@@ -99,26 +98,26 @@ export default function FeedbackPage() {
 
         {session?.user?.role === "Super Admin" && (
           <div className="space-y-4">
-            <h2 className="text-xl font-semibold">User Feedback</h2>
+            <h2 className="text-base md:text-lg font-semibold text-[#1A1A1A]">User Feedback</h2>
             {feedbacks.length === 0 ? (
-              <p className="text-muted-foreground">No feedback received yet.</p>
+              <p className="text-base text-[#1A1A1A]/40">No feedback received yet.</p>
             ) : (
               <div className="space-y-4">
                 {feedbacks.map((fb) => (
-                  <Card key={fb._id}>
+                  <Card key={fb._id} className="rounded-xl border border-[#E8E8E8] shadow-none">
                     <CardHeader className="pb-2">
                       <div className="flex justify-between">
-                        <CardTitle className="text-sm font-medium">{fb.userId?.name || 'Unknown'}</CardTitle>
+                        <CardTitle className="text-sm font-semibold text-[#1A1A1A]">{fb.userId?.name || 'Unknown'}</CardTitle>
                         <div className="flex">
                           {[...Array(5)].map((_, i) => (
-                            <Star key={i} className={`h-4 w-4 ${i < fb.rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`} />
+                            <Star key={i} className={`h-4 w-4 ${i < fb.rating ? "fill-[#F9C551] text-[#F9C551]" : "text-[#1A1A1A]/15"}`} />
                           ))}
                         </div>
                       </div>
-                      <CardDescription className="text-xs">{new Date(fb.createdAt).toLocaleDateString()}</CardDescription>
+                      <CardDescription className="text-xs text-[#1A1A1A]/40">{new Date(fb.createdAt).toLocaleDateString()}</CardDescription>
                     </CardHeader>
                     <CardContent>
-                      <p className="text-sm">{fb.message}</p>
+                      <p className="text-sm text-[#1A1A1A]/70">{fb.message}</p>
                     </CardContent>
                   </Card>
                 ))}
