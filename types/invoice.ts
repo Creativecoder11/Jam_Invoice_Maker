@@ -71,6 +71,7 @@ export type InvoiceFormData = {
     bankName: string;
     branch: string;
     swift: string;
+    routingNumber?: string;
     currency: string;
   };
   
@@ -120,6 +121,7 @@ export type ServiceInvoiceFormData  = {
     bankName: string;
     branch: string;
     swift: string;
+    routingNumber?: string;
     currency: string;
   };
 

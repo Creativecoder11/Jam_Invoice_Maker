@@ -253,7 +253,7 @@ export default function CreateServiceInvoicePage() {
     dueDate: new Date(),
     from: { name: "", email: "", phone: "", address: "" },
     to: { name: "", email: "", phone: "", address: "" },
-    paymentInfo: { accountName: "", accountNumber: "", bankName: "", branch: "", swift: "", currency: "BDT" },
+    paymentInfo: { accountName: "", accountNumber: "", bankName: "", branch: "", swift: "", routingNumber: "", currency: "BDT" },
     services: [defaultService()],
     vat: 0,
     discount: 0,
@@ -509,6 +509,7 @@ export default function CreateServiceInvoicePage() {
                     <div className="space-y-2"><Label>Account Number</Label><Input value={formData.paymentInfo?.accountNumber} onChange={(e) => updatePayment("accountNumber", e.target.value)} /></div>
                     <div className="space-y-2"><Label>Branch</Label><Input value={formData.paymentInfo?.branch} onChange={(e) => updatePayment("branch", e.target.value)} /></div>
                     <div className="space-y-2"><Label>SWIFT / BIC</Label><Input value={formData.paymentInfo?.swift} onChange={(e) => updatePayment("swift", e.target.value)} /></div>
+                    <div className="space-y-2"><Label>Routing Number</Label><Input value={formData.paymentInfo?.routingNumber ?? ""} onChange={(e) => updatePayment("routingNumber", e.target.value)} /></div>
                   </div>
                 </CardContent>
               </Card>

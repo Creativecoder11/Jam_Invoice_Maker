@@ -194,7 +194,7 @@ export default function CreateInvoicePage() {
     dueDate: new Date(),
     from: { name: "", email: "", phone: "", address: "" },
     to: { name: "sadsdasd", email: "", phone: "", address: "" },
-    paymentInfo: { accountName: "", accountNumber: "", bankName: "", branch: "", swift: "", currency: "BDT" },
+    paymentInfo: { accountName: "", accountNumber: "", bankName: "", branch: "", swift: "", routingNumber: "", currency: "BDT" },
     items: [{ name: "", quantity: 1, unitPrice: 0, note: "", subItems: [] }],
     vat: 0,
     discount: 0,
@@ -668,6 +668,10 @@ export default function CreateInvoicePage() {
                     <div className="space-y-2">
                       <Label>SWIFT / BIC</Label>
                       <Input value={formData.paymentInfo?.swift} onChange={(e) => updatePayment("swift", e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Routing Number</Label>
+                      <Input value={formData.paymentInfo?.routingNumber ?? ""} onChange={(e) => updatePayment("routingNumber", e.target.value)} />
                     </div>
                   </div>
                 </CardContent>

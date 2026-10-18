@@ -539,10 +539,12 @@ function TotalsBlock({
           pdfElement(
             View,
             { style: styles.paymentDetails },
+            pdfElement(PaymentLine, { label: "Account Name:", value: paymentInfo.accountName }),
             pdfElement(PaymentLine, { label: "Account Number:", value: paymentInfo.accountNumber }),
-            pdfElement(PaymentLine, { label: "SWIFT Code:", value: paymentInfo.swift }),
             pdfElement(PaymentLine, { label: "Bank Name:", value: paymentInfo.bankName }),
             pdfElement(PaymentLine, { label: "Branch:", value: paymentInfo.branch }),
+            pdfElement(PaymentLine, { label: "SWIFT Code:", value: paymentInfo.swift }),
+            pdfElement(PaymentLine, { label: "Routing Number:", value: paymentInfo.routingNumber }),
           ),
         ),
       ),
@@ -644,6 +646,7 @@ function withPaymentDefaults(
     bankName: paymentInfo?.bankName ?? "",
     branch: paymentInfo?.branch ?? "",
     swift: paymentInfo?.swift ?? "",
+    routingNumber: paymentInfo?.routingNumber ?? "",
     currency: paymentInfo?.currency ?? "USD",
   };
 }

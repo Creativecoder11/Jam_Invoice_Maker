@@ -57,6 +57,7 @@ const invoiceSchema = new Schema(
       bankName: { type: String },
       branch: { type: String },
       swift: { type: String },
+      routingNumber: { type: String },
       currency: { type: String, default: "USD" },
     },
     

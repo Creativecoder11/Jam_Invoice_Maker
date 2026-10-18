@@ -116,6 +116,7 @@ export const ServiceInvoicePreview = forwardRef<HTMLDivElement, ServiceInvoicePr
         bankName: "",
         branch: "",
         swift: "",
+        routingNumber: "",
         currency: "USD",
       },
       services = [],
@@ -711,6 +712,25 @@ export const ServiceInvoicePreview = forwardRef<HTMLDivElement, ServiceInvoicePr
                                     color: "white",
                                   }}
                                 >
+                                  Account Name:{" "}
+                                </span>
+                                <span
+                                  style={{
+                                    fontSize: "8px",
+                                    fontWeight: "bold",
+                                    color: "white",
+                                  }}
+                                >
+                                  {paymentInfo.accountName}
+                                </span>
+                              </div>
+                              <div style={{ lineHeight: 1.4 }}>
+                                <span
+                                  style={{
+                                    fontSize: "8px",
+                                    color: "white",
+                                  }}
+                                >
                                   Account Number:{" "}
                                 </span>
                                 <span
@@ -721,25 +741,6 @@ export const ServiceInvoicePreview = forwardRef<HTMLDivElement, ServiceInvoicePr
                                   }}
                                 >
                                   {paymentInfo.accountNumber}
-                                </span>
-                              </div>
-                              <div style={{ lineHeight: 1.4 }}>
-                                <span
-                                  style={{
-                                    fontSize: "8px",
-                                    color: "white",
-                                  }}
-                                >
-                                  SWIFT Code:{" "}
-                                </span>
-                                <span
-                                  style={{
-                                    fontSize: "8px",
-                                    fontWeight: "bold",
-                                    color: "white",
-                                  }}
-                                >
-                                  {paymentInfo.swift}
                                 </span>
                               </div>
                               <div style={{ lineHeight: 1.4 }}>
@@ -778,6 +779,44 @@ export const ServiceInvoicePreview = forwardRef<HTMLDivElement, ServiceInvoicePr
                                   }}
                                 >
                                   {paymentInfo.branch}
+                                </span>
+                              </div>
+                              <div style={{ lineHeight: 1.4 }}>
+                                <span
+                                  style={{
+                                    fontSize: "8px",
+                                    color: "white",
+                                  }}
+                                >
+                                  SWIFT Code:{" "}
+                                </span>
+                                <span
+                                  style={{
+                                    fontSize: "8px",
+                                    fontWeight: "bold",
+                                    color: "white",
+                                  }}
+                                >
+                                  {paymentInfo.swift}
+                                </span>
+                              </div>
+                              <div style={{ lineHeight: 1.4 }}>
+                                <span
+                                  style={{
+                                    fontSize: "8px",
+                                    color: "white",
+                                  }}
+                                >
+                                  Routing Number:{" "}
+                                </span>
+                                <span
+                                  style={{
+                                    fontSize: "8px",
+                                    fontWeight: "bold",
+                                    color: "white",
+                                  }}
+                                >
+                                  {paymentInfo.routingNumber}
                                 </span>
                               </div>
                             </td>

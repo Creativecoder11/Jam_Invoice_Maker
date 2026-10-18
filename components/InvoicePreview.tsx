@@ -98,6 +98,7 @@ export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
         bankName: "",
         branch: "",
         swift: "",
+        routingNumber: "",
         currency: "$",
       },
       notes,
@@ -664,12 +665,12 @@ export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
                           </div>
                           <div style={{ textAlign: "left", fontSize: "10px" }}>
                             <div style={{ display: "flex", flexDirection: "row", gap: "4px" }}>
-                              <p style={{ fontSize: "8px", color: "white", margin: 0 }}>Account Number:</p>
-                              <h4 style={{ fontSize: "8px", fontWeight: "bold", margin: 0 }}>{paymentInfo.accountNumber}</h4>
+                              <p style={{ fontSize: "8px", color: "white", margin: 0 }}>Account Name:</p>
+                              <h4 style={{ fontSize: "8px", fontWeight: "bold", margin: 0 }}>{paymentInfo.accountName}</h4>
                             </div>
                             <div style={{ display: "flex", flexDirection: "row", gap: "4px" }}>
-                              <p style={{ fontSize: "8px", color: "white", margin: 0 }}>SWIFT Code:</p>
-                              <h4 style={{ fontSize: "8px", fontWeight: "bold", margin: 0 }}>{paymentInfo.swift}</h4>
+                              <p style={{ fontSize: "8px", color: "white", margin: 0 }}>Account Number:</p>
+                              <h4 style={{ fontSize: "8px", fontWeight: "bold", margin: 0 }}>{paymentInfo.accountNumber}</h4>
                             </div>
                             <div style={{ display: "flex", flexDirection: "row", gap: "4px" }}>
                               <p style={{ fontSize: "8px", color: "white", margin: 0 }}>Bank Name:</p>
@@ -678,6 +679,14 @@ export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
                             <div style={{ display: "flex", flexDirection: "row", gap: "4px" }}>
                               <p style={{ fontSize: "8px", color: "white", margin: 0 }}>Branch:</p>
                               <h4 style={{ fontSize: "8px", fontWeight: "bold", margin: 0 }}>{paymentInfo.branch}</h4>
+                            </div>
+                            <div style={{ display: "flex", flexDirection: "row", gap: "4px" }}>
+                              <p style={{ fontSize: "8px", color: "white", margin: 0 }}>SWIFT Code:</p>
+                              <h4 style={{ fontSize: "8px", fontWeight: "bold", margin: 0 }}>{paymentInfo.swift}</h4>
+                            </div>
+                            <div style={{ display: "flex", flexDirection: "row", gap: "4px" }}>
+                              <p style={{ fontSize: "8px", color: "white", margin: 0 }}>Routing Number:</p>
+                              <h4 style={{ fontSize: "8px", fontWeight: "bold", margin: 0 }}>{paymentInfo.routingNumber}</h4>
                             </div>
                           </div>
                         </div>
