@@ -43,7 +43,17 @@ const TAB_BADGE: Record<string, string> = {
 };
 
 // ── 3-dot Row Menu ────────────────────────────────────────────────────────────
-function RowMenu({ onDraft, onDelete, isDeleting }: { onDraft: () => void; onDelete: () => void; isDeleting?: boolean }) {
+function RowMenu({
+  onDraft,
+  onDelete,
+  isDeleting,
+  openUp = true,
+}: {
+  onDraft: () => void;
+  onDelete: () => void;
+  isDeleting?: boolean;
+  openUp?: boolean;
+}) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -65,7 +75,10 @@ function RowMenu({ onDraft, onDelete, isDeleting }: { onDraft: () => void; onDel
         <MoreHorizontal className="h-4 w-4 text-[#1A1A1A]/30" />
       </button>
       {open && (
-        <div className="absolute right-0 top-full mt-1 w-40 bg-white border border-[#E8E8E8] rounded-xl shadow-xl z-150 overflow-hidden">
+        <div
+          className={`absolute right-0 ${openUp ? "bottom-full mb-1" : "top-full -mt-3"
+            } w-40 bg-white border border-[#E8E8E8] rounded-xl shadow-xl z-[150] overflow-hidden`}
+        >
           <button
             onClick={() => { onDraft(); setOpen(false); }}
             className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-[#1A1A1A]/70 hover:bg-[#F0F0F0] text-left"
@@ -349,7 +362,7 @@ export default function QuotationsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#F0F0F0]">
-                {filtered.map((q) => {
+                {filtered.map((q, index) => {
                   const badge = STATUS_BADGE[q.status] ?? { label: q.status, className: "bg-gray-100 text-gray-600" };
                   return (
                     <tr key={q._id} className={`transition-colors hover:bg-[#F0F0F0]/40 ${selected.has(q._id) ? "bg-[#EEEDFE]/30" : ""}`}>
@@ -417,6 +430,7 @@ export default function QuotationsPage() {
                               onDraft={() => handleStatusChange(q._id, "Hold")}
                               onDelete={() => setDeleteTarget(q)}
                               isDeleting={deletingId === q._id}
+                              openUp={index !== 0}
                             />
                           )}
                         </div>

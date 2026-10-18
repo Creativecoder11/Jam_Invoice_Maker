@@ -42,7 +42,17 @@ const TAB_BADGE: Record<string, string> = {
 };
 
 // ── 3-dot Row Menu ─────────────────────────────────────────────────────────────
-function RowMenu({ onDraft, onDelete, isDeleting }: { onDraft: () => void; onDelete: () => void; isDeleting?: boolean }) {
+function RowMenu({
+  onDraft,
+  onDelete,
+  isDeleting,
+  openUp = true,
+}: {
+  onDraft: () => void;
+  onDelete: () => void;
+  isDeleting?: boolean;
+  openUp?: boolean;
+}) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -59,7 +69,12 @@ function RowMenu({ onDraft, onDelete, isDeleting }: { onDraft: () => void; onDel
         <MoreHorizontal className="h-4 w-4 text-[#1A1A1A]/30" />
       </button>
       {open && (
-        <div className="absolute right-0 top-full mt-1 w-40 bg-white border border-[#E8E8E8] rounded-xl shadow-xl z-150">
+        <div
+          className={`absolute right-0 ${openUp
+              ? "bottom-full mb-1"
+              : "top-full -mt-3"
+            } w-40 bg-white border border-[#E8E8E8] rounded-xl shadow-xl z-50`}
+        >
           <button
             onClick={() => { onDraft(); setOpen(false); }}
             className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-[#1A1A1A]/70 hover:bg-[#F0F0F0] text-left"
@@ -274,9 +289,9 @@ export default function InvoicesPage() {
         </div>
 
         {/* Table */}
-        <div className="overflow-x-auto">
+        <div className="w-full overflow-x-auto overflow-y-visible">
           {loading ? (
-            <table className="w-full text-sm">
+            <table className="w-full min-w-[1100px] text-sm">
               <thead>
                 <tr className="bg-[#F0F0F0]/60 border-t border-[#E8E8E8]">
                   {["", "Invoice ID", "Client", "Email", "Date", "Amount", "Status", ""].map((h, i) => (
@@ -337,14 +352,18 @@ export default function InvoicesPage() {
                     </div>
                   </th>
                   <th className="px-3 py-3 text-left text-xs md:text-sm font-semibold text-[#1A1A1A]/40 uppercase tracking-wider">Status</th>
-                  <th className="pr-5 pl-3 py-3 text-xs md:text-sm font-semibold text-[#1A1A1A]/40 uppercase tracking-wider text-right">Actions</th>
+                  <th className="pr-5 pl-3 py-3 min-w-[160px] text-xs md:text-sm font-semibold text-[#1A1A1A]/40 uppercase tracking-wider text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#F0F0F0]">
-                {filtered.map((inv) => {
+                {filtered.map((inv, index) => {
                   const badge = STATUS_BADGE[inv.status] ?? { label: inv.status, className: "bg-[#F0F0F0] text-[#1A1A1A]/60" };
                   return (
-                    <tr key={inv._id} className={`transition-colors hover:bg-[#F0F0F0]/40 ${selected.has(inv._id) ? "bg-[#EEEDFE]/30" : ""}`}>
+                    <tr
+                      key={inv._id}
+                      className={`relative transition-colors hover:bg-[#F0F0F0]/40 ${selected.has(inv._id) ? "bg-[#EEEDFE]/30" : ""
+                        }`}
+                    >
                       <td className="pl-5 pr-3 py-4">
                         <input type="checkbox" checked={selected.has(inv._id)} onChange={() => toggleSelect(inv._id)}
                           className="rounded border-[#E8E8E8] accent-[#5A378F] cursor-pointer" />
@@ -387,7 +406,7 @@ export default function InvoicesPage() {
                       </td>
 
                       {/* Actions */}
-                      <td className="pr-5 pl-3 py-4">
+                      <td className="relative pr-5 pl-3 py-4 overflow-visible">
                         <div className="flex items-center gap-0.5 justify-end">
                           <Link href={`/dashboard/invoices/${inv._id}`}>
                             <button title="Preview" className="p-1.5 rounded-lg hover:bg-[#F0F0F0] transition-colors">
@@ -406,6 +425,7 @@ export default function InvoicesPage() {
                               onDraft={() => handleStatusChange(inv._id, "Hold")}
                               onDelete={() => setDeleteTarget(inv)}
                               isDeleting={deletingId === inv._id}
+                              openUp={index !== 0}
                             />
                           )}
                         </div>
@@ -420,10 +440,16 @@ export default function InvoicesPage() {
 
         {/* Footer */}
         {!loading && filtered.length > 0 && (
-          <div className="px-5 py-3 border-t border-[#F0F0F0] text-xs md:text-sm text-[#1A1A1A]/40 flex items-center justify-between">
-            <span>Showing {filtered.length} of {invoices.length} invoice{invoices.length !== 1 ? "s" : ""}</span>
+          <div className="relative z-0 px-5 py-3 border-t border-[#F0F0F0] bg-white text-xs md:text-sm text-[#1A1A1A]/40 flex items-center justify-between">
+            <span>
+              Showing {filtered.length} of {invoices.length} invoice
+              {invoices.length !== 1 ? "s" : ""}
+            </span>
+
             {selected.size > 0 && (
-              <span className="text-[#5A378F] font-semibold">{selected.size} selected</span>
+              <span className="text-[#5A378F] font-semibold">
+                {selected.size} selected
+              </span>
             )}
           </div>
         )}

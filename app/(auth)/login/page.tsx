@@ -2,7 +2,7 @@
 
 import { signIn } from "next-auth/react";
 import { useState, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -11,18 +11,27 @@ import Link from "next/link";
 import { ArrowRight, Bolt, Lock, Mail } from "lucide-react";
 
 function LoginForm() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrlParam = searchParams.get("callbackUrl");
-  let callbackUrl = "/dashboard";
-  if (callbackUrlParam) {
+
+  const callbackUrl = (() => {
+    if (!callbackUrlParam) return "/dashboard";
+
     try {
-      const parsedUrl = new URL(callbackUrlParam);
-      callbackUrl = parsedUrl.pathname + parsedUrl.search;
+      const url = new URL(
+        callbackUrlParam,
+        window.location.origin
+      );
+
+      if (url.origin !== window.location.origin) {
+        return "/dashboard";
+      }
+
+      return url.pathname + url.search + url.hash;
     } catch {
-      callbackUrl = callbackUrlParam;
+      return "/dashboard";
     }
-  }
+  })();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -30,24 +39,28 @@ function LoginForm() {
 
   const handleCredentialsLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading) return;
     setLoading(true);
+
     try {
       const res = await signIn("credentials", {
-        email,
+        email: email.trim(),
         password,
         redirect: false,
         callbackUrl,
       });
-      if (res?.error) {
+
+      if (!res?.ok || res.error) {
         toast.error("Invalid email or password");
         return;
       }
+
       toast.success("Logged in successfully!");
-      router.refresh();
-      router.replace(callbackUrl);
+
+      window.location.assign(res.url || callbackUrl);
     } catch (err) {
-      console.error(err);
-      toast.error("An error occurred");
+      console.error("Login error:", err);
+      toast.error("An error occurred during login");
     } finally {
       setLoading(false);
     }

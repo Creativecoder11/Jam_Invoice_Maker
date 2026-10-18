@@ -42,15 +42,29 @@ const TAB_BADGE: Record<string, string> = {
   Cancelled: "bg-[#FBEAF0] text-[#72243E]",
 };
 
-function RowMenu({ onDraft, onDelete, isDeleting }: { onDraft: () => void; onDelete: () => void; isDeleting?: boolean }) {
+function RowMenu({
+  onDraft,
+  onDelete,
+  isDeleting,
+  openUp = true,
+}: {
+  onDraft: () => void;
+  onDelete: () => void;
+  isDeleting?: boolean;
+  openUp?: boolean;
+}) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!open) return;
+
     const close = (e: MouseEvent) => {
-      if (!ref.current?.contains(e.target as Node)) setOpen(false);
+      if (!ref.current?.contains(e.target as Node)) {
+        setOpen(false);
+      }
     };
+
     document.addEventListener("mousedown", close);
     return () => document.removeEventListener("mousedown", close);
   }, [open]);
@@ -64,7 +78,10 @@ function RowMenu({ onDraft, onDelete, isDeleting }: { onDraft: () => void; onDel
         <MoreHorizontal className="h-4 w-4 text-[#1A1A1A]/30" />
       </button>
       {open && (
-        <div className="absolute right-0 top-full mt-1 w-40 bg-white border border-[#E8E8E8] rounded-xl shadow-xl z-50 overflow-hidden">
+        <div
+          className={`absolute right-0 ${openUp ? "bottom-full mb-1" : "top-full mt-1"
+            } w-40 bg-white border border-[#E8E8E8] rounded-xl shadow-xl z-150 overflow-hidden`}
+        >
           <button
             onClick={() => { onDraft(); setOpen(false); }}
             className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-[#1A1A1A]/70 hover:bg-[#F0F0F0] text-left"
@@ -349,7 +366,7 @@ export default function ServiceInvoicesPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#F0F0F0]">
-                {filtered.map((inv) => {
+                {filtered.map((inv, index) => {
                   const badge = STATUS_BADGE[inv.status] ?? { label: inv.status, className: "bg-[#F0F0F0]/60 text-[#1A1A1A]/30" };
                   return (
                     <tr key={inv._id} className={`transition-colors hover:bg-[#F0F0F0]/40 ${selected.has(inv._id) ? "bg-[#EEEDFE]/30" : ""}`}>
@@ -417,6 +434,7 @@ export default function ServiceInvoicesPage() {
                               onDraft={() => handleStatusChange(inv._id, "Hold")}
                               onDelete={() => setDeleteTarget(inv)}
                               isDeleting={deletingId === inv._id}
+                              openUp={index !== 0}
                             />
                           )}
                         </div>
