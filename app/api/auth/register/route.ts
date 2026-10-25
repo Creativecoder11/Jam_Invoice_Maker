@@ -15,18 +15,16 @@ export async function POST(req: Request) {
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return NextResponse.json({ message: "Email already registered" }, { status: 400 });
+      return NextResponse.json({ message: "User already exists" }, { status: 400 });
     }
 
+    // 🔑 CRITICAL: Hash the password before saving
     const hashedPassword = await bcrypt.hash(password, 10);
-    
-    // First user with credentials (password) becomes Super Admin + auto-approved.
-    // Checks only credential users so downloading locally still works even if
-    // the shared DB already has Google OAuth users.
-    const credentialUserCount = await User.countDocuments({ password: { $exists: true } });
-    const isFirstUser = credentialUserCount === 0;
 
-    const user = await User.create({
+    const userCount = await User.countDocuments();
+    const isFirstUser = userCount === 0;
+
+    await User.create({
       name,
       email,
       password: hashedPassword,
@@ -35,9 +33,9 @@ export async function POST(req: Request) {
       status: isFirstUser ? "approved" : "pending",
     });
 
-    return NextResponse.json({ message: "User registered" }, { status: 201 });
+    return NextResponse.json({ message: "Registration successful" }, { status: 201 });
   } catch (error) {
     console.error("Registration error:", error);
-    return NextResponse.json({ message: "An error occurred" }, { status: 500 });
+    return NextResponse.json({ message: "Internal server error" }, { status: 500 });
   }
 }
