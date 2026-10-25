@@ -24,7 +24,9 @@ export const authOptions: AuthOptions = {
 
         await dbConnect();
 
-        const user = await User.findOne({ email: credentials.email });
+        const user = await User.findOne({
+          email: credentials.email.trim().toLowerCase()
+        });
 
         if (!user || !user.password) {
           throw new Error("Invalid email or password");
@@ -67,7 +69,7 @@ export const authOptions: AuthOptions = {
               role: isFirstUser ? "Super Admin" : "Employee",
               status: isFirstUser ? "approved" : "pending",
             });
-            
+
             user.id = newUser._id.toString();
             (user as any).role = newUser.role;
             (user as any).status = newUser.status;

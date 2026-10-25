@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth/next";
+import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import dbConnect from "@/lib/mongoose";
 import { Invoice } from "@/models/Invoice";
@@ -7,12 +7,12 @@ import { Invoice } from "@/models/Invoice";
 export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session || session.user.role !== "Super Admin") {
+
+    if (!session || session.user?.role !== "Super Admin") {
       return NextResponse.json({ message: "Forbidden" }, { status: 403 });
     }
 
     const data = await req.json();
-
     await dbConnect();
 
     const invoice = await Invoice.create({
@@ -22,7 +22,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json(invoice, { status: 201 });
   } catch (error: any) {
-    console.error("Create invoice error", error);
+    console.error("❌ Create invoice error:", error);
     return NextResponse.json({ message: error.message || "Internal Error" }, { status: 500 });
   }
 }
@@ -30,6 +30,7 @@ export async function POST(req: Request) {
 export async function GET(req: Request) {
   try {
     const session = await getServerSession(authOptions);
+
     if (!session) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
@@ -48,8 +49,8 @@ export async function GET(req: Request) {
     const invoices = await Invoice.find(query).sort({ createdAt: -1 }).populate("creatorId", "name email").lean();
 
     return NextResponse.json(invoices);
-  } catch (error) {
-    console.error("Get invoices error", error);
-    return NextResponse.json({ message: "Internal Error" }, { status: 500 });
+  } catch (error: any) {
+    console.error("❌ Get invoices error:", error);
+    return NextResponse.json({ message: error.message || "Internal Error" }, { status: 500 });
   }
 }

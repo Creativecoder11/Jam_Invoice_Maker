@@ -81,9 +81,21 @@ export default function ClientsPage() {
 
   useEffect(() => {
     fetch("/api/clients")
-      .then((r) => r.json())
-      .then((data) => { if (Array.isArray(data)) setClients(data); })
-      .catch(() => { })
+      .then(async (r) => {
+        if (!r.ok) {
+          const err = await r.json();
+          throw new Error(err.message || "Failed to fetch");
+        }
+        return r.json();
+      })
+      .then((data) => {
+        if (Array.isArray(data)) setClients(data);
+        else console.error("Expected array, got:", data);
+      })
+      .catch((err) => {
+        console.error("Fetch error:", err);
+        toast.error("Failed to load clients: " + err.message);
+      })
       .finally(() => setLoading(false));
   }, []);
 

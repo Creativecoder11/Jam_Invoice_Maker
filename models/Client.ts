@@ -16,4 +16,4 @@ const clientSchema = new Schema(
 );
 
 delete (mongoose.models as any).Client;
-export const Client = mongoose.model("Client", clientSchema);
+export const Client = mongoose.models.Client || mongoose.model("Client", clientSchema);

@@ -128,10 +128,21 @@ export default function QuotationsPage() {
   const [deleteTarget, setDeleteTarget] = useState<Quotation | null>(null);
 
   useEffect(() => {
-    fetch("/api/invoices?type=quotation")
-      .then((r) => r.json())
-      .then((data) => { if (Array.isArray(data)) setQuotations(data); })
-      .catch(() => { })
+    fetch("/api/invoices?type=quotation") // 👈 Changed type
+      .then(async (r) => {
+        if (!r.ok) {
+          const err = await r.json();
+          throw new Error(err.message || "Failed to fetch");
+        }
+        return r.json();
+      })
+      .then((data) => {
+        if (Array.isArray(data)) setQuotations(data);
+      })
+      .catch((err) => {
+        console.error("Fetch error:", err);
+        toast.error("Failed to load quotations: " + err.message);
+      })
       .finally(() => setLoading(false));
   }, []);
 

@@ -71,8 +71,8 @@ function RowMenu({
       {open && (
         <div
           className={`absolute right-0 ${openUp
-              ? "bottom-full mb-1"
-              : "top-full -mt-3"
+            ? "bottom-full mb-1"
+            : "top-full -mt-3"
             } w-40 bg-white border border-[#E8E8E8] rounded-xl shadow-xl z-50`}
         >
           <button
@@ -123,9 +123,21 @@ export default function InvoicesPage() {
 
   useEffect(() => {
     fetch("/api/invoices?type=invoice")
-      .then((r) => r.json())
-      .then((data) => { if (Array.isArray(data)) setInvoices(data); })
-      .catch(() => { })
+      .then(async (r) => {
+        if (!r.ok) {
+          const err = await r.json();
+          throw new Error(err.message || "Failed to fetch");
+        }
+        return r.json();
+      })
+      .then((data) => {
+        if (Array.isArray(data)) setInvoices(data);
+        else console.error("Expected array, got:", data);
+      })
+      .catch((err) => {
+        console.error("Fetch error:", err);
+        toast.error("Failed to load invoices: " + err.message);
+      })
       .finally(() => setLoading(false));
   }, []);
 

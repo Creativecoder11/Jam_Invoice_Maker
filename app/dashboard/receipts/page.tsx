@@ -122,11 +122,22 @@ export default function ReceiptsPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Receipt | null>(null);
 
-  useEffect(() => {
+   useEffect(() => {
     fetch("/api/invoices?type=receipt")
-      .then((r) => r.json())
-      .then((data) => { if (Array.isArray(data)) setReceipts(data); })
-      .catch(() => { })
+      .then(async (r) => {
+        if (!r.ok) {
+          const err = await r.json();
+          throw new Error(err.message || "Failed to fetch");
+        }
+        return r.json();
+      })
+      .then((data) => { 
+        if (Array.isArray(data)) setReceipts(data); 
+      })
+      .catch((err) => { 
+        console.error("Fetch error:", err);
+        toast.error("Failed to load receipts: " + err.message);
+      })
       .finally(() => setLoading(false));
   }, []);
 

@@ -1,26 +1,31 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth/next";
+import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import dbConnect from "@/lib/mongoose";
 import { Client } from "@/models/Client";
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+
+    if (!session) {
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    }
 
     await dbConnect();
     const clients = await Client.find({ isDeleted: { $ne: true } }).sort({ name: 1 }).lean();
     return NextResponse.json(clients);
-  } catch (error) {
-    return NextResponse.json({ message: "Internal Error" }, { status: 500 });
+  } catch (error: any) {
+    console.error("❌ Get clients error:", error);
+    return NextResponse.json({ message: error.message || "Internal Error" }, { status: 500 });
   }
 }
 
 export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session || session.user.role !== "Super Admin") {
+
+    if (!session || session.user?.role !== "Super Admin") {
       return NextResponse.json({ message: "Forbidden" }, { status: 403 });
     }
 
@@ -33,6 +38,7 @@ export async function POST(req: Request) {
     const client = await Client.create({ ...data, creatorId: session.user.id });
     return NextResponse.json(client, { status: 201 });
   } catch (error: any) {
+    console.error("❌ Create client error:", error);
     return NextResponse.json({ message: error.message || "Internal Error" }, { status: 500 });
   }
 }

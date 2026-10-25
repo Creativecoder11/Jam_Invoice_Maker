@@ -106,4 +106,4 @@ const invoiceSchema = new Schema(
 // In production (serverless) each invocation is cold anyway.
 // In development with HMR, this ensures schema changes take effect without a full restart.
 delete (mongoose.models as any).Invoice;
-export const Invoice = mongoose.model("Invoice", invoiceSchema);
+export const Invoice = mongoose.models.Invoice || mongoose.model("Invoice", invoiceSchema);

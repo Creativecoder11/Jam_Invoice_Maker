@@ -5,7 +5,12 @@ import { User } from "@/models/User";
 
 export async function POST(req: Request) {
   try {
-    const { name, email, password, phone } = await req.json();
+    const body = await req.json();
+    
+    const name = body.name?.trim();
+    const email = body.email?.trim().toLowerCase();
+    const password = body.password;
+    const phone = body.phone?.trim();
 
     if (!name || !email || !password) {
       return NextResponse.json({ message: "Missing required fields" }, { status: 400 });
@@ -18,13 +23,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ message: "User already exists" }, { status: 400 });
     }
 
-    // 🔑 CRITICAL: Hash the password before saving
     const hashedPassword = await bcrypt.hash(password, 10);
-
     const userCount = await User.countDocuments();
     const isFirstUser = userCount === 0;
 
-    await User.create({
+    const newUser = await User.create({
       name,
       email,
       password: hashedPassword,
@@ -33,9 +36,14 @@ export async function POST(req: Request) {
       status: isFirstUser ? "approved" : "pending",
     });
 
+    console.log("✅ User registered successfully in DB:", newUser._id);
+
     return NextResponse.json({ message: "Registration successful" }, { status: 201 });
   } catch (error) {
-    console.error("Registration error:", error);
-    return NextResponse.json({ message: "Internal server error" }, { status: 500 });
+    console.error("❌ Registration error:", error);
+    return NextResponse.json(
+      { message: "Internal server error", error: error instanceof Error ? error.message : "Unknown error" }, 
+      { status: 500 }
+    );
   }
 }
